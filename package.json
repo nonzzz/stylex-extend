@@ -6,11 +6,17 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
+  "workspaces": [
+    "packages/*"
+  ],
   "keywords": [],
   "author": "",
   "license": "MIT",
   "packageManager": "yarn@4.1.1",
   "devDependencies": {
+    "@stylexjs/babel-plugin": "^0.5.1",
+    "@stylexjs/stylex": "^0.5.1",
+    "@types/node": "^20.11.30",
     "eslint": "^8.57.0",
     "eslint-config-kagura": "^2.1.1",
     "typescript": "^5.4.3"

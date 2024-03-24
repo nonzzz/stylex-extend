@@ -1,0 +1,7 @@
+{
+  "name": "@stylex-extend/babel-plugin",
+  "devDependencies": {
+    "@babel/core": "^7.23.9",
+    "@types/babel__core": "^7.20.5"
+  }
+}

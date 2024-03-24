@@ -1,0 +1,7 @@
+{
+  "name": "@stylex-extend/css",
+  "dependencies": {
+    "@stylex-extend/babel-plugin": "workspace:*",
+    "csstype": "^3.1.3"
+  }
+}
