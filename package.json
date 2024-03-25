@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "preinstall": "node ./scripts/yarn.js"
   },
   "workspaces": [
     "packages/*"
@@ -19,6 +19,10 @@
     "@types/node": "^20.11.30",
     "eslint": "^8.57.0",
     "eslint-config-kagura": "^2.1.1",
+    "tsup": "^8.0.2",
     "typescript": "^5.4.3"
+  },
+  "resolutions": {
+    "tsup": "8.0.2"
   }
 }

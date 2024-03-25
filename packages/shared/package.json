@@ -1,0 +1,18 @@
+{
+  "name": "@stylex-extend/shared",
+  "description": "Shared utilities for StyleX Extend",
+  "version": "0.0.0",
+  "license": "MIT",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "scripts": {
+    "dev": "tsup -w",
+    "build": "tsup"
+  },
+  "devDependencies": {
+    "tsup": "^8.0.2"
+  },
+  "dependencies": {
+    "csstype": "^3.1.3"
+  }
+}
