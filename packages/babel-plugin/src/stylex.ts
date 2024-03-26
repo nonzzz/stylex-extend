@@ -4,6 +4,24 @@ import type { CssObjectValue } from './interface'
 const HELPER_NAME = '__stylex__extend__helper__'
 const MODULE_NAME = '@stylexjs/stylex'
 
+interface Effect {
+  state: boolean
+  ast: types.ArrowFunctionExpression | undefined
+  variables: Record<string, { attr: string, reference: types.Identifier | types.MemberExpression }>
+  cleanp(): void
+}
+
+const defualtEffect = { state: false, ast: undefined, variables: {} }
+
+const effect = <Effect>{
+  state: false,
+  ast: undefined,
+  variables: {},
+  cleanp() {
+    Object.assign(effect, defualtEffect)
+  }
+}
+
 export function injectStylexHelper(t: typeof types) {
   return t.importDeclaration([t.importNamespaceSpecifier(t.identifier(HELPER_NAME))], t.stringLiteral(MODULE_NAME))
 }
@@ -34,6 +52,10 @@ function processStyleName(prop: string) {
 
 function evaluateCSSValue(node: types.ObjectProperty['value'], t: typeof types, selector = true): CssObjectValue | string | number | undefined {
   switch (node.type) {
+    case 'Identifier':
+    case 'MemberExpression':
+      effect.state = true
+      return
     case 'StringLiteral':
       return processStyleName(getStringValue(node))
     case 'NumericLiteral':
@@ -52,15 +74,20 @@ function evaluateObjectExpression(expression: types.ObjectExpression, t: typeof 
         if (isStringLike(property.key)) {
           const key = getStringValue(property.key)
           const value = evaluateCSSValue(property.value, t, selector)
-          if (value !== null && value !== undefined) cssObject[key] = value
+          if (value !== null && value !== undefined) {
+            cssObject[key] = value
+          } else {
+            effect.variables[key] = { attr: `_${key}`, reference: property.value as any }
+          }
         }
+        continue
       }
     }
   }
   return cssObject
 }
 
-function convertObjectToAST(object: CssObjectValue, t: typeof types): types.ObjectExpression {
+function convertObjectToAST(object: any, t: typeof types): types.ObjectExpression {
   return t.objectExpression(Object.entries(object).map(([key, value]) => {
     return t.objectProperty(t.stringLiteral(key),
       typeof value === 'undefined'
@@ -83,10 +110,21 @@ function wrapperExpressionWithStylex(ast: Array<types.Expression>, callee: strin
 
 export function transformStylexObjectExpression(path: NodePath<types.JSXAttribute>,
   expression: types.ObjectExpression, state: PluginPass, t: typeof types) {
+  effect.cleanp()
   const variable = path.scope.generateUidIdentifier('stylex_extend')
   const cssObject = evaluateObjectExpression(expression, t, false)
+  const expr: Array<types.Expression> = [t.memberExpression(t.identifier(variable.name), t.identifier('css'))]
   const ast = convertObjectToAST({ css: cssObject }, t)
+  if (effect.state) {
+    const parmas = Object.values(effect.variables).map(key => t.identifier(key.attr))
+    const body = t.objectExpression(Object.entries(effect.variables)
+      .map(([key, value]) => t.objectProperty(t.stringLiteral(key), t.identifier(value.attr))))
+    effect.ast = t.arrowFunctionExpression(parmas, body)
+    ast.properties.push(t.objectProperty(t.identifier('dynamic'), effect.ast))
+    expr.push(t.callExpression(t.memberExpression(variable, t.identifier('dynamic')),
+      Object.values(effect.variables).map(({ reference }) => reference)))
+  }
   state.statements.push(variableDeclaration(t, variable, wrapperExpressionWithStylex([ast], 'create', t)))
-  const expr = t.memberExpression(t.identifier(variable.name), t.identifier('css'))
-  path.replaceWith(t.jsxSpreadAttribute(wrapperExpressionWithStylex([expr], state.pluginOptions.stylex.helper, t)))
+  path.replaceWith(t.jsxSpreadAttribute(wrapperExpressionWithStylex(expr, state.pluginOptions.stylex.helper, t)))
+  effect.cleanp()
 }
