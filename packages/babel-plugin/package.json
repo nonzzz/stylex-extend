@@ -1,15 +1,20 @@
 {
   "name": "@stylex-extend/babel-plugin",
+  "description": "A friendly stylex babel plugin extension.",
+  "module": "./dist/index.mjs",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "scripts": {
-    "test": "node --require tsx/cjs --test __tests__/**/*spec.ts"
+    "test": "node --require tsx/cjs --test __tests__/**/*spec.ts",
+    "dev": "yarn run -T tsup --watch",
+    "build": "yarn run -T tsup"
   },
+  "license": "MIT",
   "devDependencies": {
     "@babel/core": "^7.23.9",
     "@types/babel-plugin-macros": "^3.0.0",
     "@types/babel__core": "^7.20.5",
-    "babel-plugin-tester": "^11.0.4",
-    "tsup": "^8.0.2",
-    "tsx": "^4.7.1"
+    "babel-plugin-tester": "^11.0.4"
   },
   "dependencies": {
     "babel-plugin-macros": "^3.1.0"

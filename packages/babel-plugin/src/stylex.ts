@@ -50,7 +50,7 @@ function processStyleName(prop: string) {
   return isCustomProperty(prop) ? prop : prop.replace(hyphenateRegex, '-$&').toLowerCase()
 }
 
-function evaluateCSSValue(node: types.ObjectProperty['value'], t: typeof types, selector = true): CssObjectValue | string | number | undefined {
+function evaluateCSSValue(node: types.ObjectProperty['value'], t: typeof types, selector = true) {
   switch (node.type) {
     case 'Identifier':
     case 'MemberExpression':
@@ -80,6 +80,12 @@ function evaluateObjectExpression(expression: types.ObjectExpression, t: typeof 
             effect.variables[key] = { attr: `_${key}`, reference: property.value as any }
           }
         }
+        continue
+      }
+      case 'SpreadElement': {
+        // TODO: handle spread element
+        // Spread element may contain dynamic value
+        // If the value is static we should generate new css object
         continue
       }
     }

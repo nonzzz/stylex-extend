@@ -16,6 +16,6 @@ yarn add @stylex-extend/babel-plugin
 // .babelrc.js
 
 module.exports = {
-  plugins: ["@stylexjs/babel-plugin", "@stylex-extend/babel-plugin"],
+  plugins: ["@stylex-extend/babel-plugin", "@stylexjs/babel-plugin"],
 };
 ```

@@ -6,11 +6,8 @@
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
   "scripts": {
-    "dev": "tsup -w",
-    "build": "tsup"
-  },
-  "devDependencies": {
-    "tsup": "^8.0.2"
+    "dev": "yarn run -T tsup --watch",
+    "build": "yarn run -T tsup"
   },
   "dependencies": {
     "csstype": "^3.1.3"

@@ -2,10 +2,9 @@
 
 An unofficial stylexjs extension
 
-
 ## CheckList
 
-- [] macro syntax
-- [] css selector
+- [x] macro syntax
+- [ ] css selector
 
 WIP
