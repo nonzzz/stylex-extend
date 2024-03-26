@@ -3,8 +3,5 @@
   "dependencies": {
     "@stylex-extend/babel-plugin": "workspace:*",
     "@stylex-extend/shared": "workspace:*"
-  },
-  "devDependencies": {
-    "tsup": "^8.0.2"
   }
 }

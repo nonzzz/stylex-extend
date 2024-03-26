@@ -4,8 +4,7 @@
   "module": "./index.js",
   "types": "./index.d.ts",
   "devDependencies": {
-    "@types/react": "^18.2.69",
-    "tsup": "^8.0.2"
+    "@types/react": "^18.2.69"
   },
   "dependencies": {
     "@stylex-extend/shared": "workspace:*"
