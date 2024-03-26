@@ -1,9 +1,15 @@
 {
   "name": "@stylex-extend/babel-plugin",
+  "scripts": {
+    "test": "node --require tsx/cjs --test __tests__/**/*spec.ts"
+  },
   "devDependencies": {
     "@babel/core": "^7.23.9",
+    "@types/babel-plugin-macros": "^3.0.0",
     "@types/babel__core": "^7.20.5",
-    "tsup": "^8.0.2"
+    "babel-plugin-tester": "^11.0.4",
+    "tsup": "^8.0.2",
+    "tsx": "^4.7.1"
   },
   "dependencies": {
     "babel-plugin-macros": "^3.1.0"
