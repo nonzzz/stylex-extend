@@ -7,7 +7,7 @@ interface ButtonProps {
 }
 
 function Button(props: React.PropsWithChildren<ButtonProps>) {
-  return <button type="button" onClick={props.onClick} stylex={{ color: props.color, fontSize: '15px' }}>{props.children}</button>
+  return <div onClick={props.onClick} stylex={{ color: props.color, fontSize: '15px' }}>{props.children}</div>
 }
 
 function App() {

@@ -1,10 +1,8 @@
-import {} from 'react'
-import { StylexProperty } from '@stylex-extend/shared'
-
-declare function create(args: any): string
+import type { StylexProperty } from '@stylex-extend/shared'
 
 declare module 'react' {
+
   interface Attributes {
-    stylex?: StylexProperty;
+    stylex?: StylexProperty
   }
 }
