@@ -1,0 +1,12 @@
+{
+  "name": "@stylex-extend/vue",
+  "main": "./index.js",
+  "module": "./index.js",
+  "types": "./index.d.ts",
+  "devDependencies": {
+    "vue": "^3.4.21"
+  },
+  "dependencies": {
+    "@stylex-extend/shared": "workspace:*"
+  }
+}

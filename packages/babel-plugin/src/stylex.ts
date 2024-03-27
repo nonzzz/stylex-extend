@@ -1,7 +1,7 @@
 import { NodePath, PluginPass, types } from '@babel/core'
 import type { CssObjectValue } from './interface'
+import type { State } from './index'
 
-const HELPER_NAME = '__stylex__helper'
 const MODULE_NAME = '@stylexjs/stylex'
 
 interface VariableMeta {
@@ -53,8 +53,8 @@ const effect = <Effect>{
   }
 }
 
-export function injectStylexHelper(t: typeof types) {
-  return t.importDeclaration([t.importNamespaceSpecifier(t.identifier(HELPER_NAME))], t.stringLiteral(MODULE_NAME))
+export function injectStylexHelper(t: typeof types, id: types.Identifier) {
+  return t.importDeclaration([t.importNamespaceSpecifier(id)], t.stringLiteral(MODULE_NAME))
 }
 
 export function variableDeclaration(t: typeof types, identifier: types.Identifier | string, ast: types.Expression) {
@@ -191,12 +191,11 @@ function convertObjectToAST(object: any, t: typeof types, usingIdentifer = false
   }))
 }
 
-function wrapperExpressionWithStylex(ast: Array<types.Expression>, callee: string, t: typeof types) {
-  return t.callExpression(t.memberExpression(t.identifier(HELPER_NAME), 
-    t.identifier(callee)), ast)
+function wrapperExpressionWithStylex(ast: Array<types.Expression>, callee: string, t: typeof types, helper: types.Identifier) {
+  return t.callExpression(t.memberExpression(helper, t.identifier(callee)), ast)
 }
 
-export function transformStylexObjectExpression(path: NodePath<types.JSXAttribute>, expression: types.ObjectExpression, state: PluginPass, t: typeof types) {
+export function transformStylexObjectExpression(path: NodePath<types.JSXAttribute>, expression: types.ObjectExpression, state: PluginPass & State, t: typeof types) {
   effect.cleanp()
   const variable = path.scope.generateUidIdentifier('styles')
   const cssObject = evaluateObjectExpression(expression, t)
@@ -234,9 +233,8 @@ export function transformStylexObjectExpression(path: NodePath<types.JSXAttribut
     expr.push(logicalExpr)
     count++
   }
+  state.statements.push(variableDeclaration(t, variable, wrapperExpressionWithStylex([ast], 'create', t, state.helper)))
 
-  state.statements.push(variableDeclaration(t, variable, wrapperExpressionWithStylex([ast], 'create', t)))
-
-  path.replaceWith(t.jsxSpreadAttribute(wrapperExpressionWithStylex(expr, state.pluginOptions.stylex.helper, t)))
+  path.replaceWith(t.jsxSpreadAttribute(wrapperExpressionWithStylex(expr, state.pluginOptions.stylex.helper, t, state.helper)))
   effect.cleanp()
 }

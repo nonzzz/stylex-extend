@@ -15,12 +15,11 @@ interface PluginMacros {
 
 type InternalPluginOptions = Omit<StylexExtendBabelPluginOptions, 'stylex'> & { stylex: StylexBindingMeta }
 
-declare module '@babel/core' {
-  interface PluginPass {
-    pluginMacros: PluginMacros
-    pluginOptions: InternalPluginOptions
-    statements: types.VariableDeclaration[]
-  }
+export interface State {
+  pluginMacros: PluginMacros
+  pluginOptions: InternalPluginOptions
+  statements: types.VariableDeclaration[]
+  helper: types.Identifier
 }
 
 const defaultOptions: InternalPluginOptions = {
@@ -34,7 +33,7 @@ export const macros: PluginMacros = {
   css: cssMacro
 }
 
-function declare({ types: t }: typeof b): PluginObj {
+function declare({ types: t }: typeof b): PluginObj<b.PluginPass & State> {
   return {
     name: '@stylex-extend',
     manipulateOptions(_, parserOpts) {
@@ -60,8 +59,9 @@ function declare({ types: t }: typeof b): PluginObj {
           if (typeof state.pluginOptions.stylex === 'boolean') {
             state.pluginOptions.stylex = { helper: state.pluginOptions.stylex ? 'props' : '' }
           }
-          path.unshiftContainer('body', injectStylexHelper(t))
-          path.scope.registerBinding('module', path.get('body')[0])
+          const helper = path.scope.generateUidIdentifier('stylexHelper')
+          state.helper = helper
+          path.unshiftContainer('body', injectStylexHelper(t, helper))
         },
         exit(path, state) {
           const body = path.get('body')

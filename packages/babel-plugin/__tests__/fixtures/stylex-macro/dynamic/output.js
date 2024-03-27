@@ -1,5 +1,5 @@
-import * as __stylex__helper from "@stylexjs/stylex";
-const _styles = __stylex__helper.create({
+import * as _stylexHelper from "@stylexjs/stylex";
+const _styles = _stylexHelper.create({
   css: {
     borderRadius: "10px",
     border: {
@@ -26,7 +26,7 @@ export function App(props) {
   const { color } = props;
   return (
     <div
-      {...__stylex__helper.props(
+      {..._stylexHelper.props(
         _styles.css,
         _styles.dynamic(color, props.fontSize),
         props.flex && _styles["1"],
