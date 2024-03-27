@@ -10,6 +10,7 @@ export function App(props) {
         default: 'blue',
         '@media (prefers-color-scheme: dark)': color
       },
+      ...(props.align && { textAlign: props.textAlign, background: 'pink' }),
       border: {
         default: '1px solid red'
       }
@@ -18,21 +19,3 @@ export function App(props) {
     </div>
   )
 }
-
-// expect
-// const styles = {
-//   css: {
-//     borderRadius: '10px'
-//   },
-//   dynamic: (_color, _fontSize) => ({
-//     color: _color,
-//     fontSize: _fontSize,
-//     backgroundColor: {
-//       default: 'blue',
-//       '@media (prefers-color-scheme: dark)': _color
-//     }
-//   }),
-//   css1: {
-//     display: 'flex'
-//   }
-// }

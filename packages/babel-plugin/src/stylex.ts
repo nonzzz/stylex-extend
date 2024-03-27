@@ -9,27 +9,47 @@ interface VariableMeta {
   reference?: types.Identifier | types.MemberExpression
 }
 
+interface DynamicMeta {
+  references: Array<types.Identifier | types.MemberExpression> 
+  paramters: Set<string>
+}
+
 interface Effect {
   state: boolean
   nested: boolean
+  condit: boolean
+  dynamicParamters: Set<string>
+  dynamicReferences: Array<types.Identifier | types.MemberExpression>
   ast: types.ArrowFunctionExpression | undefined
   variables: Map<string, VariableMeta>
   parameters: Set<string>
+  conditionds: Map<types.Expression, { css: CssObjectValue, dynamic: DynamicMeta }>
   cleanp(): void
 }
 
-const defualtEffect = { state: false, ast: undefined, nested: false }
+const defualtEffect = { state: false,
+  ast: undefined,
+  nested: false,
+  condit: false,
+  dynamicReferences: []
+}
 
 const effect = <Effect>{
   state: false,
   nested: false,
   ast: undefined,
+  condit: false,
+  dynamicParamters: new Set(),
+  dynamicReferences: [],
   parameters: new Set(),
   variables: new Map(),
+  conditionds: new Map(),
   cleanp() {
     Object.assign(effect, defualtEffect)
     this.variables.clear()
     this.parameters.clear()
+    this.conditionds.clear()
+    this.dynamicParamters.clear()
   }
 }
 
@@ -98,7 +118,7 @@ function evaluateCSSValue(parentKey: string, node: types.ObjectProperty['value']
   }
 }
 
-function evaluateObjectExpression(expression: types.ObjectExpression, t: typeof types, _ = '') {
+function evaluateObjectExpression(expression: types.ObjectExpression, t: typeof types, parentKey = '') {
   const cssObject: CssObjectValue = Object.create(null)
   for (const property of expression.properties) {
     effect.state = false
@@ -120,13 +140,34 @@ function evaluateObjectExpression(expression: types.ObjectExpression, t: typeof 
               cssObject[key] = value
             }
           }
+          if (effect.state && effect.condit) {
+            effect.dynamicParamters.add(processAttributeName(key))
+            effect.dynamicReferences.push(property.value as types.Identifier | types.MemberExpression)
+          }
         }
         continue
       }
       case 'SpreadElement': {
-        // TODO: handle spread element
-        // Spread element may contain dynamic value
-        // If the value is static we should generate new css object
+        const arg = property.argument
+        switch (arg.type) {
+          case 'ObjectExpression': {
+            Object.assign(cssObject, evaluateObjectExpression(arg, t, parentKey))
+            continue
+          }
+          case 'LogicalExpression': {
+            if (arg.operator === '&&') {
+              const { left, right } = arg
+              if (right.type !== 'ObjectExpression') throw new Error('right node must be an object expression')
+              effect.condit = true
+              const css = evaluateObjectExpression(right, t, parentKey)
+              effect.conditionds.set(left, { css, dynamic: { paramters: new Set([...effect.dynamicParamters]), references: effect.dynamicReferences } })
+              effect.dynamicParamters.clear()
+              effect.dynamicReferences = []
+              effect.condit = false
+            }
+            continue
+          }
+        }
         continue
       }
     }
@@ -175,8 +216,27 @@ export function transformStylexObjectExpression(path: NodePath<types.JSXAttribut
     }
     expr.push(t.callExpression(t.memberExpression(variable, t.identifier('dynamic')), references))
   }
-  
+
+  // conditionds always be the last
+  let count = 1
+  for (const [condition, { css, dynamic }] of effect.conditionds.entries()) {
+    const { references, paramters } = dynamic
+    const s = t.identifier(count.toString())
+    ast.properties.push(paramters.size
+      ? t.objectProperty(s,
+        t.arrowFunctionExpression([...paramters].map(t.identifier), convertObjectToAST(css, t, true)))
+      : t.objectProperty(s, convertObjectToAST(css, t)))
+    const memberExpr = t.memberExpression(variable, t.stringLiteral(count.toString()), true)
+    const right = paramters.size
+      ? t.callExpression(memberExpr, references)
+      : memberExpr
+    const logicalExpr = t.logicalExpression('&&', condition, right)
+    expr.push(logicalExpr)
+    count++
+  }
+
   state.statements.push(variableDeclaration(t, variable, wrapperExpressionWithStylex([ast], 'create', t)))
+
   path.replaceWith(t.jsxSpreadAttribute(wrapperExpressionWithStylex(expr, state.pluginOptions.stylex.helper, t)))
   effect.cleanp()
 }
