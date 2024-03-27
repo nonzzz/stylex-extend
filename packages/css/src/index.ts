@@ -1,6 +1,6 @@
-import type { CSSInterpolation } from '@stylex-extend/shared'
+import type { StylexCSS } from '@stylex-extend/shared'
 
-function css(..._: Array<Record<string, CSSInterpolation>>): string {
+function css(..._: Array<Record<string, StylexCSS>>): string {
   throw new Error('css calls should be compiled away.')
 }
 

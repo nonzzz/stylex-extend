@@ -20,12 +20,15 @@ export type CSSPropertiesWithMultiValues = {
 export interface CSSObject
   extends CSSPropertiesWithMultiValues { }
 
-export type InterpolationPrimitive =
-  | null
-  | undefined
-  | boolean
-  | number
-  | string
-  | CSSObject
+export type StylexProperty = CSSObject | ((...args: any[]) => CSSObject)
 
-export type CSSInterpolation = InterpolationPrimitive
+type CSSPropertiesAndSubKey = (keyof CSSProperties) | CSS.AtRules | `&${CSS.Pseudos}` | (string & {})
+
+export type StylexCSSObject = {
+  [K in CSSPropertiesAndSubKey]?:
+  K extends keyof CSSProperties
+    ? CSSProperties[K]
+    : StylexCSSObject | (string & {}) | ((...args: any[]) => StylexCSSObject)
+}
+
+export type StylexCSS = StylexCSSObject | ((...args: any[]) => StylexCSSObject) 
