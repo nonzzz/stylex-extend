@@ -7,13 +7,15 @@
     "preinstall": "node ./scripts/yarn.js"
   },
   "workspaces": [
-    "packages/*"
+    "packages/*",
+    "examples/*"
   ],
   "keywords": [],
   "author": "kanno",
   "license": "MIT",
   "packageManager": "yarn@4.1.1",
   "devDependencies": {
+    "@stylex-extend/babel-plugin": "workspace:*",
     "@stylex-extend/css": "workspace:*",
     "@stylex-extend/react": "workspace:*",
     "@stylex-extend/shared": "workspace:*",
@@ -24,7 +26,8 @@
     "eslint-config-kagura": "^2.1.1",
     "tsup": "^8.0.2",
     "tsx": "^4.7.1",
-    "typescript": "^5.4.3"
+    "typescript": "^5.4.3",
+    "vite": "^5.2.6"
   },
   "resolutions": {
     "array-buffer-byte-length": "npm:@nolyfill/array-buffer-byte-length@latest",
