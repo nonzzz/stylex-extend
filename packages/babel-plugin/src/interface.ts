@@ -8,5 +8,5 @@ export interface StylexExtendBabelPluginOptions {
 }
 
 export type CssObjectValue = {
-  [key: string]: CssObjectValue | number | string | undefined
+  [key: string]: CssObjectValue | number | string | undefined | null
 }

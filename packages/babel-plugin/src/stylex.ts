@@ -1,24 +1,35 @@
 import { NodePath, PluginPass, types } from '@babel/core'
 import type { CssObjectValue } from './interface'
 
-const HELPER_NAME = '__stylex__extend__helper__'
+const HELPER_NAME = '__stylex__helper'
 const MODULE_NAME = '@stylexjs/stylex'
+
+interface VariableMeta {
+  ast: types.Identifier | types.MemberExpression | types.ObjectExpression
+  reference?: types.Identifier | types.MemberExpression
+}
 
 interface Effect {
   state: boolean
+  nested: boolean
   ast: types.ArrowFunctionExpression | undefined
-  variables: Record<string, { attr: string, reference: types.Identifier | types.MemberExpression }>
+  variables: Map<string, VariableMeta>
+  parameters: Set<string>
   cleanp(): void
 }
 
-const defualtEffect = { state: false, ast: undefined, variables: {} }
+const defualtEffect = { state: false, ast: undefined, nested: false }
 
 const effect = <Effect>{
   state: false,
+  nested: false,
   ast: undefined,
-  variables: {},
+  parameters: new Set(),
+  variables: new Map(),
   cleanp() {
     Object.assign(effect, defualtEffect)
+    this.variables.clear()
+    this.parameters.clear()
   }
 }
 
@@ -50,34 +61,64 @@ function processStyleName(prop: string) {
   return isCustomProperty(prop) ? prop : prop.replace(hyphenateRegex, '-$&').toLowerCase()
 }
 
-function evaluateCSSValue(node: types.ObjectProperty['value'], t: typeof types, selector = true) {
+function processAttributeName(s: string) {
+  return '_' + s
+}
+
+function evaluateCSSValue(parentKey: string, node: types.ObjectProperty['value'], t: typeof types) {
   switch (node.type) {
-    case 'Identifier':
-    case 'MemberExpression':
+    case 'NullLiteral':
+      return null
+    case 'Identifier': {
       effect.state = true
-      return
+      if (node.name === 'undefined') return null
+      return processAttributeName(node.name)
+    }
+    case 'MemberExpression': {
+      effect.state = true
+      if (node.property.type === 'Identifier') {
+        return processAttributeName(node.property.name)
+      }
+      throw new Error('cannot use computed property for stylex object attribute')
+    }
     case 'StringLiteral':
       return processStyleName(getStringValue(node))
     case 'NumericLiteral':
       return node.value
-    case 'ObjectExpression':
-      return evaluateObjectExpression(node, t, selector)
+    case 'ObjectExpression': {
+      effect.nested = true
+      const cssObject = evaluateObjectExpression(node, t, parentKey)
+      if (effect.state) {
+        effect.variables.set(parentKey, { ast: convertObjectToAST(cssObject, t, true) })
+        return
+      }
+      effect.nested = false
+      return cssObject
+    }
   }
 }
 
-function evaluateObjectExpression(expression: types.ObjectExpression, t: typeof types, selector = true) {
+function evaluateObjectExpression(expression: types.ObjectExpression, t: typeof types, _ = '') {
   const cssObject: CssObjectValue = Object.create(null)
   for (const property of expression.properties) {
+    effect.state = false
     switch (property.type) {
       case 'ObjectProperty': {
         if (property.computed) throw new Error('cannot use computed property for stylex object attribute')
         if (isStringLike(property.key)) {
           const key = getStringValue(property.key)
-          const value = evaluateCSSValue(property.value, t, selector)
-          if (value !== null && value !== undefined) {
-            cssObject[key] = value
+          const value = evaluateCSSValue(key, property.value, t)
+          const nil = value === null || value === undefined
+          if (effect.state && !effect.nested) {
+            const paramter = processAttributeName(key)
+            effect.parameters.add(paramter)
+            effect.variables.set(key, { ast: t.identifier(paramter), reference: property.value as VariableMeta['reference'] })
           } else {
-            effect.variables[key] = { attr: `_${key}`, reference: property.value as any }
+            if (key === 'default' && nil) {
+              cssObject[key] = null
+            } else if (!nil) {
+              cssObject[key] = value
+            }
           }
         }
         continue
@@ -93,13 +134,13 @@ function evaluateObjectExpression(expression: types.ObjectExpression, t: typeof 
   return cssObject
 }
 
-function convertObjectToAST(object: any, t: typeof types): types.ObjectExpression {
+function convertObjectToAST(object: any, t: typeof types, usingIdentifer = false): types.ObjectExpression {
   return t.objectExpression(Object.entries(object).map(([key, value]) => {
     return t.objectProperty(t.stringLiteral(key),
       typeof value === 'undefined'
         ? t.identifier('undefined')
         : typeof value === 'string'
-          ? t.stringLiteral(value)
+          ? usingIdentifer ? t.identifier(value) : t.stringLiteral(value)
           : typeof value === 'number'
             ? t.numericLiteral(value)
             : typeof value === 'boolean'
@@ -114,22 +155,27 @@ function wrapperExpressionWithStylex(ast: Array<types.Expression>, callee: strin
     t.identifier(callee)), ast)
 }
 
-export function transformStylexObjectExpression(path: NodePath<types.JSXAttribute>,
-  expression: types.ObjectExpression, state: PluginPass, t: typeof types) {
+export function transformStylexObjectExpression(path: NodePath<types.JSXAttribute>, expression: types.ObjectExpression, state: PluginPass, t: typeof types) {
   effect.cleanp()
-  const variable = path.scope.generateUidIdentifier('stylex_extend')
-  const cssObject = evaluateObjectExpression(expression, t, false)
+  const variable = path.scope.generateUidIdentifier('styles')
+  const cssObject = evaluateObjectExpression(expression, t)
   const expr: Array<types.Expression> = [t.memberExpression(t.identifier(variable.name), t.identifier('css'))]
   const ast = convertObjectToAST({ css: cssObject }, t)
-  if (effect.state) {
-    const parmas = Object.values(effect.variables).map(key => t.identifier(key.attr))
-    const body = t.objectExpression(Object.entries(effect.variables)
-      .map(([key, value]) => t.objectProperty(t.stringLiteral(key), t.identifier(value.attr))))
-    effect.ast = t.arrowFunctionExpression(parmas, body)
+  if (effect.parameters.size) {
+    const parmas = [...effect.parameters].map(key => t.identifier(key))
+    const body = []
+    for (const [key, { ast }] of effect.variables.entries()) {
+      body.push(t.objectProperty(t.stringLiteral(key), ast))
+    }
+    effect.ast = t.arrowFunctionExpression(parmas, t.objectExpression(body))
     ast.properties.push(t.objectProperty(t.identifier('dynamic'), effect.ast))
-    expr.push(t.callExpression(t.memberExpression(variable, t.identifier('dynamic')),
-      Object.values(effect.variables).map(({ reference }) => reference)))
+    const references = []
+    for (const { reference } of effect.variables.values()) {
+      reference && references.push(reference)
+    }
+    expr.push(t.callExpression(t.memberExpression(variable, t.identifier('dynamic')), references))
   }
+  
   state.statements.push(variableDeclaration(t, variable, wrapperExpressionWithStylex([ast], 'create', t)))
   path.replaceWith(t.jsxSpreadAttribute(wrapperExpressionWithStylex(expr, state.pluginOptions.stylex.helper, t)))
   effect.cleanp()
