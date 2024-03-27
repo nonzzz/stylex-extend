@@ -1,37 +1,34 @@
 import * as CSS from 'csstype'
 
 export type CSSProperties = CSS.PropertiesFallback<number | string>
+
+type CSSPropertiesKey = (keyof CSSProperties) | CSS.AtRules | CSS.Pseudos | (string & {})
+
+type SelectOrAtRules = CSS.AtRules | CSS.Pseudos | (string & {})
+
+type CSSPropertiesMoreValue<T> = {
+  default: T
+} & Partial<Record<SelectOrAtRules, T>>
+
 export type CSSPropertiesWithMultiValues = {
-  [K in keyof CSSProperties]:
-  | CSSProperties[K]
-  | ReadonlyArray<Extract<CSSProperties[K], string>>
+  [K in CSSPropertiesKey]?:
+  K extends keyof CSSProperties
+    ? (CSSProperties[K] | CSSPropertiesMoreValue<CSSProperties[K]>)
+    : CSSPropertiesWithMultiValues | (string & {})
 }
 
 export interface CSSObject
-  extends CSSPropertiesWithMultiValues,
-  // eslint-disable-next-line no-use-before-define
-  CSSPseudos,
-  // eslint-disable-next-line no-use-before-define
-  CSSOthersObject { }
+  extends CSSPropertiesWithMultiValues { }
 
-// eslint-disable-next-line no-unused-vars
-export type CSSPseudos = { [K in CSS.Pseudos]?: CSSObject }
+export type StylexProperty = CSSObject | ((...args: any[]) => CSSObject)
 
-export interface ArrayCSSInterpolation
-  // eslint-disable-next-line no-use-before-define
-  extends ReadonlyArray<CSSInterpolation> { }
+type CSSPropertiesAndSubKey = (keyof CSSProperties) | CSS.AtRules | `&${CSS.Pseudos}` | (string & {})
 
-export type InterpolationPrimitive =
-    | null
-    | undefined
-    | boolean
-    | number
-    | string
-    | CSSObject
-
-export interface CSSOthersObject {
-  // eslint-disable-next-line no-use-before-define
-  [propertiesName: string]: CSSInterpolation
+export type StylexCSSObject = {
+  [K in CSSPropertiesAndSubKey]?:
+  K extends keyof CSSProperties
+    ? CSSProperties[K]
+    : StylexCSSObject | (string & {}) | ((...args: any[]) => StylexCSSObject)
 }
 
-export type CSSInterpolation = InterpolationPrimitive | ArrayCSSInterpolation
+export type StylexCSS = StylexCSSObject | ((...args: any[]) => StylexCSSObject) 
