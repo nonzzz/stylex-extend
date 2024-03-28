@@ -1,8 +1,8 @@
 import { NodePath, PluginPass, types } from '@babel/core'
 import type { CssObjectValue } from './interface'
-import type { State } from './index'
+import { Context } from './state-context'
 
-const MODULE_NAME = '@stylexjs/stylex'
+type t = typeof types
 
 interface VariableMeta {
   ast: types.Identifier | types.MemberExpression | types.ObjectExpression
@@ -51,10 +51,6 @@ const effect = <Effect>{
     this.conditionds.clear()
     this.dynamicParamters.clear()
   }
-}
-
-export function injectStylexHelper(t: typeof types, id: types.Identifier) {
-  return t.importDeclaration([t.importNamespaceSpecifier(id)], t.stringLiteral(MODULE_NAME))
 }
 
 export function variableDeclaration(t: typeof types, identifier: types.Identifier | string, ast: types.Expression) {
@@ -237,4 +233,97 @@ export function transformStylexObjectExpression(path: NodePath<types.JSXAttribut
 
   path.replaceWith(t.jsxSpreadAttribute(wrapperExpressionWithStylex(expr, state.pluginOptions.stylex.helper, t, state.helper)))
   effect.cleanp()
+}
+
+let dynamic = false
+
+function scanProperty(ctx: Context, path: NodePath<types.ObjectProperty>, t: t) {
+  if (path.node.computed) throw new Error('[stylex-extend]: can\'t use computed property for stylex object attributes')
+  const { key, value } = path.node
+  if (!isStringLike(key)) throw new Error('[stylex-extend]: object key must be string')
+  let nested = false
+
+  let result
+  switch (value.type) {
+    case 'NullLiteral': {
+      result = null
+      break 
+    }
+    case 'Identifier': {
+      if (value.name === 'undefined') {
+        result = null
+      } else {
+        dynamic = true
+        result = processAttributeName(value.name)
+      }
+      break 
+    }
+    case 'MemberExpression': {
+      if (value.property.type === 'Identifier') {
+        result = processAttributeName(value.property.name)
+        dynamic = true
+        break 
+      }
+      throw new Error('[stylex-extend]: can\'t use computed property for stylex object attributes')
+    }
+    case 'StringLiteral': {
+      result = processStyleName(value.value)
+      break 
+    }
+    case 'NumericLiteral': {
+      result = value.value
+      break
+    }
+    case 'ObjectExpression': {
+      nested = true
+      result = scanOjectExpression(ctx, path.get('value') as NodePath<types.ObjectExpression>, t)
+      nested = false
+      break
+    }
+  }
+  if (!dynamic) return { [getStringValue(key)]: result }
+  // if (!nested) {
+  //   ctx.effect.paramters.add(processAttributeName(getStringValue(key)))
+  //   ctx.effect.references.set(getStringValue(key), { ast: t.identifier(processAttributeName(getStringValue(key))),reference: })
+  // }
+  return {}
+}
+
+function scanOjectExpression(ctx: Context, path: NodePath<types.ObjectExpression>, t: t) {
+  const cssObject: CssObjectValue = Object.create(null)
+  for (const prop of path.get('properties')) {
+    dynamic = false
+    switch (prop.type) {
+      case 'ObjectProperty': {
+        Object.assign(cssObject, scanProperty(ctx, prop as unknown as NodePath<types.ObjectProperty>, t))
+        break
+      }
+      case 'SpreadElement': {
+        const arg = (prop.node as types.SpreadElement).argument
+        if (arg.type === 'ObjectExpression') {
+          Object.assign(cssObject, scanOjectExpression(ctx, prop.get('argument') as unknown as NodePath<types.ObjectExpression>, t))
+        }
+        break
+      }
+      case 'ObjectMethod': {
+        throw new Error(`[stylex-extend]: can't pass function as value for '${prop.key}'`)
+      }
+    }
+  }
+  return cssObject
+}
+
+export function transformStylexAttrs(path: NodePath<types.JSXAttribute>, ctx: Context, t: t) {
+  const value = path.get('value')
+  if (!value.isJSXExpressionContainer()) return
+  const { importIdentifiers } = ctx
+  const variable = path.scope.generateUidIdentifier('styles')
+  const expression = value.get('expression')
+  if (!expression.isObjectExpression()) throw new Error('[stylex-extend]: can\'t pass not object value for attribute \'stylex\'.')
+  const cssObject = scanOjectExpression(ctx, expression, t)
+  const cssAST = convertObjectToAST({ css: cssObject }, t)
+  const expr: Array<types.Expression> = [t.memberExpression(t.identifier(variable.name), t.identifier('css'))]
+  const stylexDeclaration = variableDeclaration(t, variable, t.callExpression(importIdentifiers.create, [cssAST]))
+  ctx.stmts.push(stylexDeclaration)
+  path.replaceWith(t.jsxSpreadAttribute(t.callExpression(importIdentifiers.props, expr)))
 }
