@@ -41,6 +41,14 @@ export class Context {
     this.importIdentifiers = identifiers
   }
 
+  get attach() {
+    const { helper } = this.options.stylex
+    if (helper in this.importIdentifiers) {
+      return this.importIdentifiers[helper]
+    }
+    throw new Error(`[stylex-extend]: helper ${helper} is not imported`)
+  }
+
   get enableStylex() {
     return !!this.options.stylex.helper
   }

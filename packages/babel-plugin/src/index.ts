@@ -1,7 +1,7 @@
 import * as b from '@babel/core'
 import type { PluginObj } from '@babel/core'
 import { createExtendMacro } from './extend-macro'
-import { transformStylexAttrs } from './stylex'
+import { transformStylexAttrs } from './css'
 import { Context } from './state-context'
 import type { StylexExtendBabelPluginOptions } from './interface'
 import type { ImportIdentifiers, InternalPluginOptions } from './state-context'
@@ -62,7 +62,6 @@ function declare({ types: t }: typeof b): PluginObj {
           const importStmt = t.importDeclaration(importSpecs, t.stringLiteral('@stylexjs/stylex'))
           path.unshiftContainer('body', importStmt)
           ctx.setupOptions(pluginOptions, identifiers)
-          console.log(path.node.body)
         },
         exit(path) {
           const body = path.get('body')
@@ -72,7 +71,7 @@ function declare({ types: t }: typeof b): PluginObj {
       },
       JSXAttribute(path) {
         if (path.node.name.name !== JSX_ATTRIBUTE_NAME || !ctx.enableStylex) return
-        transformStylexAttrs(path, ctx, t)
+        transformStylexAttrs(path, ctx)
       }
     }
   }

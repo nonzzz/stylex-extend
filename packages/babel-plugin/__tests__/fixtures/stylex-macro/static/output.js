@@ -1,6 +1,6 @@
-import * as _stylexHelper from "@stylexjs/stylex";
-const _styles = _stylexHelper.create({
-  css: {
+import { create as _create, props as _props } from "@stylexjs/stylex";
+const _styles = _create({
+  color: {
     color: {
       default: "var(--blue-link)",
       ":hover": {
@@ -11,17 +11,17 @@ const _styles = _stylexHelper.create({
     },
   },
 });
-const _styles2 = _stylexHelper.create({
-  css: {
+const _styles2 = _create({
+  fontSize: {
     fontSize: "16px",
   },
 });
 function Button() {
-  return <button {..._stylexHelper.props(_styles.css)}></button>;
+  return <button {..._props(_styles.color)}></button>;
 }
 export function App() {
   return (
-    <div {..._stylexHelper.props(_styles2.css)}>
+    <div {..._props(_styles2.fontSize)}>
       <Button />
     </div>
   );
