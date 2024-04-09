@@ -16,9 +16,13 @@ const _styles = _create({
     default: "blue",
     "@media (prefers-color-scheme: dark)": color,
   }),
-  "#5": (textAlign) => ({
+  "#7": (textAlign, color) => ({
     textAlign: textAlign,
-    background: "pink",
+    background: {
+      default: "pink",
+      "@media (prefers-color-scheme: dark)": color,
+    },
+    borderRadius: "5px",
   }),
   border: {
     border: {
@@ -36,7 +40,7 @@ export function App(props) {
         _styles.fontSize(props.fontSize),
         ...(props.flex && _styles["#3"]),
         _styles.backgroundColor(color),
-        ...(props.align && _styles["#5"](props.textAlign)),
+        _styles["#7"](color),
         _styles.border
       )}
     ></div>

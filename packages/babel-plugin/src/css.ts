@@ -1,6 +1,6 @@
 import { NodePath, types } from '@babel/core'
 import { Context } from './state-context'
-import { CssObjectValue } from './interface'
+import type { CSSObjectValue } from './interface'
 
 interface CSSContext {
   cssRules: Map<string, { node: types.Expression, loc: Array<{ pos: number, kind: 'spare' | 'prop' }> }>
@@ -106,9 +106,8 @@ function scanExpressionProperty(path: NodePath<types.ObjectProperty>, cssContext
   return { attr, result }
 }
 
-// we can't assign dynamic value. so we should create an insertion order
 function scanObjectExpression(path: NodePath<types.ObjectExpression>, cssContext: CSSContext) {
-  const CSSObject: CssObjectValue = {}
+  const CSSObject: CSSObjectValue = {}
   for (const prop of path.get('properties')) {
     if (prop.isObjectProperty()) {
       const { attr, result } = scanExpressionProperty(prop, cssContext)
@@ -163,7 +162,7 @@ function scanObjectExpression(path: NodePath<types.ObjectExpression>, cssContext
   return CSSObject
 }
 
-function convertObjectToAST(cssObject: CssObjectValue, cssContext: CSSContext, nested = false, spread = false) {
+function convertObjectToAST(cssObject: CSSObjectValue, cssContext: CSSContext, nested = false, spread = false) {
   const ast: Array<types.ObjectProperty> = []
   for (const [key, value] of Object.entries(cssObject)) {
     if (key[0] === '#' && typeof value === 'object' && value !== null) {
@@ -207,7 +206,7 @@ function convertObjectToAST(cssObject: CssObjectValue, cssContext: CSSContext, n
           ast.push(types.objectProperty(types.stringLiteral(key), types.nullLiteral()))
         } else {
           const c = convertObjectToAST(value, cssContext, true)
-          if (cssContext.variables.size) {
+          if (cssContext.variables.size && !spread) {
             const vars = Array.from(cssContext.variables.values())
             const fn = arrowFunctionExpression(vars, c)
             ast.push(types.objectProperty(types.stringLiteral(key), fn))
