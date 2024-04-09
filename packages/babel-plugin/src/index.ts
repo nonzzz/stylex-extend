@@ -1,6 +1,5 @@
 import * as b from '@babel/core'
 import type { PluginObj } from '@babel/core'
-import { createExtendMacro } from './extend-macro'
 import { transformStylexAttrs } from './css'
 import { Context } from './state-context'
 import type { StylexExtendBabelPluginOptions } from './interface'
@@ -8,22 +7,11 @@ import type { ImportIdentifiers, InternalPluginOptions } from './state-context'
 
 const JSX_ATTRIBUTE_NAME = 'stylex'
 
-const cssMacro = createExtendMacro('@stylex-extend/css')
-
-interface PluginMacros {
-  css: typeof cssMacro
-  [prop: string]: any
-}
-
 const defaultOptions: InternalPluginOptions = {
   css: true,
   stylex: {
     helper: 'props'
   }
-}
-
-export const macros: PluginMacros = {
-  css: cssMacro
 }
 
 function declare({ types: t }: typeof b): PluginObj {
@@ -67,6 +55,7 @@ function declare({ types: t }: typeof b): PluginObj {
           const body = path.get('body')
           const anchor = body.findLast(p => t.isImportDeclaration(p.node))
           if (anchor) anchor.insertAfter(ctx.stmts)
+          ctx.stmts = []
         }
       },
       JSXAttribute(path) {

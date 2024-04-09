@@ -2,12 +2,67 @@ import { NodePath, types } from '@babel/core'
 import { Context } from './state-context'
 import type { CSSObjectValue } from './interface'
 
-interface CSSContext {
-  cssRules: Map<string, { node: types.Expression, loc: Array<{ pos: number, kind: 'spare' | 'prop' }> }>
-  count: number
-  variables: Map<string, types.Identifier>
-  isNested: boolean
-  isSpread: boolean
+interface Loc {
+  pos: number
+  kind: 'spare' | 'prop'
+
+}
+
+interface ParamterMeta {
+  node: types.Expression
+  loc: Array<Loc>
+}
+
+interface CSSContextStates {
+  nested: boolean
+  spread: boolean
+}
+
+class CSSContext {
+  pos: number
+  maxLayer: number
+  paramters: Map<string, ParamterMeta>
+  variables: Map<number, types.Identifier[]>
+  state: CSSContextStates
+  rules: Array<CSSObjectValue>
+  dynamicPositions: Set<number>
+  constructor(maxLayer = 0) {
+    this.pos = 0
+    this.paramters = new Map()
+    this.variables = new Map()
+    this.state = { nested: false, spread: false }
+    this.maxLayer = maxLayer
+    this.rules = []
+    this.dynamicPositions = new Set()
+  }
+
+  advance() {
+    if (this.pos < this.maxLayer) {
+      this.pos++
+    }
+  }
+
+  updateParamters(key: string, loc: Loc, node: types.Expression) {
+    if (this.paramters.has(key)) {
+      const param = this.paramters.get(key)!
+      param.loc.push(loc)
+      param.node = node
+    } else {
+      this.paramters.set(key, { node, loc: [loc] })
+    }
+  }
+
+  updateVariables(pos: number, node: types.Identifier) {
+    if (this.variables.has(pos)) {
+      this.variables.get(pos)!.push(node)
+      return
+    }
+    this.variables.set(pos, [node])
+  }
+}
+
+function createCSSContext(maxLayer = 0) {
+  return new CSSContext(maxLayer)
 }
 
 function isStringLikeKind(node: types.Node): node is types.Identifier | types.StringLiteral {
@@ -40,187 +95,171 @@ function p(s: string) {
   return '_#' + s
 }
 
-function scanExpressionProperty(path: NodePath<types.ObjectProperty>, cssContext: CSSContext) {
+function scanExpressionProperty(path: NodePath<types.ObjectProperty>, ctx: CSSContext) {
   if (path.node.computed) throw new Error('[stylex-extend]: can\'t use computed property for stylex object attributes')
   const { key, value } = path.node
   if (!isStringLikeKind(key)) throw new Error('[stylex-extend]: object key must be string')
-
+  const CSSObject: CSSObjectValue = Object.create(null)
   const attr = getStringValue(key)
-  let result = null
   switch (value.type) {
-    case 'NullLiteral': {
-      result = null
+    case 'NullLiteral':
+      CSSObject[attr] = null
       break
-    }
     case 'Identifier': {
       if (value.name === 'undefined') {
-        result = undefined
+        CSSObject[attr] = undefined
       } else {
-        result = p(value.name)
-        if (cssContext.cssRules.has(value.name)) {
-          cssContext.cssRules.get(value.name)!.loc.push({ pos: cssContext.count, kind: 'prop' })
-        } else {
-          cssContext.cssRules.set(value.name, { node: value, loc: [{ pos: cssContext.count, kind: 'prop' }] })
-        }
-        if (cssContext.isNested) {
-          cssContext.count++
-        }
-        if (cssContext.isSpread && cssContext.isNested) {
-          cssContext.count--
-        }
+        CSSObject[attr] = p(value.name)
+        ctx.updateParamters(value.name, { pos: ctx.pos, kind: 'prop' }, value)
+        ctx.dynamicPositions.add(ctx.pos)
+        ctx.updateVariables(ctx.pos, value)
       }
       break
     }
-    case 'StringLiteral': {
-      result = value.value
-      break
+    case 'StringLiteral':
+    case 'NumericLiteral':
+      CSSObject[attr] = value.value
+      break 
+    case 'TemplateLiteral': {
+      break 
     }
-    case 'NumericLiteral': {
-      result = value.value
+    case 'ConditionalExpression': {
       break
     }
     case 'MemberExpression': {
       if (value.object.type === 'Identifier' && value.property.type === 'Identifier') {
-        const attr = value.object.name + '.' + value.property.name
-        result = p(attr)
-        if (cssContext.cssRules.has(attr)) {
-          cssContext.cssRules.get(attr)!.loc.push({ pos: cssContext.count, kind: 'prop' })
-        } else {
-          cssContext.cssRules.set(attr, { node: value, loc: [{ pos: cssContext.count, kind: 'prop' }] })
-        }
-        break 
+        const ref = value.object.name + '.' + value.property.name
+        CSSObject[attr] = p(value.property.name)
+        ctx.updateParamters(ref, { pos: ctx.pos, kind: 'prop' }, value)
+        ctx.dynamicPositions.add(ctx.pos)
+        ctx.updateVariables(ctx.pos, types.identifier(value.property.name))
       }
-      throw new Error('cannot use computed property for stylex object attribute')
-    }
-    case 'ObjectExpression': {
-      cssContext.isNested = true
-      result = scanObjectExpression(path.get('value') as NodePath<types.ObjectExpression>, cssContext)
-      cssContext.isNested = false
       break
     }
-  }
-  if (!cssContext.isNested) {
-    cssContext.count++
-  }
-
-  return { attr, result }
-}
-
-function scanObjectExpression(path: NodePath<types.ObjectExpression>, cssContext: CSSContext) {
-  const CSSObject: CSSObjectValue = {}
-  for (const prop of path.get('properties')) {
-    if (prop.isObjectProperty()) {
-      const { attr, result } = scanExpressionProperty(prop, cssContext)
-      CSSObject[attr] = result
-    }
-    if (prop.isSpreadElement()) {
-      const arg = prop.get('argument')
-      if (arg.isObjectExpression()) {
-        const spreadObject = scanObjectExpression(arg, cssContext)
-        CSSObject['#' + cssContext.count] = spreadObject
-      }
-      if (arg.isLogicalExpression()) {
-        if (arg.node.operator === '&&') {
-          const left = arg.get('left')
-          const right = arg.get('right')
-          if (!right.isObjectExpression()) throw new Error('right side of logical expression must be object expression')
-          cssContext.isNested = true
-          cssContext.isSpread = true
-          const rightObject = scanObjectExpression(right, cssContext)
-          cssContext.isNested = false
-          cssContext.isSpread = true
-          if (left.node.type === 'NumericLiteral' && left.node.value) {
-            CSSObject['#' + cssContext.count] = rightObject
-          } else if (isStringLikeKind(left.node)) {
-            const attr = getStringValue(left.node)
-            if (attr) {
-              CSSObject['#' + attr] = rightObject
-            }
-            if (left.node.type === 'Identifier') {
-              if (cssContext.cssRules.has(left.node.name)) {
-                cssContext.cssRules.get(left.node.name)!.loc.push({ pos: cssContext.count, kind: 'spare' })
-              } else {
-                cssContext.cssRules.set(left.node.name, { node: left.node, loc: [{ pos: cssContext.count, kind: 'spare' }] })
-              }
-            }
-          } else if (left.node.type === 'MemberExpression') {
-            if (left.node.object.type === 'Identifier' && left.node.property.type === 'Identifier') {
-              const attr = left.node.object.name + '.' + left.node.property.name
-              CSSObject['#' + cssContext.count] = rightObject
-              if (cssContext.cssRules.has(attr)) {
-                cssContext.cssRules.get(attr)!.loc.push({ pos: cssContext.count, kind: 'spare' })
-              } else {
-                cssContext.cssRules.set(attr, { node: left.node, loc: [{ pos: cssContext.count, kind: 'spare' }] })
-              }
-            }
-          }
-          cssContext.count++
+    case 'ObjectExpression': {
+      const valuePath = path.get('value')
+      const CSSObject = Object.create(null)
+      if (valuePath.isObjectExpression()) {
+        ctx.state.nested = true
+        for (const prop of valuePath.get('properties')) {
+          Object.assign(CSSObject, scanExpressionProperty(prop as NodePath<types.ObjectProperty>, ctx))
         }
+        ctx.state.nested = false
       }
+      return { [attr]: CSSObject }
     }
   }
   return CSSObject
 }
 
-function convertObjectToAST(cssObject: CSSObjectValue, cssContext: CSSContext, nested = false, spread = false) {
-  const ast: Array<types.ObjectProperty> = []
-  for (const [key, value] of Object.entries(cssObject)) {
-    if (key[0] === '#' && typeof value === 'object' && value !== null) {
-      const c = convertObjectToAST(value, cssContext, true, true)
-      if (cssContext.variables.size && !spread) {
-        const vars = Array.from(cssContext.variables.values())
-        const fn = arrowFunctionExpression(vars, c)
-        ast.push(types.objectProperty(types.stringLiteral(key), fn))
-        cssContext.variables.clear()
-      } else {
-        ast.push(types.objectProperty(types.stringLiteral(key), c))
+function scanObjectExpression(path: NodePath<types.ObjectExpression>, ctx: CSSContext) {
+  const properties = path.get('properties')
+  while (ctx.pos < ctx.maxLayer) {
+    const prop = properties[ctx.pos]
+    const { node } = prop
+    switch (node.type) {
+      case 'ObjectProperty': {
+        ctx.rules.push(scanExpressionProperty(prop as NodePath<types.ObjectProperty>, ctx))
+        break
       }
-    } else {
-      if (typeof value === 'undefined') {
-        ast.push(types.objectProperty(types.stringLiteral(key), types.identifier('undefined')))
-      }
-      if (typeof value === 'string') {
-        if (value[0] === '_' && value[1] === '#') {
-          const attr = value.slice(2)
-          const [obj, prop] = attr.split('.')
-          const identifier = obj && prop ? types.identifier(prop) : types.identifier(obj)
-          if (nested) { 
-            cssContext.variables.set(key, identifier)
-            ast.push(types.objectProperty(types.stringLiteral(key), identifier))
-          } else {
-            const fn = arrowFunctionExpression([identifier], types.objectExpression([types.objectProperty(types.stringLiteral(key), identifier)]))
-            ast.push(types.objectProperty(types.stringLiteral(key), fn))
+      case 'SpreadElement': {
+        const arg = node.argument
+        if (arg.type === 'ObjectExpression') {
+          const path = prop.get('argument') as NodePath<types.ObjectExpression>
+          const CSSObject = {}
+          for (const p of path.get('properties')) {
+            Object.assign(CSSObject, scanExpressionProperty(p as NodePath<types.ObjectProperty>, ctx))
           }
-        } else {
-          ast.push(types.objectProperty(types.stringLiteral(key), types.stringLiteral(value)))
-        }
-      }
-      if (typeof value === 'number') {
-        ast.push(types.objectProperty(types.stringLiteral(key), types.numericLiteral(value)))
-      }
-      if (typeof value === 'boolean') {
-        ast.push(types.objectProperty(types.stringLiteral(key), types.booleanLiteral(value)))
-      }
-      if (typeof value === 'object') {
-        if (value === null) {
-          ast.push(types.objectProperty(types.stringLiteral(key), types.nullLiteral()))
-        } else {
-          const c = convertObjectToAST(value, cssContext, true)
-          if (cssContext.variables.size && !spread) {
-            const vars = Array.from(cssContext.variables.values())
-            const fn = arrowFunctionExpression(vars, c)
-            ast.push(types.objectProperty(types.stringLiteral(key), fn))
-            cssContext.variables.clear()
-          } else {
-            ast.push(types.objectProperty(types.stringLiteral(key), c))
+          const attr = '#' + ctx.pos
+          ctx.rules.push({ [attr]: CSSObject })
+        } else if (arg.type === 'LogicalExpression') {
+          const path = prop.get('argument') as NodePath<types.LogicalExpression>
+          if (path.node.operator === '&&') {
+            const left = path.get('left')
+            const right = path.get('right')
+            if (!right.isObjectExpression()) throw new Error('[stylex-extend]: right side of logical expression must be object expression')
+            const CSSObject = {} 
+            for (const p of right.get('properties')) {
+              Object.assign(CSSObject, scanExpressionProperty(p as NodePath<types.ObjectProperty>, ctx))
+            }
+            const attr = '#' + ctx.pos
+            ctx.rules.push({ [attr]: CSSObject })
+            ctx.updateParamters(attr, { pos: ctx.pos, kind: 'spare' }, left.node)
           }
         }
-      }
-      if (ast[ast.length - 1].value.type !== 'ArrowFunctionExpression' && !nested) {
-        const current = ast.pop()!
-        ast.push(types.objectProperty(types.stringLiteral(key), types.objectExpression([current])))
+
+        break
       }
     }
+    ctx.advance()
+  }
+}
+
+function ensureCSSValueASTKind(value: string | number | null | undefined) {
+  let ast: types.Expression
+  switch (typeof value) {
+    case 'undefined':
+      ast = types.identifier('undefined')
+      break
+    case 'string':
+      if (value === 'undefined') {
+        ast = types.identifier('undefined')
+      } else {
+        if (value[0] === '_' && value[1] === '#') {
+          ast = types.identifier(value.slice(2))
+        } else {
+          ast = types.stringLiteral(value)
+        }
+      }
+      break
+    case 'object':
+      ast = types.nullLiteral()
+      break
+    case 'number':
+      ast = types.numericLiteral(value)
+  }
+  return ast
+}
+
+function convertToAST(CSSRules: CSSObjectValue[], nested = false) {
+  const ast: types.ObjectProperty[] = []
+  for (const rule of CSSRules) {
+    const c: types.ObjectProperty[] = []
+    for (const prop in rule) {
+      const v = rule[prop]
+      if (typeof v === 'object' && v !== null) {
+        const childAST = convertToAST([v], true)
+        c.push(types.objectProperty(types.stringLiteral(prop), childAST))
+      } else {
+        const value = ensureCSSValueASTKind(v)
+        c.push(types.objectProperty(types.stringLiteral(prop), value))
+      }
+      if (nested || prop[0] === '#') {
+        ast.push(...c)
+        c.length = 0
+      } else {
+        ast.push(types.objectProperty(types.stringLiteral(prop), types.objectExpression(c)))
+      }
+    }
+  }
+  return types.objectExpression(ast)
+}
+
+function evaluateCSSAST(CSSAST: types.ObjectExpression, ctx: CSSContext) {
+  const ast: types.ObjectProperty[] = []
+  for (let i = 0; i < CSSAST.properties.length; i++) {
+    const item = CSSAST.properties[i]
+    if (item.type === 'ObjectProperty' && ctx.dynamicPositions.has(i)) {
+      const variables = ctx.variables.get(i)!
+      if (isStringLikeKind(item.key)) {
+        const key = getStringValue(item.key)
+        const fn = arrowFunctionExpression(variables, item.value as types.Expression)
+        ast.push(types.objectProperty(types.stringLiteral(key), fn))
+      }
+      continue
+    }
+    // @ts-expect-error
+    ast.push(item)
   }
   return types.objectExpression(ast)
 }
@@ -232,31 +271,34 @@ export function transformStylexAttrs(path: NodePath<types.JSXAttribute>, ctx: Co
   const variable = path.scope.generateUidIdentifier('styles')
   const expression = value.get('expression')
   if (!expression.isObjectExpression()) throw new Error('[stylex-extend]: can\'t pass not object value for attribute \'stylex\'.')
-  const cssRules: CSSContext['cssRules'] = new Map()
-  const cssContext: CSSContext = { cssRules, count: 0, variables: new Map(), isNested: false, isSpread: false }
-  const cssObject = scanObjectExpression(expression, cssContext)
-  const cssAST = convertObjectToAST(cssObject, cssContext)
-  const expr: Array<types.MemberExpression | types.CallExpression | types.SpreadElement> = Object.keys(cssObject).map(key => {
-    if (key[0] === '#') {
-      return types.memberExpression(types.identifier(variable.name), types.stringLiteral(key), true)
+  const CSSContext = createCSSContext(expression.node.properties.length)
+  scanObjectExpression(expression, CSSContext)
+  const CSSAST = evaluateCSSAST(convertToAST(CSSContext.rules), CSSContext)
+  const expr: Array<types.MemberExpression | types.CallExpression | types.SpreadElement> = []
+  for (const prop of CSSAST.properties) {
+    if (prop.type === 'ObjectProperty') {
+      expr.push(types.memberExpression(variable, prop.key, true))
     }
-    return types.memberExpression(types.identifier(variable.name), types.identifier(key))
-  })
+  }
+   
   // eslint-disable-next-line no-unused-vars
-  for (const [_, { node, loc }] of cssContext.cssRules) {
+  for (const [_, { node, loc }] of CSSContext.paramters) {
     for (const { pos, kind } of loc) {
       const previous = expr[pos]
       if (!previous) continue
       if (kind === 'prop' && previous.type === 'MemberExpression') {
         expr[pos] = callExpression(previous, [node])
       }
+      if (kind === 'prop' && previous.type === 'CallExpression') {
+        previous.arguments.push(node)
+        expr[pos] = previous
+      }
       if (kind === 'spare' && previous.type !== 'SpreadElement') {
         expr[pos] = spreadElement(types.logicalExpression('&&', node, previous))
       }
     }
   }
-
-  const stylexDeclaration = variableDeclaration(variable, types.callExpression(importIdentifiers.create, [cssAST]))
+  const stylexDeclaration = variableDeclaration(variable, types.callExpression(importIdentifiers.create, [CSSAST]))
   ctx.stmts.push(stylexDeclaration)
   path.replaceWith(types.jsxSpreadAttribute(types.callExpression(attach, expr)))
 }

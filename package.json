@@ -17,9 +17,7 @@
   "devDependencies": {
     "@stylex-extend/babel-plugin": "workspace:*",
     "@stylex-extend/css": "workspace:*",
-    "@stylex-extend/react": "workspace:*",
     "@stylex-extend/shared": "workspace:*",
-    "@stylex-extend/vue": "workspace:*",
     "@stylexjs/babel-plugin": "^0.5.1",
     "@stylexjs/stylex": "^0.5.1",
     "@types/node": "^20.11.30",

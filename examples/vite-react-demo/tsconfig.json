@@ -4,6 +4,6 @@
         "lib": ["DOM"],
         "esModuleInterop": true,
         "jsx": "react-jsx",
-        "types": ["vite/client","react","react-dom","@stylex-extend/react"],
+        "types": ["vite/client","react","react-dom", "@stylex-extend/react"],
     },
 }
