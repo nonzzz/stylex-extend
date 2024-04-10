@@ -3,6 +3,7 @@
   "main": "./index.js",
   "module": "./index.js",
   "types": "./index.d.ts",
+  "version": "0.1.0",
   "devDependencies": {
     "vue": "^3.4.21"
   },

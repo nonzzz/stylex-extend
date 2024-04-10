@@ -1051,6 +1051,7 @@ __metadata:
   resolution: "@stylex-extend/babel-plugin@workspace:packages/babel-plugin"
   dependencies:
     "@babel/core": "npm:^7.23.9"
+    "@stylex-extend/react": "workspace:*"
     "@types/babel__core": "npm:^7.20.5"
     babel-plugin-tester: "npm:^11.0.4"
   languageName: unknown

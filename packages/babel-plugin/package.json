@@ -1,5 +1,6 @@
 {
   "name": "@stylex-extend/babel-plugin",
+  "version": "0.1.0",
   "description": "A friendly stylex babel plugin extension.",
   "module": "./dist/index.mjs",
   "main": "./dist/index.js",
@@ -11,10 +12,15 @@
   },
   "license": "MIT",
   "devDependencies": {
+    "@stylex-extend/react": "workspace:*",
     "@types/babel__core": "^7.20.5",
     "babel-plugin-tester": "^11.0.4"
   },
   "dependencies": {
     "@babel/core": "^7.23.9"
-  }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ]
 }

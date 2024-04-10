@@ -1,11 +1,10 @@
 {
   "name": "stylex-extend",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "An unofficial stylexjs extension",
   "scripts": {
     "preinstall": "node ./scripts/yarn.js",
-    "test": "yarn workspaces foreach --all run test"
+    "test": "yarn workspaces foreach --all run test",
+    "build": "yarn workspaces foreach --all --include packages/babel-plugin --include packages/shared run build"
   },
   "workspaces": [
     "packages/*",
