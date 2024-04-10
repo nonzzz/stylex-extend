@@ -1,21 +1,21 @@
 import { create as _create, props as _props } from "@stylexjs/stylex";
 const _styles = _create({
-  color: (color) => ({
-    color: color,
+  color: (_$color) => ({
+    color: _$color,
   }),
   "#1": {
     display: "flex",
   },
-  "#2": (color, flex) => ({
+  "#2": (_$color, _$flex) => ({
     fontSize: {
       default: "18px",
       "@media (max-width: 768px)": "20px",
     },
     color: {
       default: "pink",
-      hover: color,
+      hover: _$color,
     },
-    display: flex,
+    display: _$flex,
   }),
 });
 const visible = true;

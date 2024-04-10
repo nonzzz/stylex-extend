@@ -1,3 +1,4 @@
+/* eslint-disable no-labels */
 import { NodePath, types } from '@babel/core'
 import { Context } from './state-context'
 import type { CSSObjectValue } from './interface'
@@ -91,8 +92,8 @@ function spreadElement(expression: types.Expression) {
   return types.spreadElement(expression)
 }
 
-function p(s: string) {
-  return '_#' + s
+function l(s: string) {
+  return '_$' + s
 }
 
 function scanExpressionProperty(path: NodePath<types.ObjectProperty>, ctx: CSSContext) {
@@ -109,10 +110,10 @@ function scanExpressionProperty(path: NodePath<types.ObjectProperty>, ctx: CSSCo
       if (value.name === 'undefined') {
         CSSObject[attr] = undefined
       } else {
-        CSSObject[attr] = p(value.name)
+        CSSObject[attr] = l(value.name)
         ctx.updateParamters(value.name, { pos: ctx.pos, kind: 'prop' }, value)
         ctx.dynamicPositions.add(ctx.pos)
-        ctx.updateVariables(ctx.pos, value)
+        ctx.updateVariables(ctx.pos, types.identifier(l(value.name)))
       }
       break
     }
@@ -120,19 +121,21 @@ function scanExpressionProperty(path: NodePath<types.ObjectProperty>, ctx: CSSCo
     case 'NumericLiteral':
       CSSObject[attr] = value.value
       break 
-    case 'TemplateLiteral': {
-      break 
-    }
+    case 'TemplateLiteral':
     case 'ConditionalExpression': {
+      CSSObject[attr] = l(attr)
+      ctx.updateParamters(l(attr), { pos: ctx.pos, kind: 'prop' }, value)
+      ctx.dynamicPositions.add(ctx.pos)
+      ctx.updateVariables(ctx.pos, types.identifier(l(attr)))
       break
     }
     case 'MemberExpression': {
       if (value.object.type === 'Identifier' && value.property.type === 'Identifier') {
         const ref = value.object.name + '.' + value.property.name
-        CSSObject[attr] = p(value.property.name)
+        CSSObject[attr] = l(value.property.name)
         ctx.updateParamters(ref, { pos: ctx.pos, kind: 'prop' }, value)
         ctx.dynamicPositions.add(ctx.pos)
-        ctx.updateVariables(ctx.pos, types.identifier(value.property.name))
+        ctx.updateVariables(ctx.pos, types.identifier(l(value.property.name)))
       }
       break
     }
@@ -154,7 +157,8 @@ function scanExpressionProperty(path: NodePath<types.ObjectProperty>, ctx: CSSCo
 
 function scanObjectExpression(path: NodePath<types.ObjectExpression>, ctx: CSSContext) {
   const properties = path.get('properties')
-  while (ctx.pos < ctx.maxLayer) {
+  loop: for (;;) {
+    if (ctx.pos >= ctx.maxLayer) break loop
     const prop = properties[ctx.pos]
     const { node } = prop
     switch (node.type) {
@@ -205,8 +209,8 @@ function ensureCSSValueASTKind(value: string | number | null | undefined) {
       if (value === 'undefined') {
         ast = types.identifier('undefined')
       } else {
-        if (value[0] === '_' && value[1] === '#') {
-          ast = types.identifier(value.slice(2))
+        if (value[0] === '_' && value[1] === '$') {
+          ast = types.identifier(value)
         } else {
           ast = types.stringLiteral(value)
         }

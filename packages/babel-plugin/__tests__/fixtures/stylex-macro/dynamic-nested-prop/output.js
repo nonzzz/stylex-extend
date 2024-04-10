@@ -1,21 +1,21 @@
 import { create as _create, props as _props } from "@stylexjs/stylex";
 const _styles = _create({
-  color: (color) => ({
-    color: color,
+  color: (_$color) => ({
+    color: _$color,
   }),
   fontSize: {
     fontSize: "20px",
   },
-  display: (display) => ({
+  display: (_$display) => ({
     display: {
       display: "flex",
-      "@media (max-width: 600px)": display,
+      "@media (max-width: 600px)": _$display,
     },
   }),
-  borderRadius: (normalRadius, maxRadius) => ({
+  borderRadius: (_$normalRadius, _$maxRadius) => ({
     borderRadius: {
-      borderRadius: normalRadius,
-      "@media (max-width: 600px)": maxRadius,
+      borderRadius: _$normalRadius,
+      "@media (max-width: 600px)": _$maxRadius,
     },
   }),
 });
