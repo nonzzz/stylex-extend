@@ -1,3 +1,4 @@
+import { } from 'react'
 import type { StylexProperty } from '@stylex-extend/shared'
 
 declare module 'react' {
@@ -6,3 +7,4 @@ declare module 'react' {
     stylex?: StylexProperty
   }
 }
+export { }
