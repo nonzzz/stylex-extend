@@ -1,26 +1,11 @@
 import * as b from '@babel/core'
-import type { PluginObj, types } from '@babel/core'
-import { createExtendMacro } from './extend-macro'
-import { injectStylexHelper, transformStylexObjectExpression } from './stylex'
-import type { StylexBindingMeta, StylexExtendBabelPluginOptions } from './interface'
+import type { PluginObj } from '@babel/core'
+import { transformStylexAttrs } from './css'
+import { Context } from './state-context'
+import type { StylexExtendBabelPluginOptions } from './interface'
+import type { ImportIdentifiers, InternalPluginOptions } from './state-context'
 
 const JSX_ATTRIBUTE_NAME = 'stylex'
-
-const cssMacro = createExtendMacro('@stylex-extend/css')
-
-interface PluginMacros {
-  css: typeof cssMacro
-  [prop: string]: any
-}
-
-type InternalPluginOptions = Omit<StylexExtendBabelPluginOptions, 'stylex'> & { stylex: StylexBindingMeta }
-
-export interface State {
-  pluginMacros: PluginMacros
-  pluginOptions: InternalPluginOptions
-  statements: types.VariableDeclaration[]
-  helper: types.Identifier
-}
 
 const defaultOptions: InternalPluginOptions = {
   css: true,
@@ -29,11 +14,9 @@ const defaultOptions: InternalPluginOptions = {
   }
 }
 
-export const macros: PluginMacros = {
-  css: cssMacro
-}
+function declare({ types: t }: typeof b): PluginObj {
+  const ctx = new Context()
 
-function declare({ types: t }: typeof b): PluginObj<b.PluginPass & State> {
   return {
     name: '@stylex-extend',
     manipulateOptions(_, parserOpts) {
@@ -53,34 +36,31 @@ function declare({ types: t }: typeof b): PluginObj<b.PluginPass & State> {
     visitor: {
       Program: {
         enter(path, state) {
-          state.pluginMacros = this.pluginMacros
           state.pluginOptions = { ...defaultOptions, ...state.opts }
           state.statements = []
-          if (typeof state.pluginOptions.stylex === 'boolean') {
-            state.pluginOptions.stylex = { helper: state.pluginOptions.stylex ? 'props' : '' }
+          const pluginOptions = { ...defaultOptions, ...state.opts }
+          if (typeof pluginOptions.stylex === 'boolean') {
+            pluginOptions.stylex = { helper: pluginOptions.stylex ? 'props' : '' }
           }
-          const helper = path.scope.generateUidIdentifier('stylexHelper')
-          state.helper = helper
-          path.unshiftContainer('body', injectStylexHelper(t, helper))
+
+          const modules = ['create']
+          if (pluginOptions.stylex.helper) modules.push(pluginOptions.stylex.helper)
+          const identifiers = modules.reduce<ImportIdentifiers>((acc, cur) => ({ ...acc, [cur]: path.scope.generateUidIdentifier(cur) }), {})
+          const importSpecs = Object.values(identifiers).map((a, i) => t.importSpecifier(a, t.identifier(modules[i])))
+          const importStmt = t.importDeclaration(importSpecs, t.stringLiteral('@stylexjs/stylex'))
+          path.unshiftContainer('body', importStmt)
+          ctx.setupOptions(pluginOptions, identifiers)
         },
-        exit(path, state) {
+        exit(path) {
           const body = path.get('body')
           const anchor = body.findLast(p => t.isImportDeclaration(p.node))
-          if (anchor) {
-            anchor.insertAfter(state.statements)
-          }
+          if (anchor) anchor.insertAfter(ctx.stmts)
+          ctx.stmts = []
         }
       },
-      JSXAttribute(path, state) {
-        if (path.node.name.name !== JSX_ATTRIBUTE_NAME || !state.pluginOptions.stylex.helper) {
-          return
-        }
-        const value = path.get('value')
-        if (value.isJSXExpressionContainer()) {
-          if (t.isObjectExpression(value.node.expression)) {
-            transformStylexObjectExpression(path, value.node.expression, state, t)
-          }
-        }
+      JSXAttribute(path) {
+        if (path.node.name.name !== JSX_ATTRIBUTE_NAME || !ctx.enableStylex) return
+        transformStylexAttrs(path, ctx)
       }
     }
   }

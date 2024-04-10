@@ -11,6 +11,7 @@
     "lib": ["ESNext"],
     "moduleResolution": "node",
     "jsx": "react-jsx",
-    "strict": true
+    "strict": true,
+    "types": ["vitest/globals"]
   }
 }

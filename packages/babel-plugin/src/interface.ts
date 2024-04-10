@@ -7,6 +7,6 @@ export interface StylexExtendBabelPluginOptions {
   stylex: boolean | StylexBindingMeta
 }
 
-export type CssObjectValue = {
-  [key: string]: CssObjectValue | number | string | undefined | null
+export type CSSObjectValue = {
+  [key: string]: CSSObjectValue | number | string | undefined | null
 }

@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "preinstall": "node ./scripts/yarn.js"
+    "preinstall": "node ./scripts/yarn.js",
+    "test": "yarn workspaces foreach --all run test"
   },
   "workspaces": [
     "packages/*",
@@ -17,9 +18,7 @@
   "devDependencies": {
     "@stylex-extend/babel-plugin": "workspace:*",
     "@stylex-extend/css": "workspace:*",
-    "@stylex-extend/react": "workspace:*",
     "@stylex-extend/shared": "workspace:*",
-    "@stylex-extend/vue": "workspace:*",
     "@stylexjs/babel-plugin": "^0.5.1",
     "@stylexjs/stylex": "^0.5.1",
     "@types/node": "^20.11.30",
@@ -28,7 +27,8 @@
     "tsup": "^8.0.2",
     "tsx": "^4.7.1",
     "typescript": "^5.4.3",
-    "vite": "^5.2.6"
+    "vite": "^5.2.6",
+    "vitest": "^1.4.0"
   },
   "resolutions": {
     "array-buffer-byte-length": "npm:@nolyfill/array-buffer-byte-length@latest",
