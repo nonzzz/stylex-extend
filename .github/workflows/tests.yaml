@@ -15,7 +15,5 @@ jobs:
       - name: Install Dependices
         run: yarn install
       
-      - name: Build Library
-        run:  yarn build
       - name: Run Test
         run: yarn test
