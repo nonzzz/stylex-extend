@@ -1,10 +1,14 @@
 {
   "name": "@stylex-extend/shared",
   "description": "Shared utilities for StyleX Extend",
-  "version": "0.1.0",
+  "version": "0.1.2",
   "license": "MIT",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "scripts": {
     "dev": "yarn run -T tsup --watch",
     "build": "yarn run -T tsup"

@@ -3,11 +3,11 @@
   "main": "./index.js",
   "module": "./index.js",
   "types": "./index.d.ts",
-  "version": "0.1.0",
+  "version": "0.1.2",
   "devDependencies": {
     "vue": "^3.4.21"
   },
   "dependencies": {
-    "@stylex-extend/shared": "workspace:*"
+    "@stylex-extend/shared": "0.1.2"
   }
 }

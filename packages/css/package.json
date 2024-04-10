@@ -1,8 +1,8 @@
 {
   "name": "@stylex-extend/css",
-  "version": "0.1.0",
+  "version": "0.1.2",
   "dependencies": {
-    "@stylex-extend/babel-plugin": "workspace:*",
-    "@stylex-extend/shared": "workspace:*"
+    "@stylex-extend/babel-plugin": "0.1.2",
+    "@stylex-extend/shared": "0.1.2"
   }
 }
