@@ -5,7 +5,7 @@ import type { CSSObjectValue } from './interface'
 
 interface Loc {
   pos: number
-  kind: 'spare' | 'prop'
+  kind: 'spared' | 'prop'
 
 }
 
@@ -86,10 +86,6 @@ function arrowFunctionExpression(params: types.Identifier[], body: types.Express
 
 function callExpression(callee: types.Expression, args: types.Expression[]) {
   return types.callExpression(callee, args)
-}
-
-function spreadElement(expression: types.Expression) {
-  return types.spreadElement(expression)
 }
 
 function l(s: string) {
@@ -188,7 +184,7 @@ function scanObjectExpression(path: NodePath<types.ObjectExpression>, ctx: CSSCo
             }
             const attr = '#' + ctx.pos
             ctx.rules.push({ [attr]: CSSObject })
-            ctx.updateParamters(attr, { pos: ctx.pos, kind: 'spare' }, left.node)
+            ctx.updateParamters(attr, { pos: ctx.pos, kind: 'spared' }, left.node)
           }
         }
 
@@ -278,7 +274,7 @@ export function transformStylexAttrs(path: NodePath<types.JSXAttribute>, ctx: Co
   const CSSContext = createCSSContext(expression.node.properties.length)
   scanObjectExpression(expression, CSSContext)
   const CSSAST = evaluateCSSAST(convertToAST(CSSContext.rules), CSSContext)
-  const expr: Array<types.MemberExpression | types.CallExpression | types.SpreadElement> = []
+  const expr: Array<types.Expression> = []
   for (const prop of CSSAST.properties) {
     if (prop.type === 'ObjectProperty') {
       expr.push(types.memberExpression(variable, prop.key, true))
@@ -297,8 +293,8 @@ export function transformStylexAttrs(path: NodePath<types.JSXAttribute>, ctx: Co
         previous.arguments.push(node)
         expr[pos] = previous
       }
-      if (kind === 'spare' && previous.type !== 'SpreadElement') {
-        expr[pos] = spreadElement(types.logicalExpression('&&', node, previous))
+      if (kind === 'spared') {
+        expr[pos] = types.logicalExpression('&&', node, previous)
       }
     }
   }

@@ -7,6 +7,6 @@
         },
         "jsx": "react-jsx",
         "jsxImportSource": "@stylex-extend/react",
-        "types": ["@stylex-extend/react"],
+        "types": ["node","@stylex-extend/react"],
     }
 }

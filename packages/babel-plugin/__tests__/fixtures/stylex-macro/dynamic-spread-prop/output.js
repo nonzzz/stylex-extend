@@ -26,7 +26,7 @@ export function Component(props) {
       {..._props(
         _styles["color"](color),
         _styles["#1"],
-        ...(visible && _styles["#2"](props.color, flex))
+        visible && _styles["#2"](props.color, flex)
       )}
     />
   );
