@@ -5,7 +5,7 @@
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "scripts": {
-    "test": "node --require tsx/cjs --test __tests__/**/*spec.ts",
+    "test": "yarn run -T vitest",
     "dev": "yarn run -T tsup --watch",
     "build": "yarn run -T tsup"
   },
