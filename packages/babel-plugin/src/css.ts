@@ -150,6 +150,11 @@ function scanExpressionProperty(path: NodePath<types.ObjectProperty>, ctx: CSSCo
       }
       break
     }
+    case 'CallExpression': {
+      CSSObject[attr] = l(attr)
+      ctx.recordVars('prop', types.identifier(l(attr)), value)
+      break
+    }
     case 'ObjectExpression': {
       const valuePath = path.get('value')
       const CSSObject = Object.create(null)
@@ -266,11 +271,13 @@ function evaluateCSSAST(CSSAST: types.ObjectExpression, ctx: CSSContext) {
   for (let i = 0; i < CSSAST.properties.length; i++) {
     const item = CSSAST.properties[i]
     if (item.type === 'ObjectProperty' && ctx.vars.has(i)) {
-      const { refers: variables } = ctx.vars.get(i)!
-      if (isStringLikeKind(item.key)) {
+      const { refers: variables, originals } = ctx.vars.get(i)!
+      if (isStringLikeKind(item.key) && originals.prop?.length) {
         const key = getStringValue(item.key)
         const fn = arrowFunctionExpression(variables, item.value as types.Expression)
         ast.push(types.objectProperty(types.stringLiteral(key), fn))
+      } else {
+        ast.push(item)
       }
       continue
     }
@@ -296,7 +303,6 @@ export function transformStylexAttrs(path: NodePath<types.JSXAttribute>, ctx: Co
       expr.push(types.memberExpression(variable, prop.key, true))
     }
   }
-   
   for (const [pos, { originals }] of CSSContext.vars) {
     for (const kind in originals) {
       if (kind === 'prop') {
