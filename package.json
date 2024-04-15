@@ -4,7 +4,9 @@
   "scripts": {
     "preinstall": "node ./scripts/yarn.js",
     "test": "yarn workspaces foreach --all run test",
-    "build": "yarn workspaces foreach --all --include packages/babel-plugin --include packages/shared run build"
+    "build": "yarn build:babel-plugin && yarn build:shared",
+    "build:babel-plugin": "yarn workspace @stylex-extend/babel-plugin run build",
+    "build:shared": "yarn workspace @stylex-extend/shared run build"
   },
   "workspaces": [
     "packages/*",
