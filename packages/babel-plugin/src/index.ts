@@ -50,7 +50,7 @@ function declare({ types: t }: typeof b): PluginObj {
           const importStmt = t.importDeclaration(importSpecs, t.stringLiteral('@stylexjs/stylex'))
           path.unshiftContainer('body', importStmt)
           const anchor = path.get('body').findIndex(p => t.isImportDeclaration(p.node))
-          ctx.setupOptions(pluginOptions, identifiers, anchor)
+          ctx.setupOptions(pluginOptions, identifiers, anchor ?? 0)
         },
         exit(path) {
           const body = path.get('body')
