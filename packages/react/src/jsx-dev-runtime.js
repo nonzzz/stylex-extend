@@ -1,3 +1,6 @@
-const { jsxDEV } = require('react/jsx-dev-runtime')
+const { jsxDEV, Fragment } = require('react/jsx-dev-runtime')
 
-exports.jsxDEV = jsxDEV
+module.exports = {
+  jsxDEV,
+  Fragment
+}

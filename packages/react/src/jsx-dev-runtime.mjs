@@ -1,1 +1,1 @@
-export { jsxDEV } from 'react/jsx-dev-runtime'
+export { jsxDEV, Fragment } from 'react/jsx-dev-runtime'
