@@ -8,3 +8,7 @@ An unofficial stylexjs extension
 - [ ] css selector
 
 WIP
+
+## License
+
+[MIT](./LICENSE)

@@ -3,38 +3,30 @@ import { NodePath, types } from '@babel/core'
 import { Context } from './state-context'
 import type { CSSObjectValue } from './interface'
 
-interface Loc {
-  pos: number
-  kind: 'spared' | 'prop'
-
+type Kind = 'spared' | 'prop'
+interface VarsMeta {
+  refers: types.Identifier[]
+  originals: Partial<Record<Kind, types.Expression[]>>
 }
 
-interface ParamterMeta {
-  node: types.Expression
-  loc: Array<Loc>
-}
-
-interface CSSContextStates {
-  nested: boolean
-  spread: boolean
+interface CSSContextState {
+  inSpread: boolean
+  lastBindingPos: number
+  anchor: number
 }
 
 class CSSContext {
   pos: number
   maxLayer: number
-  paramters: Map<string, ParamterMeta>
-  variables: Map<number, types.Identifier[]>
-  state: CSSContextStates
+  vars: Map<number, VarsMeta>
   rules: Array<CSSObjectValue>
-  dynamicPositions: Set<number>
-  constructor(maxLayer = 0) {
+  state: CSSContextState
+  constructor(maxLayer = 0, anchor: number) {
     this.pos = 0
-    this.paramters = new Map()
-    this.variables = new Map()
-    this.state = { nested: false, spread: false }
+    this.vars = new Map()
     this.maxLayer = maxLayer
+    this.state = { inSpread: false, lastBindingPos: 0, anchor }
     this.rules = []
-    this.dynamicPositions = new Set()
   }
 
   advance() {
@@ -43,27 +35,31 @@ class CSSContext {
     }
   }
 
-  updateParamters(key: string, loc: Loc, node: types.Expression) {
-    if (this.paramters.has(key)) {
-      const param = this.paramters.get(key)!
-      param.loc.push(loc)
-      param.node = node
+  recordVars(kind: Kind, referAST: types.Identifier | null, originalAST: types.Expression) {
+    if (this.vars.has(this.pos)) {
+      const current = this.vars.get(this.pos)!
+      if (referAST) {
+        current.refers.push(referAST)
+      }
+      if (current.originals[kind]) {
+        current.originals[kind]!.push(originalAST)
+      } else {
+        current.originals[kind] = [originalAST]
+      }
     } else {
-      this.paramters.set(key, { node, loc: [loc] })
+      const originals = { [kind]: [originalAST] }
+      this.vars.set(this.pos, { refers: referAST ? [referAST] : [], originals })
     }
-  }
-
-  updateVariables(pos: number, node: types.Identifier) {
-    if (this.variables.has(pos)) {
-      this.variables.get(pos)!.push(node)
-      return
-    }
-    this.variables.set(pos, [node])
   }
 }
 
-function createCSSContext(maxLayer = 0) {
-  return new CSSContext(maxLayer)
+function createCSSContext(maxLayer = 0, anchor: number) {
+  return new CSSContext(maxLayer, anchor)
+}
+
+function isGlobalReference(path: NodePath<types.Identifier>) {
+  const hasBind = path.scope.getProgramParent().hasBinding(path.node.name)
+  return hasBind
 }
 
 function isStringLikeKind(node: types.Node): node is types.Identifier | types.StringLiteral {
@@ -92,6 +88,10 @@ function l(s: string) {
   return '_$' + s
 }
 
+function r(s: string) {
+  return '_#' + s
+}
+
 function scanExpressionProperty(path: NodePath<types.ObjectProperty>, ctx: CSSContext) {
   if (path.node.computed) throw new Error('[stylex-extend]: can\'t use computed property for stylex object attributes')
   const { key, value } = path.node
@@ -107,9 +107,25 @@ function scanExpressionProperty(path: NodePath<types.ObjectProperty>, ctx: CSSCo
         CSSObject[attr] = undefined
       } else {
         CSSObject[attr] = l(value.name)
-        ctx.updateParamters(value.name, { pos: ctx.pos, kind: 'prop' }, value)
-        ctx.dynamicPositions.add(ctx.pos)
-        ctx.updateVariables(ctx.pos, types.identifier(l(value.name)))
+        const identifier = path.get('value') as NodePath<types.Identifier>
+        if (!isGlobalReference(identifier) || ctx.state.inSpread) {
+          ctx.recordVars('prop', types.identifier(l(value.name)), value)
+        } 
+        if (isGlobalReference(identifier)) {
+          const programPath = identifier.findParent(p => p.isProgram()) as NodePath<types.Program>
+          if (programPath) {
+            const parent = identifier.scope.getProgramParent().getBinding(value.name)
+            const stmt = parent?.path.findParent(p => p.isStatement())
+            if (stmt) {
+              const node = types.cloneNode(stmt.node)
+              stmt.remove()
+              const body = programPath.get('body')
+              body[ctx.state.anchor].insertAfter(node)
+              ctx.state.lastBindingPos++
+            }
+          }
+          CSSObject[attr] = r(value.name)
+        }
       }
       break
     }
@@ -119,19 +135,18 @@ function scanExpressionProperty(path: NodePath<types.ObjectProperty>, ctx: CSSCo
       break 
     case 'TemplateLiteral':
     case 'ConditionalExpression': {
-      CSSObject[attr] = l(attr)
-      ctx.updateParamters(l(attr), { pos: ctx.pos, kind: 'prop' }, value)
-      ctx.dynamicPositions.add(ctx.pos)
-      ctx.updateVariables(ctx.pos, types.identifier(l(attr)))
+      if (value.type === 'TemplateLiteral' && !value.expressions.length) {
+        CSSObject[attr] = value.quasis[0].value.raw
+      } else {
+        CSSObject[attr] = l(attr)
+        ctx.recordVars('prop', types.identifier(l(attr)), value)
+      }
       break
     }
     case 'MemberExpression': {
       if (value.object.type === 'Identifier' && value.property.type === 'Identifier') {
-        const ref = value.object.name + '.' + value.property.name
         CSSObject[attr] = l(value.property.name)
-        ctx.updateParamters(ref, { pos: ctx.pos, kind: 'prop' }, value)
-        ctx.dynamicPositions.add(ctx.pos)
-        ctx.updateVariables(ctx.pos, types.identifier(l(value.property.name)))
+        ctx.recordVars('prop', types.identifier(l(value.property.name)), value)
       }
       break
     }
@@ -139,11 +154,9 @@ function scanExpressionProperty(path: NodePath<types.ObjectProperty>, ctx: CSSCo
       const valuePath = path.get('value')
       const CSSObject = Object.create(null)
       if (valuePath.isObjectExpression()) {
-        ctx.state.nested = true
         for (const prop of valuePath.get('properties')) {
           Object.assign(CSSObject, scanExpressionProperty(prop as NodePath<types.ObjectProperty>, ctx))
         }
-        ctx.state.nested = false
       }
       return { [attr]: CSSObject }
     }
@@ -164,6 +177,7 @@ function scanObjectExpression(path: NodePath<types.ObjectExpression>, ctx: CSSCo
       }
       case 'SpreadElement': {
         const arg = node.argument
+        ctx.state.inSpread = true
         if (arg.type === 'ObjectExpression') {
           const path = prop.get('argument') as NodePath<types.ObjectExpression>
           const CSSObject = {}
@@ -184,10 +198,10 @@ function scanObjectExpression(path: NodePath<types.ObjectExpression>, ctx: CSSCo
             }
             const attr = '#' + ctx.pos
             ctx.rules.push({ [attr]: CSSObject })
-            ctx.updateParamters(attr, { pos: ctx.pos, kind: 'spared' }, left.node)
+            ctx.recordVars('spared', null, left.node)
           }
         }
-
+        ctx.state.inSpread = false
         break
       }
     }
@@ -207,6 +221,8 @@ function ensureCSSValueASTKind(value: string | number | null | undefined) {
       } else {
         if (value[0] === '_' && value[1] === '$') {
           ast = types.identifier(value)
+        } else if (value[0] === '_' && value[1] === '#') {
+          ast = types.identifier(value.slice(2))
         } else {
           ast = types.stringLiteral(value)
         }
@@ -249,8 +265,8 @@ function evaluateCSSAST(CSSAST: types.ObjectExpression, ctx: CSSContext) {
   const ast: types.ObjectProperty[] = []
   for (let i = 0; i < CSSAST.properties.length; i++) {
     const item = CSSAST.properties[i]
-    if (item.type === 'ObjectProperty' && ctx.dynamicPositions.has(i)) {
-      const variables = ctx.variables.get(i)!
+    if (item.type === 'ObjectProperty' && ctx.vars.has(i)) {
+      const { refers: variables } = ctx.vars.get(i)!
       if (isStringLikeKind(item.key)) {
         const key = getStringValue(item.key)
         const fn = arrowFunctionExpression(variables, item.value as types.Expression)
@@ -267,11 +283,11 @@ function evaluateCSSAST(CSSAST: types.ObjectExpression, ctx: CSSContext) {
 export function transformStylexAttrs(path: NodePath<types.JSXAttribute>, ctx: Context) {
   const value = path.get('value')
   if (!value.isJSXExpressionContainer()) return
-  const { importIdentifiers, attach } = ctx
+  const { importIdentifiers, attach, anchor } = ctx
   const variable = path.scope.generateUidIdentifier('styles')
   const expression = value.get('expression')
   if (!expression.isObjectExpression()) throw new Error('[stylex-extend]: can\'t pass not object value for attribute \'stylex\'.')
-  const CSSContext = createCSSContext(expression.node.properties.length)
+  const CSSContext = createCSSContext(expression.node.properties.length, anchor)
   scanObjectExpression(expression, CSSContext)
   const CSSAST = evaluateCSSAST(convertToAST(CSSContext.rules), CSSContext)
   const expr: Array<types.Expression> = []
@@ -281,24 +297,24 @@ export function transformStylexAttrs(path: NodePath<types.JSXAttribute>, ctx: Co
     }
   }
    
-  // eslint-disable-next-line no-unused-vars
-  for (const [_, { node, loc }] of CSSContext.paramters) {
-    for (const { pos, kind } of loc) {
-      const previous = expr[pos]
-      if (!previous) continue
-      if (kind === 'prop' && previous.type === 'MemberExpression') {
-        expr[pos] = callExpression(previous, [node])
-      }
-      if (kind === 'prop' && previous.type === 'CallExpression') {
-        previous.arguments.push(node)
-        expr[pos] = previous
+  for (const [pos, { originals }] of CSSContext.vars) {
+    for (const kind in originals) {
+      if (kind === 'prop') {
+        const previous = expr[pos]
+        if (!previous) continue
+        if (previous.type === 'MemberExpression') {
+          const nodes = originals[kind]
+          expr[pos] = callExpression(previous, nodes!)
+        }
       }
       if (kind === 'spared') {
-        expr[pos] = types.logicalExpression('&&', node, previous)
+        const [node] = originals[kind]!
+        expr[pos] = types.logicalExpression('&&', node, expr[pos])
       }
     }
   }
-  const stylexDeclaration = variableDeclaration(variable, types.callExpression(importIdentifiers.create, [CSSAST]))
+  ctx.lastBindingPos = CSSContext.state.lastBindingPos
+  const stylexDeclaration = variableDeclaration(variable, callExpression(importIdentifiers.create, [CSSAST]))
   ctx.stmts.push(stylexDeclaration)
-  path.replaceWith(types.jsxSpreadAttribute(types.callExpression(attach, expr)))
+  path.replaceWith(types.jsxSpreadAttribute(callExpression(attach, expr)))
 }

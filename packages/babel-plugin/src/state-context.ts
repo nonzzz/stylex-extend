@@ -9,15 +9,20 @@ export class Context {
   options: InternalPluginOptions
   importIdentifiers: ImportIdentifiers
   stmts: types.VariableDeclaration[]
+  lastBindingPos: number
+  anchor: number
   constructor() {
     this.options = Object.create(null)
     this.importIdentifiers = Object.create(null)
     this.stmts = []
+    this.anchor = 0
+    this.lastBindingPos = 0
   }
 
-  setupOptions(pluginOptions: InternalPluginOptions, identifiers: ImportIdentifiers) {
+  setupOptions(pluginOptions: InternalPluginOptions, identifiers: ImportIdentifiers, anchor: number) {
     this.options = pluginOptions
     this.importIdentifiers = identifiers
+    this.anchor = anchor
   }
 
   get attach() {

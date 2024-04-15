@@ -49,12 +49,13 @@ function declare({ types: t }: typeof b): PluginObj {
           const importSpecs = Object.values(identifiers).map((a, i) => t.importSpecifier(a, t.identifier(modules[i])))
           const importStmt = t.importDeclaration(importSpecs, t.stringLiteral('@stylexjs/stylex'))
           path.unshiftContainer('body', importStmt)
-          ctx.setupOptions(pluginOptions, identifiers)
+          const anchor = path.get('body').findIndex(p => t.isImportDeclaration(p.node))
+          ctx.setupOptions(pluginOptions, identifiers, anchor)
         },
         exit(path) {
           const body = path.get('body')
-          const anchor = body.findLast(p => t.isImportDeclaration(p.node))
-          if (anchor) anchor.insertAfter(ctx.stmts)
+          const anchor = ctx.anchor + ctx.lastBindingPos
+          if (anchor !== -1) body[anchor].insertAfter(ctx.stmts)
           ctx.stmts = []
         }
       },
