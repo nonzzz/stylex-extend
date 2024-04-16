@@ -15,7 +15,7 @@ interface CSSContextState {
   anchor: number
 }
 
-class CSSContext {
+export class CSSContext {
   pos: number
   maxLayer: number
   vars: Map<number, VarsMeta>

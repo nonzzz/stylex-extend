@@ -10,6 +10,12 @@ const JSX_ATTRIBUTE_NAME = 'stylex'
 const defaultOptions: InternalPluginOptions = {
   stylex: {
     helper: 'props'
+  },
+  classNamePrefix: 'x',
+  unstable_moduleResolution: {
+    type: 'commonJS',
+    rootDir: process.cwd(),
+    themeFileExtension: '.stylex'
   }
 }
 
@@ -35,8 +41,6 @@ function declare({ types: t }: typeof b): PluginObj {
     visitor: {
       Program: {
         enter(path, state) {
-          state.pluginOptions = { ...defaultOptions, ...state.opts }
-          state.statements = []
           const pluginOptions = { ...defaultOptions, ...state.opts }
           if (typeof pluginOptions.stylex === 'boolean') {
             pluginOptions.stylex = { helper: pluginOptions.stylex ? 'props' : '' }
@@ -60,6 +64,7 @@ function declare({ types: t }: typeof b): PluginObj {
           path.unshiftContainer('body', importStmt)
           const anchor = body.findIndex(p => t.isImportDeclaration(p.node))
           ctx.setupOptions(pluginOptions, identifiers, anchor === -1 ? 0 : anchor)
+          ctx.filename = this.filename
           path.traverse({
             CallExpression(path) {
               transformInjectGlobalStyle(path, ctx)
