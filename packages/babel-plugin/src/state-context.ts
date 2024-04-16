@@ -11,11 +11,13 @@ export class Context {
   stmts: types.VariableDeclaration[]
   lastBindingPos: number
   anchor: number
+  imports: Set<string>
   constructor() {
     this.options = Object.create(null)
     this.importIdentifiers = Object.create(null)
     this.stmts = []
     this.anchor = 0
+    this.imports = new Set()
     this.lastBindingPos = 0
   }
 

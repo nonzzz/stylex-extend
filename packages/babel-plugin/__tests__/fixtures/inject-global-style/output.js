@@ -1,0 +1,1 @@
+import { create as _create, props as _props } from "@stylexjs/stylex";

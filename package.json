@@ -18,7 +18,7 @@
   "packageManager": "yarn@4.1.1",
   "devDependencies": {
     "@stylex-extend/babel-plugin": "workspace:*",
-    "@stylex-extend/css": "workspace:*",
+    "@stylex-extend/core": "workspace:*",
     "@stylex-extend/shared": "workspace:*",
     "@stylexjs/babel-plugin": "^0.5.1",
     "@stylexjs/stylex": "^0.5.1",

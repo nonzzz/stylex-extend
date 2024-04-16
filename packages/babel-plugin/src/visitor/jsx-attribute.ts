@@ -1,7 +1,7 @@
 /* eslint-disable no-labels */
 import { NodePath, types } from '@babel/core'
-import { Context } from './state-context'
-import type { CSSObjectValue } from './interface'
+import { Context } from '../state-context'
+import type { CSSObjectValue } from '../interface'
 
 type Kind = 'spared' | 'prop'
 interface VarsMeta {
@@ -53,7 +53,7 @@ class CSSContext {
   }
 }
 
-function createCSSContext(maxLayer = 0, anchor: number) {
+export function createCSSContext(maxLayer = 0, anchor: number) {
   return new CSSContext(maxLayer, anchor)
 }
 
@@ -169,7 +169,7 @@ function scanExpressionProperty(path: NodePath<types.ObjectProperty>, ctx: CSSCo
   return CSSObject
 }
 
-function scanObjectExpression(path: NodePath<types.ObjectExpression>, ctx: CSSContext) {
+export function scanObjectExpression(path: NodePath<types.ObjectExpression>, ctx: CSSContext) {
   const properties = path.get('properties')
   loop: for (;;) {
     if (ctx.pos >= ctx.maxLayer) break loop

@@ -25,7 +25,8 @@
     "babel-plugin-tester": "^11.0.4"
   },
   "dependencies": {
-    "@babel/core": "^7.23.9"
+    "@babel/core": "^7.23.9",
+    "@stylexjs/shared": "^0.5.1"
   },
   "files": [
     "dist",

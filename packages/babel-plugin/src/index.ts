@@ -1,6 +1,6 @@
 import * as b from '@babel/core'
 import type { PluginObj } from '@babel/core'
-import { transformStylexAttrs } from './css'
+import { transformInjectGlobalStyle, transformStylexAttrs } from './visitor'
 import { Context } from './state-context'
 import type { StylexExtendBabelPluginOptions } from './interface'
 import type { ImportIdentifiers, InternalPluginOptions } from './state-context'
@@ -42,14 +42,29 @@ function declare({ types: t }: typeof b): PluginObj {
             pluginOptions.stylex = { helper: pluginOptions.stylex ? 'props' : '' }
           }
 
+          const body = path.get('body')
+          for (const stmt of body) {
+            if (stmt.isImportDeclaration()) {
+              for (const decl of stmt.node.specifiers) {
+                if (decl.type === 'ImportSpecifier') {
+                  ctx.imports.add(decl.local.name)
+                }
+              }
+            }
+          }
           const modules = ['create']
           if (pluginOptions.stylex.helper) modules.push(pluginOptions.stylex.helper)
           const identifiers = modules.reduce<ImportIdentifiers>((acc, cur) => ({ ...acc, [cur]: path.scope.generateUidIdentifier(cur) }), {})
           const importSpecs = Object.values(identifiers).map((a, i) => t.importSpecifier(a, t.identifier(modules[i])))
           const importStmt = t.importDeclaration(importSpecs, t.stringLiteral('@stylexjs/stylex'))
           path.unshiftContainer('body', importStmt)
-          const anchor = path.get('body').findIndex(p => t.isImportDeclaration(p.node))
-          ctx.setupOptions(pluginOptions, identifiers, anchor ?? 0)
+          const anchor = body.findIndex(p => t.isImportDeclaration(p.node))
+          ctx.setupOptions(pluginOptions, identifiers, anchor === -1 ? 0 : anchor)
+          path.traverse({
+            CallExpression(path) {
+              transformInjectGlobalStyle(path, ctx)
+            }
+          })
         },
         exit(path) {
           const body = path.get('body')

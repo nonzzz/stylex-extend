@@ -1,0 +1,6 @@
+{
+    "name": "@stylex-extend/core",
+    "dependencies": {
+        "@stylex-extend/shared": "0.1.3"
+    }
+}
