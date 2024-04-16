@@ -1,6 +1,6 @@
 import * as b from '@babel/core'
 import type { PluginObj } from '@babel/core'
-import { transformInjectGlobalStyle, transformStylexAttrs } from './visitor'
+import { scanImportStmt, transformInjectGlobalStyle, transformStylexAttrs } from './visitor'
 import { Context } from './state-context'
 import type { StylexExtendBabelPluginOptions } from './interface'
 import type { ImportIdentifiers, InternalPluginOptions } from './state-context'
@@ -11,6 +11,7 @@ const defaultOptions: InternalPluginOptions = {
   stylex: {
     helper: 'props'
   },
+  enableInjectGlobalStyle: true,
   classNamePrefix: 'x',
   unstable_moduleResolution: {
     type: 'commonJS',
@@ -45,36 +46,30 @@ function declare({ types: t }: typeof b): PluginObj {
           if (typeof pluginOptions.stylex === 'boolean') {
             pluginOptions.stylex = { helper: pluginOptions.stylex ? 'props' : '' }
           }
-
+          ctx.filename = state.filename || (state.file.opts?.sourceFileName ?? undefined)
           const body = path.get('body')
-          for (const stmt of body) {
-            if (stmt.isImportDeclaration()) {
-              for (const decl of stmt.node.specifiers) {
-                if (decl.type === 'ImportSpecifier') {
-                  ctx.imports.add(decl.local.name)
-                }
-              }
-            }
-          }
           const modules = ['create']
           if (pluginOptions.stylex.helper) modules.push(pluginOptions.stylex.helper)
           const identifiers = modules.reduce<ImportIdentifiers>((acc, cur) => ({ ...acc, [cur]: path.scope.generateUidIdentifier(cur) }), {})
-          const importSpecs = Object.values(identifiers).map((a, i) => t.importSpecifier(a, t.identifier(modules[i])))
-          const importStmt = t.importDeclaration(importSpecs, t.stringLiteral('@stylexjs/stylex'))
-          path.unshiftContainer('body', importStmt)
+          if (pluginOptions.stylex.helper) {
+            const importSpecs = Object.values(identifiers).map((a, i) => t.importSpecifier(a, t.identifier(modules[i])))
+            const importStmt = t.importDeclaration(importSpecs, t.stringLiteral('@stylexjs/stylex'))
+            path.unshiftContainer('body', importStmt)
+          }
           const anchor = body.findIndex(p => t.isImportDeclaration(p.node))
           ctx.setupOptions(pluginOptions, identifiers, anchor === -1 ? 0 : anchor)
-          ctx.filename = this.filename
+          scanImportStmt(body, ctx)
           path.traverse({
             CallExpression(path) {
-              transformInjectGlobalStyle(path, ctx)
+              const CSS = transformInjectGlobalStyle(path, ctx)
+              Reflect.set(state.file.metadata, 'globalStyle', CSS)
             }
           })
         },
         exit(path) {
           const body = path.get('body')
           const anchor = ctx.anchor + ctx.lastBindingPos
-          if (anchor !== -1) body[anchor].insertAfter(ctx.stmts)
+          if (anchor !== -1 && ctx.stmts.length) body[anchor].insertAfter(ctx.stmts)
           ctx.stmts = []
         }
       },

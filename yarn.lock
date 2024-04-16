@@ -1054,7 +1054,9 @@ __metadata:
     "@stylex-extend/react": "npm:0.1.3"
     "@stylexjs/shared": "npm:^0.5.1"
     "@types/babel__core": "npm:^7.20.5"
+    "@types/stylis": "npm:^4.2.5"
     babel-plugin-tester: "npm:^11.0.4"
+    stylis: "npm:^4.3.1"
   languageName: unknown
   linkType: soft
 
@@ -1293,6 +1295,13 @@ __metadata:
   version: 7.5.8
   resolution: "@types/semver@npm:7.5.8"
   checksum: 10c0/8663ff927234d1c5fcc04b33062cb2b9fcfbe0f5f351ed26c4d1e1581657deebd506b41ff7fdf89e787e3d33ce05854bc01686379b89e9c49b564c4cfa988efa
+  languageName: node
+  linkType: hard
+
+"@types/stylis@npm:^4.2.5":
+  version: 4.2.5
+  resolution: "@types/stylis@npm:4.2.5"
+  checksum: 10c0/23f5b35a3a04f6bb31a29d404fa1bc8e0035fcaff2356b4047743a057e0c37b2eba7efe14d57dd2b95b398cea3bac294d9c6cd93ed307d8c0b7f5d282224b469
   languageName: node
   linkType: hard
 
@@ -4732,6 +4741,13 @@ __metadata:
     vitest: "npm:^1.4.0"
   languageName: unknown
   linkType: soft
+
+"stylis@npm:^4.3.1":
+  version: 4.3.1
+  resolution: "stylis@npm:4.3.1"
+  checksum: 10c0/33e8ebd2bfa5f0bd0215f718dc2d3be896e1d00c5bcaeb9a4ae03cf239db6867af9eee230f57229bf1c29499357073ba3e6b547484ba1db2f5de1e8be7d4eee9
+  languageName: node
+  linkType: hard
 
 "sucrase@npm:^3.20.3":
   version: 3.35.0
