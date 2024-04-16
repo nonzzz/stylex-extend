@@ -3,7 +3,6 @@ export interface StylexBindingMeta {
 }
 
 export interface StylexExtendBabelPluginOptions {
-  css: boolean
   stylex: boolean | StylexBindingMeta
 }
 

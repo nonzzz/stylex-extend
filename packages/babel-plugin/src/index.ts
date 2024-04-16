@@ -8,7 +8,6 @@ import type { ImportIdentifiers, InternalPluginOptions } from './state-context'
 const JSX_ATTRIBUTE_NAME = 'stylex'
 
 const defaultOptions: InternalPluginOptions = {
-  css: true,
   stylex: {
     helper: 'props'
   }
