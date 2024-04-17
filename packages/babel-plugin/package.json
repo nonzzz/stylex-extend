@@ -6,9 +6,9 @@
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "scripts": {
-    "test": "yarn run -T vitest",
-    "dev": "yarn run -T tsup --watch",
-    "build": "yarn run -T tsup"
+    "test": "vitest",
+    "dev": "tsup --watch",
+    "build": "tsup"
   },
   "license": "MIT",
   "exports": {
@@ -20,7 +20,7 @@
     "./*": "./*"
   },
   "devDependencies": {
-    "@stylex-extend/react": "0.1.3",
+    "@stylex-extend/react": "workspace:*",
     "@types/babel__core": "^7.20.5",
     "@types/stylis": "^4.2.5",
     "babel-plugin-tester": "^11.0.4"

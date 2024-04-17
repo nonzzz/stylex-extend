@@ -6,9 +6,9 @@
   "version": "0.1.3",
   "license": "MIT",
   "scripts": {
-    "build": "yarn run -T tsup"
+    "build": "tsup"
   },
   "dependencies": {
-    "@stylex-extend/shared": "0.1.3"
+    "@stylex-extend/shared": "workspace:*"
   }
 }

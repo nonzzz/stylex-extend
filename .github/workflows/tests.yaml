@@ -13,7 +13,7 @@ jobs:
         with:
           node-version: 20.5.1
       - name: Install Dependices
-        run: yarn install
+        run: pnpm install
       
       - name: Run Test
-        run: yarn test
+        run: pnpm test

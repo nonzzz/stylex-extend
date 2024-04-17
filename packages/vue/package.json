@@ -8,6 +8,6 @@
     "vue": "^3.4.21"
   },
   "dependencies": {
-    "@stylex-extend/shared": "0.1.3"
+    "@stylex-extend/shared": "workspace:*"
   }
 }

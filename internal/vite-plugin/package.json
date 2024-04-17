@@ -4,8 +4,8 @@
   "types": "dist/index.d.ts",
   "module": "dist/index.js",
   "scripts": {
-    "build": "yarn run -T tsup",
-    "dev": "yarn run -T tsup --watch"
+    "build": "tsup",
+    "dev": "tsup --watch"
   },
   "dependencies": {
     "@babel/core": "^7.23.9",
