@@ -1,3 +1,9 @@
+## v0.2.0 (2024-04-17)
+
+### Features
+
+- Add new package `@stylex-extend/core`
+
 ## v0.1.3 (2024-04-15)
 
 ### Improve
