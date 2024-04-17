@@ -22,7 +22,7 @@ export interface ModuleResolutionExperimentalCrossFileParsing {
 export type ModuleResolution = ModuleResolutionCommonJS | MOduleResolutionHaste | ModuleResolutionExperimentalCrossFileParsing
 
 export interface StylexExtendBabelPluginOptions {
-  stylex: boolean | StylexBindingMeta
+  stylex?: boolean | StylexBindingMeta
   enableInjectGlobalStyle?: boolean
   /**
    * @default 'x'

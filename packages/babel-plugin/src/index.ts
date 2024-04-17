@@ -59,12 +59,14 @@ function declare({ types: t }: typeof b): PluginObj {
           const anchor = body.findIndex(p => t.isImportDeclaration(p.node))
           ctx.setupOptions(pluginOptions, identifiers, anchor === -1 ? 0 : anchor)
           scanImportStmt(body, ctx)
-          path.traverse({
-            CallExpression(path) {
-              const CSS = transformInjectGlobalStyle(path, ctx)
-              Reflect.set(state.file.metadata, 'globalStyle', CSS)
-            }
-          })
+          if (ctx.options.enableInjectGlobalStyle) {
+            path.traverse({
+              CallExpression(path) {
+                const CSS = transformInjectGlobalStyle(path, ctx)
+                Reflect.set(state.file.metadata, 'globalStyle', CSS)
+              }
+            })
+          }
         },
         exit(path) {
           const body = path.get('body')
@@ -93,3 +95,5 @@ export type StylexExtendTransformObject = {
 }
 
 export default declare as unknown as StylexExtendTransformObject
+
+export type { StylexExtendBabelPluginOptions }

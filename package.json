@@ -10,7 +10,8 @@
   },
   "workspaces": [
     "packages/*",
-    "examples/*"
+    "examples/*",
+    "internal/*"
   ],
   "keywords": [],
   "author": "kanno",

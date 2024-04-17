@@ -1,0 +1,16 @@
+{
+    "name": "@stylex-extend/vite-plugin",
+    "type": "module",
+    "types": "dist/index.d.ts",
+    "module": "dist/index.js",
+    "scripts": {
+        "build": "yarn run -T tsup"
+    },
+    "dependencies": {
+        "@babel/core": "^7.23.9",
+        "@types/babel__core": "^7.20.5"
+    },
+    "exports": {
+        ".": "./dist/index.js"
+    }
+}

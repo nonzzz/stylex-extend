@@ -12,7 +12,7 @@ function isTopLevelCalled(p: NodePath) {
 }
 
 export function scanImportStmt(stmts: NodePath<types.Statement>[], ctx: Context) {
-  const matchers = matchesFileSuffix(ctx.options.unstable_moduleResolution.themeFileExtension!)
+  const matchers = matchesFileSuffix(ctx.options.unstable_moduleResolution.themeFileExtension ?? '.stylex')
   for (const stmt of stmts) {
     if (!stmt.isImportDeclaration()) continue
     if (stmt.node.source.value === STYLEX_EXTEND || matchers(stmt.node.source.value)) {
@@ -20,6 +20,7 @@ export function scanImportStmt(stmts: NodePath<types.Statement>[], ctx: Context)
       if (stmt.node.source.value === STYLEX_EXTEND) {
         ctx.addImports(specs.map((s) => s.local.name))
       } else {
+        if (!ctx.options.enableInjectGlobalStyle) continue
         const [filePath, fileName] = ctx.importPathResolver(stmt.node.source.value)
         const codeContent = fs.readFileSync(filePath, 'utf-8')
         const ast = parseSync(codeContent, { babelrc: true })

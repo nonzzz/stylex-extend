@@ -1,10 +1,13 @@
 import path from 'path'
+import { createRequire } from 'module'
 import { types } from '@babel/core'
 import type { StylexBindingMeta, StylexExtendBabelPluginOptions } from './interface'
 
 export type InternalPluginOptions = Required<Omit<StylexExtendBabelPluginOptions, 'stylex'>> & { stylex: StylexBindingMeta }
 
 export type ImportIdentifiers = Record<string, types.Identifier>
+
+const _require = createRequire(__filename)
 
 interface FileNamesForHashing {
   fileName: string
@@ -28,11 +31,11 @@ function filePathResolver(relativePath: string, sourceFilePath: string) {
     const importPathStr = relativePath + ext
     if (importPathStr.startsWith('.')) {
       try {
-        return require.resolve(importPathStr, {
+        return _require.resolve(importPathStr, {
           paths: [path.dirname(sourceFilePath)]
         })
       } catch {
-        return null
+        
       }
     }
   } 

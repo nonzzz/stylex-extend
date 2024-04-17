@@ -1085,6 +1085,15 @@ __metadata:
   languageName: unknown
   linkType: soft
 
+"@stylex-extend/vite-plugin@workspace:*, @stylex-extend/vite-plugin@workspace:internal/vite-plugin":
+  version: 0.0.0-use.local
+  resolution: "@stylex-extend/vite-plugin@workspace:internal/vite-plugin"
+  dependencies:
+    "@babel/core": "npm:^7.23.9"
+    "@types/babel__core": "npm:^7.20.5"
+  languageName: unknown
+  linkType: soft
+
 "@stylex-extend/vue@workspace:*, @stylex-extend/vue@workspace:packages/vue":
   version: 0.0.0-use.local
   resolution: "@stylex-extend/vue@workspace:packages/vue"
@@ -5118,6 +5127,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "vite-vue-demo@workspace:examples/vite-vue-demo"
   dependencies:
+    "@stylex-extend/vite-plugin": "workspace:*"
     "@stylex-extend/vue": "workspace:*"
     "@vitejs/plugin-vue": "npm:^5.0.4"
     "@vitejs/plugin-vue-jsx": "npm:^3.1.0"
