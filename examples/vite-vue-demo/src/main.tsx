@@ -15,6 +15,8 @@ const A = defineComponent(() => {
 
 const color = 'purple'
 
+export { colors }
+
 injectGlobalStyle({
   p: {
     color: colors.purple

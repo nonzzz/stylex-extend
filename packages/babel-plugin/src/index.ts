@@ -63,7 +63,9 @@ function declare({ types: t }: typeof b): PluginObj {
             path.traverse({
               CallExpression(path) {
                 const CSS = transformInjectGlobalStyle(path, ctx)
-                Reflect.set(state.file.metadata, 'globalStyle', CSS)
+                if (CSS) {
+                  Reflect.set(state.file.metadata, 'globalStyle', CSS)
+                }
               }
             })
           }
