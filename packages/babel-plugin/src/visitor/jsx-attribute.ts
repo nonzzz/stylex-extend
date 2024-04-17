@@ -1,12 +1,12 @@
 /* eslint-disable no-labels */
 import { NodePath, types } from '@babel/core'
-import { Context } from './state-context'
-import type { CSSObjectValue } from './interface'
+import { Context } from '../state-context'
+import type { CSSObjectValue } from '../interface'
 
 type Kind = 'spared' | 'prop'
 interface VarsMeta {
   refers: types.Identifier[]
-  originals: Partial<Record<Kind, types.Expression[]>>
+  originals: Partial<Record<Kind, NodePath<types.Expression>[]>>
 }
 
 interface CSSContextState {
@@ -15,7 +15,7 @@ interface CSSContextState {
   anchor: number
 }
 
-class CSSContext {
+export class CSSContext {
   pos: number
   maxLayer: number
   vars: Map<number, VarsMeta>
@@ -35,7 +35,7 @@ class CSSContext {
     }
   }
 
-  recordVars(kind: Kind, referAST: types.Identifier | null, originalAST: types.Expression) {
+  recordVars(kind: Kind, referAST: types.Identifier | null, originalAST: NodePath<types.Expression>) {
     if (this.vars.has(this.pos)) {
       const current = this.vars.get(this.pos)!
       if (referAST) {
@@ -53,7 +53,7 @@ class CSSContext {
   }
 }
 
-function createCSSContext(maxLayer = 0, anchor: number) {
+export function createCSSContext(maxLayer = 0, anchor: number) {
   return new CSSContext(maxLayer, anchor)
 }
 
@@ -66,7 +66,7 @@ function isStringLikeKind(node: types.Node): node is types.Identifier | types.St
   return types.isIdentifier(node) || types.isStringLiteral(node)
 }
 
-function getStringValue(kind: types.StringLiteral | types.Identifier) {
+export function getStringValue(kind: types.StringLiteral | types.Identifier) {
   if (kind.type === 'Identifier') return kind.name
   return kind.value
 }
@@ -86,6 +86,10 @@ function callExpression(callee: types.Expression, args: types.Expression[]) {
 
 function l(s: string) {
   return '_$' + s
+}
+
+function m(s: string) {
+  return '_~' + s
 }
 
 function r(s: string) {
@@ -109,7 +113,7 @@ function scanExpressionProperty(path: NodePath<types.ObjectProperty>, ctx: CSSCo
         CSSObject[attr] = l(value.name)
         const identifier = path.get('value') as NodePath<types.Identifier>
         if (!isGlobalReference(identifier) || ctx.state.inSpread) {
-          ctx.recordVars('prop', types.identifier(l(value.name)), value)
+          ctx.recordVars('prop', types.identifier(l(value.name)), identifier)
         } 
         if (isGlobalReference(identifier)) {
           const programPath = identifier.findParent(p => p.isProgram()) as NodePath<types.Program>
@@ -139,20 +143,20 @@ function scanExpressionProperty(path: NodePath<types.ObjectProperty>, ctx: CSSCo
         CSSObject[attr] = value.quasis[0].value.raw
       } else {
         CSSObject[attr] = l(attr)
-        ctx.recordVars('prop', types.identifier(l(attr)), value)
+        ctx.recordVars('prop', types.identifier(l(attr)), path.get('value') as NodePath<types.Expression>)
       }
       break
     }
     case 'MemberExpression': {
       if (value.object.type === 'Identifier' && value.property.type === 'Identifier') {
-        CSSObject[attr] = l(value.property.name)
-        ctx.recordVars('prop', types.identifier(l(value.property.name)), value)
+        CSSObject[attr] = m(value.object.name + '.' + value.property.name)
+        ctx.recordVars('prop', types.identifier(l(value.property.name)), path.get('value') as NodePath<types.Expression>)
       }
       break
     }
     case 'CallExpression': {
       CSSObject[attr] = l(attr)
-      ctx.recordVars('prop', types.identifier(l(attr)), value)
+      ctx.recordVars('prop', types.identifier(l(attr)), path.get('value') as NodePath<types.Expression>)
       break
     }
     case 'ObjectExpression': {
@@ -169,7 +173,7 @@ function scanExpressionProperty(path: NodePath<types.ObjectProperty>, ctx: CSSCo
   return CSSObject
 }
 
-function scanObjectExpression(path: NodePath<types.ObjectExpression>, ctx: CSSContext) {
+export function scanObjectExpression(path: NodePath<types.ObjectExpression>, ctx: CSSContext) {
   const properties = path.get('properties')
   loop: for (;;) {
     if (ctx.pos >= ctx.maxLayer) break loop
@@ -203,7 +207,7 @@ function scanObjectExpression(path: NodePath<types.ObjectExpression>, ctx: CSSCo
             }
             const attr = '#' + ctx.pos
             ctx.rules.push({ [attr]: CSSObject })
-            ctx.recordVars('spared', null, left.node)
+            ctx.recordVars('spared', null, left)
           }
         }
         ctx.state.inSpread = false
@@ -224,10 +228,17 @@ function ensureCSSValueASTKind(value: string | number | null | undefined) {
       if (value === 'undefined') {
         ast = types.identifier('undefined')
       } else {
-        if (value[0] === '_' && value[1] === '$') {
-          ast = types.identifier(value)
-        } else if (value[0] === '_' && value[1] === '#') {
-          ast = types.identifier(value.slice(2))
+        if (value[0] === '_') {
+          if (value[1] === '~') {
+            const letter = value.slice(2).split('.')[1]
+            ast = types.identifier(l(letter))
+          } else if (value[1] === '$') {
+            ast = types.identifier(value)
+          } else if (value[1] === '#') {
+            ast = types.identifier(value.slice(2))
+          } else {
+            ast = types.stringLiteral(value)
+          }
         } else {
           ast = types.stringLiteral(value)
         }
@@ -310,12 +321,12 @@ export function transformStylexAttrs(path: NodePath<types.JSXAttribute>, ctx: Co
         if (!previous) continue
         if (previous.type === 'MemberExpression') {
           const nodes = originals[kind]
-          expr[pos] = callExpression(previous, nodes!)
+          expr[pos] = callExpression(previous, nodes!.map(n => n.node))
         }
       }
       if (kind === 'spared') {
         const [node] = originals[kind]!
-        expr[pos] = types.logicalExpression('&&', node, expr[pos])
+        expr[pos] = types.logicalExpression('&&', node.node, expr[pos])
       }
     }
   }

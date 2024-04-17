@@ -2,23 +2,14 @@
   "name": "stylex-extend",
   "description": "An unofficial stylexjs extension",
   "scripts": {
-    "preinstall": "node ./scripts/yarn.js",
-    "test": "yarn workspaces foreach --all run test",
-    "build": "yarn build:babel-plugin && yarn build:shared",
-    "build:babel-plugin": "yarn workspace @stylex-extend/babel-plugin run build",
-    "build:shared": "yarn workspace @stylex-extend/shared run build"
+    "test": "pnpm -r run test"
   },
-  "workspaces": [
-    "packages/*",
-    "examples/*"
-  ],
   "keywords": [],
   "author": "kanno",
   "license": "MIT",
-  "packageManager": "yarn@4.1.1",
   "devDependencies": {
     "@stylex-extend/babel-plugin": "workspace:*",
-    "@stylex-extend/css": "workspace:*",
+    "@stylex-extend/core": "workspace:*",
     "@stylex-extend/shared": "workspace:*",
     "@stylexjs/babel-plugin": "^0.5.1",
     "@stylexjs/stylex": "^0.5.1",

@@ -5,8 +5,8 @@ import plugin from '../src'
 
 pluginTester({
   plugin,
-  pluginName: 'stylex-macro',
-  fixtures: path.join(__dirname, 'fixtures', 'stylex-macro'),
+  pluginName: 'stylex-extend',
+  fixtures: path.join(__dirname, 'fixtures'),
   babelOptions: {
     parserOpts: {
       plugins: ['jsx']

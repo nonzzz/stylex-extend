@@ -1,6 +1,6 @@
 import * as b from '@babel/core'
 import type { PluginObj } from '@babel/core'
-import { transformStylexAttrs } from './css'
+import { scanImportStmt, transformInjectGlobalStyle, transformStylexAttrs } from './visitor'
 import { Context } from './state-context'
 import type { StylexExtendBabelPluginOptions } from './interface'
 import type { ImportIdentifiers, InternalPluginOptions } from './state-context'
@@ -8,9 +8,15 @@ import type { ImportIdentifiers, InternalPluginOptions } from './state-context'
 const JSX_ATTRIBUTE_NAME = 'stylex'
 
 const defaultOptions: InternalPluginOptions = {
-  css: true,
   stylex: {
     helper: 'props'
+  },
+  enableInjectGlobalStyle: true,
+  classNamePrefix: 'x',
+  unstable_moduleResolution: {
+    type: 'commonJS',
+    rootDir: process.cwd(),
+    themeFileExtension: '.stylex'
   }
 }
 
@@ -36,26 +42,38 @@ function declare({ types: t }: typeof b): PluginObj {
     visitor: {
       Program: {
         enter(path, state) {
-          state.pluginOptions = { ...defaultOptions, ...state.opts }
-          state.statements = []
           const pluginOptions = { ...defaultOptions, ...state.opts }
           if (typeof pluginOptions.stylex === 'boolean') {
             pluginOptions.stylex = { helper: pluginOptions.stylex ? 'props' : '' }
           }
-
+          ctx.filename = state.filename || (state.file.opts?.sourceFileName ?? undefined)
+          const body = path.get('body')
           const modules = ['create']
           if (pluginOptions.stylex.helper) modules.push(pluginOptions.stylex.helper)
           const identifiers = modules.reduce<ImportIdentifiers>((acc, cur) => ({ ...acc, [cur]: path.scope.generateUidIdentifier(cur) }), {})
-          const importSpecs = Object.values(identifiers).map((a, i) => t.importSpecifier(a, t.identifier(modules[i])))
-          const importStmt = t.importDeclaration(importSpecs, t.stringLiteral('@stylexjs/stylex'))
-          path.unshiftContainer('body', importStmt)
-          const anchor = path.get('body').findIndex(p => t.isImportDeclaration(p.node))
-          ctx.setupOptions(pluginOptions, identifiers, anchor ?? 0)
+          if (pluginOptions.stylex.helper) {
+            const importSpecs = Object.values(identifiers).map((a, i) => t.importSpecifier(a, t.identifier(modules[i])))
+            const importStmt = t.importDeclaration(importSpecs, t.stringLiteral('@stylexjs/stylex'))
+            path.unshiftContainer('body', importStmt)
+          }
+          const anchor = body.findIndex(p => t.isImportDeclaration(p.node))
+          ctx.setupOptions(pluginOptions, identifiers, anchor === -1 ? 0 : anchor)
+          scanImportStmt(body, ctx)
+          if (ctx.options.enableInjectGlobalStyle) {
+            path.traverse({
+              CallExpression(path) {
+                const CSS = transformInjectGlobalStyle(path, ctx)
+                if (CSS) {
+                  Reflect.set(state.file.metadata, 'globalStyle', CSS)
+                }
+              }
+            })
+          }
         },
         exit(path) {
           const body = path.get('body')
           const anchor = ctx.anchor + ctx.lastBindingPos
-          if (anchor !== -1) body[anchor].insertAfter(ctx.stmts)
+          if (anchor !== -1 && ctx.stmts.length) body[anchor].insertAfter(ctx.stmts)
           ctx.stmts = []
         }
       },
@@ -79,3 +97,5 @@ export type StylexExtendTransformObject = {
 }
 
 export default declare as unknown as StylexExtendTransformObject
+
+export type { StylexExtendBabelPluginOptions }

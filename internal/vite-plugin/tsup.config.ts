@@ -5,6 +5,7 @@ export default defineConfig({
   splitting: false,
   shims: true,
   dts: true,
-  format: ['esm', 'cjs'],
-  clean: true
+  format: ['esm'],
+  clean: true,
+  external: ['vite', '@stylex-extend/babel-plugin']
 })
