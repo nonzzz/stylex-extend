@@ -1,13 +1,7 @@
 # @stylex-extend
 
-An unofficial stylexjs extension
+An unofficial stylexjs extend.
 
-## CheckList
-
-- [x] macro syntax
-- [ ] css selector
-
-WIP
 
 ## License
 
