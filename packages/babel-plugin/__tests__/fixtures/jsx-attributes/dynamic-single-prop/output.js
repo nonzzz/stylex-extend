@@ -7,11 +7,11 @@ const _styles = _create({
   fontSize: {
     fontSize: "20px",
   },
-  display: (_$display) => ({
-    display: _$display,
+  display: (_$mashst) => ({
+    display: _$mashst,
   }),
-  padding: (_$padding) => ({
-    padding: _$padding,
+  padding: (_$omo79q) => ({
+    padding: _$omo79q,
   }),
 });
 export function Component(props) {

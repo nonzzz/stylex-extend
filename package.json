@@ -7,6 +7,7 @@
   "keywords": [],
   "author": "kanno",
   "license": "MIT",
+  "packageManager": "pnpm@9.0.1",
   "devDependencies": {
     "@stylex-extend/babel-plugin": "workspace:*",
     "@stylex-extend/core": "workspace:*",

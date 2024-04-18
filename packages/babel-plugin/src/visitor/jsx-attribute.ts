@@ -1,5 +1,6 @@
 /* eslint-disable no-labels */
 import { NodePath, types } from '@babel/core'
+import { utils } from '@stylexjs/shared'
 import { Context } from '../state-context'
 import type { CSSObjectValue } from '../interface'
 
@@ -142,8 +143,9 @@ function scanExpressionProperty(path: NodePath<types.ObjectProperty>, ctx: CSSCo
       if (value.type === 'TemplateLiteral' && !value.expressions.length) {
         CSSObject[attr] = value.quasis[0].value.raw
       } else {
-        CSSObject[attr] = l(attr)
-        ctx.recordVars('prop', types.identifier(l(attr)), path.get('value') as NodePath<types.Expression>)
+        const value = l(utils.hash(attr))
+        CSSObject[attr] = value
+        ctx.recordVars('prop', types.identifier(value), path.get('value') as NodePath<types.Expression>)
       }
       break
     }
@@ -155,8 +157,9 @@ function scanExpressionProperty(path: NodePath<types.ObjectProperty>, ctx: CSSCo
       break
     }
     case 'CallExpression': {
-      CSSObject[attr] = l(attr)
-      ctx.recordVars('prop', types.identifier(l(attr)), path.get('value') as NodePath<types.Expression>)
+      const value = l(utils.hash(attr))
+      CSSObject[attr] = value
+      ctx.recordVars('prop', types.identifier(value), path.get('value') as NodePath<types.Expression>)
       break
     }
     case 'ObjectExpression': {
