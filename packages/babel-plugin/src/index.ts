@@ -17,7 +17,8 @@ const defaultOptions: InternalPluginOptions = {
     type: 'commonJS',
     rootDir: process.cwd(),
     themeFileExtension: '.stylex'
-  }
+  },
+  aliases: {}
 }
 
 function declare({ types: t }: typeof b): PluginObj {

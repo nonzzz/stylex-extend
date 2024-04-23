@@ -26,7 +26,35 @@ export function matchesFileSuffix(allowedSuffix: string) {
 
 const EXTENSIONS = ['.js', '.ts', '.tsx', '.jsx', '.mjs', '.cjs']
 
-function filePathResolver(relativePath: string, sourceFilePath: string) {
+function possibleAliasedPaths(importPath: string, aliases: StylexExtendBabelPluginOptions['aliases']) {
+  const result = [importPath]
+  if (aliases == null || Object.keys(aliases).length === 0) {
+    return result
+  }
+  for (const [alias, _value] of Object.entries(aliases)) {
+    const value = Array.isArray(_value) ? _value : [_value]
+    if (alias.includes('*')) {
+      const [before, after] = alias.split('*')
+      if (importPath.startsWith(before) && importPath.endsWith(after)) {
+        const replacementString = importPath.slice(
+          before.length,
+          after.length > 0 ? -after.length : undefined
+        )
+        value.forEach((v) => {
+          result.push(v.split('*').join(replacementString))
+        })
+      }
+    } else if (alias === importPath) {
+      value.forEach((v) => {
+        result.push(v)
+      })
+    }
+  }
+
+  return result
+}
+
+function filePathResolver(relativePath: string, sourceFilePath: string, aliases: StylexExtendBabelPluginOptions['aliases']) {
   for (const ext of ['', ...EXTENSIONS]) {
     const importPathStr = relativePath + ext
     if (importPathStr.startsWith('.')) {
@@ -38,7 +66,16 @@ function filePathResolver(relativePath: string, sourceFilePath: string) {
         
       }
     }
+    const allAliases = possibleAliasedPaths(importPathStr, aliases)
+    for (const possiblePath of allAliases) {
+      try {
+        return require.resolve(possiblePath, {
+          paths: [path.dirname(sourceFilePath)]
+        })
+      } catch {}
+    }
   } 
+  return null
 }
 
 export class Context {
@@ -81,7 +118,7 @@ export class Context {
 
   importPathResolver(importPath: string) {
     if (!this.filename) throw new Error('filename is not defined')
-    const importerPath = filePathResolver(importPath, this.filename)
+    const importerPath = filePathResolver(importPath, this.filename, this.options.aliases)
     if (!importerPath) throw new Error(`[stylex-extend]: Cannot resolve module ${importPath}`)
     switch (this.options.unstable_moduleResolution.type) {
       case 'commonJS':

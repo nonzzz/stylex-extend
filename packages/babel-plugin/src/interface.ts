@@ -24,6 +24,7 @@ export type ModuleResolution = ModuleResolutionCommonJS | MOduleResolutionHaste 
 export interface StylexExtendBabelPluginOptions {
   stylex?: boolean | StylexBindingMeta
   enableInjectGlobalStyle?: boolean
+  aliases?: Record<string, string | string[]>
   /**
    * @default 'x'
    * @see {@link https://stylexjs.com/docs/api/configuration/babel-plugin/#classnameprefix}
