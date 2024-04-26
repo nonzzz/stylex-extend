@@ -10,7 +10,7 @@ export function Component(props) {
         '@media (max-width: 600px)': props.display
       },
       borderRadius: {
-        borderRadius: props.normalRadius,
+        default: props.normalRadius,
         '@media (max-width: 600px)': props.maxRadius
       }
     }}

@@ -6,10 +6,13 @@ const _styles = _create({
   "#1": {
     display: "flex",
   },
-  "#2": (_$color, _$flex) => ({
+  "#2": (_$fontSize, _$fontSizeActive, _$color, _$flex) => ({
     fontSize: {
       default: "18px",
       "@media (max-width: 768px)": "20px",
+      ":hover": _$fontSize,
+      ":active": _$fontSizeActive,
+      ":focus": _$fontSize,
     },
     color: {
       default: "pink",
@@ -26,7 +29,8 @@ export function Component(props) {
       {..._props(
         _styles["color"](color),
         _styles["#1"],
-        visible && _styles["#2"](props.color, flex)
+        visible &&
+          _styles["#2"](props.fontSize, props.fontSizeActive, props.color, flex)
       )}
     />
   );

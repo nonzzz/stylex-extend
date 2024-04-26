@@ -7,6 +7,7 @@ import type { CSSObjectValue } from '../interface'
 type Kind = 'spared' | 'prop'
 interface VarsMeta {
   refers: types.Identifier[]
+  referSets: Set<string>
   originals: Partial<Record<Kind, NodePath<types.Expression>[]>>
 }
 
@@ -39,17 +40,29 @@ export class CSSContext {
   recordVars(kind: Kind, referAST: types.Identifier | null, originalAST: NodePath<types.Expression>) {
     if (this.vars.has(this.pos)) {
       const current = this.vars.get(this.pos)!
-      if (referAST) {
+      if (referAST && !current.referSets.has(referAST.name)) {
         current.refers.push(referAST)
+        current.referSets.add(referAST.name)
+        if (current.originals[kind]) {
+          current.originals[kind]!.push(originalAST)
+        } else {
+          current.originals[kind] = [originalAST]
+        }
       }
-      if (current.originals[kind]) {
-        current.originals[kind]!.push(originalAST)
-      } else {
-        current.originals[kind] = [originalAST]
+      if (!referAST) {
+        if (current.originals[kind]) {
+          current.originals[kind]!.push(originalAST)
+        } else {
+          current.originals[kind] = [originalAST]
+        }
       }
     } else {
       const originals = { [kind]: [originalAST] }
-      this.vars.set(this.pos, { refers: referAST ? [referAST] : [], originals })
+      this.vars.set(this.pos, { 
+        refers: referAST ? [referAST] : [],
+        originals,
+        referSets: referAST ? new Set([referAST.name]) : new Set()
+      })
     }
   }
 }
@@ -115,8 +128,7 @@ function scanExpressionProperty(path: NodePath<types.ObjectProperty>, ctx: CSSCo
         const identifier = path.get('value') as NodePath<types.Identifier>
         if (!isGlobalReference(identifier) || ctx.state.inSpread) {
           ctx.recordVars('prop', types.identifier(l(value.name)), identifier)
-        } 
-        if (isGlobalReference(identifier)) {
+        } else if (isGlobalReference(identifier)) {
           const programPath = identifier.findParent(p => p.isProgram()) as NodePath<types.Program>
           if (programPath) {
             const parent = identifier.scope.getProgramParent().getBinding(value.name)

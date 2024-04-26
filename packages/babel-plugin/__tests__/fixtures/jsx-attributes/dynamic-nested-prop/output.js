@@ -14,7 +14,7 @@ const _styles = _create({
   }),
   borderRadius: (_$normalRadius, _$maxRadius) => ({
     borderRadius: {
-      borderRadius: _$normalRadius,
+      default: _$normalRadius,
       "@media (max-width: 600px)": _$maxRadius,
     },
   }),

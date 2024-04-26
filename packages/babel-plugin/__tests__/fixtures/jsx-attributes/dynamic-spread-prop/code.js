@@ -9,7 +9,10 @@ export function Component(props) {
       ...visible && { 
         fontSize: {
           default: '18px',
-          '@media (max-width: 768px)': '20px'
+          '@media (max-width: 768px)': '20px',
+          ':hover': props.fontSize,
+          ':active': props.fontSizeActive,
+          ':focus': props.fontSize
         },
         color: {
           default: 'pink',
