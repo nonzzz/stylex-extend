@@ -4,7 +4,8 @@
         "lib": ["DOM"],
         "esModuleInterop": true,
         "jsx": "react-jsx",
+        "moduleResolution": "Node",
+        "types": ["vite/client","react","react-dom"],
         "jsxImportSource": "@stylex-extend/react",
-        "types": ["vite/client","react","react-dom", "@stylex-extend/react"],
     },
 }

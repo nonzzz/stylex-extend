@@ -10,7 +10,6 @@
   "packageManager": "pnpm@9.0.1",
   "devDependencies": {
     "@stylex-extend/babel-plugin": "workspace:*",
-    "@stylex-extend/core": "workspace:*",
     "@stylex-extend/shared": "workspace:*",
     "@stylexjs/babel-plugin": "^0.5.1",
     "@stylexjs/stylex": "^0.5.1",
@@ -21,7 +20,9 @@
     "tsx": "^4.7.1",
     "typescript": "^5.4.3",
     "vite": "^5.2.6",
-    "vitest": "^1.4.0"
+    "vitest": "^1.4.0",
+    "vite-plugin-stylex-dev": "^0.6.0",
+    "@stylex-extend/core": "file:./packages/core"
   },
   "resolutions": {
     "array-buffer-byte-length": "npm:@nolyfill/array-buffer-byte-length@latest",
