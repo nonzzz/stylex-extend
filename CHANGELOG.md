@@ -1,13 +1,18 @@
+## v0.2.2 (2024-04-27)
+
+### Patches
+
+- Fix `@stylex-extend/babel-plugin` duplicate variables.
+
 ## v0.2.1 (2024-04-18)
 
 ### Patches
 
 - Fix `@stylex-extend/babel-plugin` dynmiac variable generate.
 
-
 ## v0.2.0 (2024-04-17)
 
-### Features 
+### Features
 
 - Expose new package `@stylex-extend/core`
 
