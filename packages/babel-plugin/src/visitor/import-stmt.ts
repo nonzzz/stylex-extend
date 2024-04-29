@@ -23,7 +23,7 @@ export function scanImportStmt(stmts: NodePath<types.Statement>[], ctx: Context)
         if (!ctx.options.enableInjectGlobalStyle) continue
         const [filePath, fileName] = ctx.importPathResolver(stmt.node.source.value)
         const codeContent = fs.readFileSync(filePath, 'utf-8')
-        const ast = parseSync(codeContent, { babelrc: true })
+        const ast = parseSync(codeContent, { babelrc: true, parserOpts: { plugins: ['jsx', 'typescript'] } })
         const seens = new Set<string>(specs.map((s) => getStringValue(s.imported)))
         traverse(ast!, {
           VariableDeclaration(path) {

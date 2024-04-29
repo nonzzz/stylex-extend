@@ -1,3 +1,9 @@
+## v0.2.3 (2024-04-29)
+
+### Patches
+
+- Fix `@stylex-extend/babel-plugin` can't import not js file.
+
 ## v0.2.2 (2024-04-27)
 
 ### Patches
