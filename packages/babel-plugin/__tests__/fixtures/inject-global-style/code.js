@@ -3,6 +3,7 @@ import { expression } from './expression.stylex'
 
 export const styles = injectGlobalStyle({
   html: {
-    fontSize: expression.font
+    fontSize: expression.font,
+    padding: 0
   }
 })

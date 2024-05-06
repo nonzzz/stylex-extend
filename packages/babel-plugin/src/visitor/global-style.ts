@@ -45,7 +45,8 @@ class Stringify {
     } else {
       for (const selector in rule) {
         const content = rule[selector]
-        if (!content) continue
+        // In css only `null` and `undefined` are considered as falsy values
+        if (typeof content === 'undefined' || typeof content === 'object' && !content) continue
         if (typeof content === 'object') {
           this.print(selector)
           this.print('{')
