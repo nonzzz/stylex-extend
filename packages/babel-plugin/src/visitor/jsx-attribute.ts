@@ -85,7 +85,7 @@ export function getStringValue(kind: types.StringLiteral | types.Identifier) {
   return kind.value
 }
 
-function variableDeclaration(identifier: types.Identifier | string, ast: types.Expression) {
+export function variableDeclaration(identifier: types.Identifier | string, ast: types.Expression) {
   return types.variableDeclaration('const', [
     types.variableDeclarator(typeof identifier === 'string' ? types.identifier(identifier) : identifier, ast)])
 }
@@ -94,7 +94,7 @@ function arrowFunctionExpression(params: types.Identifier[], body: types.Express
   return types.arrowFunctionExpression(params, body)
 }
 
-function callExpression(callee: types.Expression, args: types.Expression[]) {
+export function callExpression(callee: types.Expression | types.V8IntrinsicIdentifier, args: types.Expression[]) {
   return types.callExpression(callee, args)
 }
 
@@ -313,15 +313,10 @@ function evaluateCSSAST(CSSAST: types.ObjectExpression, ctx: CSSContext) {
   return types.objectExpression(ast)
 }
 
-export function transformStylexAttrs(path: NodePath<types.JSXAttribute>, ctx: Context) {
-  const value = path.get('value')
-  if (!value.isJSXExpressionContainer()) return
-  const { importIdentifiers, attach, anchor } = ctx
+export function transformExpression(path: NodePath<types.ObjectExpression>, ctx: Context) {
   const variable = path.scope.generateUidIdentifier('styles')
-  const expression = value.get('expression')
-  if (!expression.isObjectExpression()) throw new Error('[stylex-extend]: can\'t pass not object value for attribute \'stylex\'.')
-  const CSSContext = createCSSContext(expression.node.properties.length, anchor)
-  scanObjectExpression(expression, CSSContext)
+  const CSSContext = createCSSContext(path.node.properties.length, ctx.anchor)
+  scanObjectExpression(path, CSSContext)
   const CSSAST = evaluateCSSAST(convertToAST(CSSContext.rules), CSSContext)
   const expr: Array<types.Expression> = []
   for (const prop of CSSAST.properties) {
@@ -346,6 +341,16 @@ export function transformStylexAttrs(path: NodePath<types.JSXAttribute>, ctx: Co
     }
   }
   ctx.lastBindingPos = CSSContext.state.lastBindingPos
+  return [CSSAST, variable, expr] as const
+}
+
+export function transformStylexAttrs(path: NodePath<types.JSXAttribute>, ctx: Context) {
+  const value = path.get('value')
+  if (!value.isJSXExpressionContainer()) return
+  const { importIdentifiers, attach } = ctx
+  const expression = value.get('expression')
+  if (!expression.isObjectExpression()) throw new Error('[stylex-extend]: can\'t pass not object value for attribute \'stylex\'.')
+  const [CSSAST, variable, expr] = transformExpression(expression, ctx)
   const stylexDeclaration = variableDeclaration(variable, callExpression(importIdentifiers.create, [CSSAST]))
   ctx.stmts.push(stylexDeclaration)
   path.replaceWith(types.jsxSpreadAttribute(callExpression(attach, expr)))

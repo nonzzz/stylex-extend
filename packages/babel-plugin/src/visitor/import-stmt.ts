@@ -5,7 +5,7 @@ import type { NodePath } from '@babel/core'
 import { Context, matchesFileSuffix } from '../state-context'
 import { getStringValue } from './jsx-attribute'
 
-const STYLEX_EXTEND = '@stylex-extend/core'
+export const STYLEX_EXTEND = '@stylex-extend/core'
 
 function isTopLevelCalled(p: NodePath) {
   return types.isProgram(p.parent) || types.isExportDefaultDeclaration(p.parent) || types.isExportNamedDeclaration(p.parent)
@@ -18,7 +18,7 @@ export function scanImportStmt(stmts: NodePath<types.Statement>[], ctx: Context)
     if (stmt.node.source.value === STYLEX_EXTEND || matchers(stmt.node.source.value)) {
       const specs = stmt.node.specifiers.filter((s) => s.type === 'ImportSpecifier') as types.ImportSpecifier[] 
       if (stmt.node.source.value === STYLEX_EXTEND) {
-        ctx.addImports(specs.map((s) => s.local.name))
+        ctx.addImports(specs.map((s) => [s.local.name, STYLEX_EXTEND]))
       } else {
         if (!ctx.options.enableInjectGlobalStyle) continue
         const [filePath, fileName] = ctx.importPathResolver(stmt.node.source.value)

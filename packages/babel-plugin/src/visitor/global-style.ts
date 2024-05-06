@@ -5,6 +5,7 @@ import { compile, serialize, stringify } from 'stylis'
 import { Context } from '../state-context'
 import type { CSSObjectValue } from '../interface'
 import { createCSSContext, scanObjectExpression } from './jsx-attribute'
+import { STYLEX_EXTEND } from './import-stmt'
 
 function getCSSVarName(themeName: string, key: string, classNamePrefix: string) {
   return `var(--${classNamePrefix + utils.hash(`${themeName}.${key}`)})`
@@ -79,6 +80,7 @@ class Stringify {
 export function transformInjectGlobalStyle(path: NodePath<types.CallExpression>, ctx: Context) {
   const { node } = path
   if (!node || node.callee.type !== 'Identifier' || !ctx.imports.has(node.callee.name)) return
+  if (ctx.imports.get(node.callee.name) !== STYLEX_EXTEND || node.callee.name !== 'injectGlobalStyle') return
   const args = path.get('arguments')
   if (args.length > 1) throw new Error(`[stylex-extend]: ${node.callee.name} only accept one argument`)
   if (!args[0].isObjectExpression()) throw new Error('[stylex-extend]: can\'t pass not object value for attribute \'stylex\'.')

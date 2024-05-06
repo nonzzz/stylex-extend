@@ -4,6 +4,7 @@ import { scanImportStmt, transformInjectGlobalStyle, transformInline, transformS
 import { Context } from './state-context'
 import type { StylexExtendBabelPluginOptions } from './interface'
 import type { ImportIdentifiers, InternalPluginOptions } from './state-context'
+import { STYLEX_EXTEND } from './visitor/import-stmt'
 
 const JSX_ATTRIBUTE_NAME = 'stylex'
 
@@ -72,10 +73,13 @@ function declare({ types: t }: typeof b): PluginObj {
           }
           path.traverse({
             CallExpression(path) {
-              const { arguments } = path.node
-              // if (!arguments.length || arguments.find(a => a.type === 'CallExpression'))
-              // if (path.get('arguments').length) {
-              transformInline(path, ctx)
+              const { arguments: args } = path.node
+              if (!args.length) return
+              const maybeHave = args.find(a => a.type === 'CallExpression' &&
+               a.callee.type === 'Identifier' && 
+              ctx.imports.get(a.callee.name) === STYLEX_EXTEND)
+              if (!maybeHave) return
+              transformInline(path, ctx) 
               path.skip()
             }
           })
