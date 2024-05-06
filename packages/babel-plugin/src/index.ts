@@ -1,6 +1,6 @@
 import * as b from '@babel/core'
 import type { PluginObj } from '@babel/core'
-import { scanImportStmt, transformInjectGlobalStyle, transformStylexAttrs } from './visitor'
+import { scanImportStmt, transformInjectGlobalStyle, transformInline, transformStylexAttrs } from './visitor'
 import { Context } from './state-context'
 import type { StylexExtendBabelPluginOptions } from './interface'
 import type { ImportIdentifiers, InternalPluginOptions } from './state-context'
@@ -70,6 +70,15 @@ function declare({ types: t }: typeof b): PluginObj {
               }
             })
           }
+          path.traverse({
+            CallExpression(path) {
+              const { arguments } = path.node
+              // if (!arguments.length || arguments.find(a => a.type === 'CallExpression'))
+              // if (path.get('arguments').length) {
+              transformInline(path, ctx)
+              path.skip()
+            }
+          })
         },
         exit(path) {
           const body = path.get('body')

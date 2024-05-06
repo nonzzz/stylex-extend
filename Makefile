@@ -28,3 +28,6 @@ build-shared:
 publish-all: build-shared build-core build-babel-plugin
 	@echo "Publishing packages..."
 	pnpm -r publish --access public
+
+test:
+	pnpm -r run test
