@@ -14,6 +14,7 @@ interface CSSRule {
   rule: CSSObjectValue
   isReference: boolean
   isSpread: boolean
+  vairableNames: Set<string>
 }
 
 // Mark is a collection that help us to define dynamic value in css object.
@@ -113,7 +114,7 @@ class CSSParser {
     }
   }
 
-  private parseObjectProperty(path: NodePath<types.ObjectProperty>): CSSRule {
+  private parseObjectProperty(path: NodePath<types.ObjectProperty>): Partial<CSSRule> {
     is(path.get('computed'), MESSAGES.NO_STATIC_ATTRIBUTE)
     const attribute = path.get('key')
     const valuePath = path.get('value')
@@ -174,7 +175,7 @@ class CSSParser {
     return { rule: CSSObject, isReference, isSpread: false }
   }
 
-  private parseSpreadElement(path: NodePath<types.SpreadElement>): CSSRule {
+  private parseSpreadElement(path: NodePath<types.SpreadElement>): Partial<CSSRule> {
     const arg = path.get('argument')
     if (isObjectExpression(arg)) {
       const CSSObject: CSSObjectValue = {}
@@ -216,7 +217,7 @@ class CSSParser {
       const path = properties[i]
       const rule = isObjectProperty(path) ? this.parseObjectProperty(path) : isSpreadElement(path) ? this.parseSpreadElement(path) : null
       if (typeof rule === 'object' && rule) {
-        this.rules.push(rule)
+        this.rules.push({ ...rule as CSSRule, vairableNames: this.duplicateDeclaration })
       }
       this.counter++
     }
@@ -231,9 +232,9 @@ class CSSParser {
     let section = 0
     const mergedCSSRules: Array<{ rule: CSSObjectValue, asts: types.Node[] }> = []
     while (step < this.counter) {
-      const { rule, isReference, isSpread } = this.rules[step]
+      const { rule, isReference, isSpread, vairableNames } = this.rules[step]
       if (isSpread) section++
-      
+      console.log(vairableNames)
       if (!mergedCSSRules.length || section > mergedCSSRules.length) {
         mergedCSSRules.push({ rule, asts: [] })
       } else {
