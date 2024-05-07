@@ -40,6 +40,10 @@ export function isSpreadElement(path: NodePath<types.Node>): path is NodePath<ty
   return path.isSpreadElement()
 }
 
+export function isMemberExpression(path: NodePath<types.Node>): path is NodePath<types.MemberExpression> {
+  return path.isMemberExpression()
+}
+
 export function is(condit: boolean, message: string = 'Invalid Error') {
   if (!condit) throw new Error(message)
 }
