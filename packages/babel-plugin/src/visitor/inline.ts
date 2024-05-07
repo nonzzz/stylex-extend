@@ -3,6 +3,7 @@
 import { types } from '@babel/core'
 import type { NodePath } from '@babel/core'
 import { Context } from '../state-context'
+import { scanObjectExpression } from '../ast/evaluate-css'
 import { callExpression, transformExpression, variableDeclaration } from './jsx-attribute'
 
 function pickupAllInlineMacro(args: NodePath<types.Expression>[], ctx: Context) {
@@ -27,10 +28,12 @@ export function transformInline(path: NodePath<types.CallExpression>, ctx: Conte
     if (calleeArgs.length > 1) throw new Error(`[stylex-extend]: ${(inlineCall.node.callee as types.Identifier).name} only accept one argument.`)
     const expression = calleeArgs[0]
     if (expression.isObjectExpression()) {
-      const [CSSAST, variable, expr] = transformExpression(expression, ctx)
-      const stylexDeclaration = variableDeclaration(variable, callExpression(ctx.importIdentifiers.create, [CSSAST]))
+      const CSSAST = scanObjectExpression(expression)
+      const variable = path.scope.generateUidIdentifier('styles')
+      // const [CSSAST, variable, expr] = transformExpression(expression, ctx)
+      const stylexDeclaration = variableDeclaration(variable, callExpression(ctx.importIdentifiers.create, CSSAST))
       ctx.stmts.push(stylexDeclaration)
-      expressions.push(expr)
+      // expressions.push(expr)
     }
   }
   const finallExpression: types.Expression[] = []

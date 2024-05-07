@@ -40,6 +40,6 @@ export function isSpreadElement(path: NodePath<types.Node>): path is NodePath<ty
   return path.isSpreadElement()
 }
 
-export function is(condit: boolean, message?: string) {
-  if (!condit) throw new Error(message ?? 'Invalid Error')
+export function is(condit: boolean, message: string = 'Invalid Error') {
+  if (!condit) throw new Error(message)
 }
