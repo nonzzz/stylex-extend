@@ -8,6 +8,23 @@ const styles = create({
   }
 })
 
-export function Component() {
-  return <div {...props(styles.base, inline({ font: '16px', display: 'inline-flex' }))}></div>
+export function Component(props) {
+  return (
+    <div
+      {...props(
+        styles.base,
+        inline({
+          font: '16px',
+          display: 'inline-flex',
+          color: {
+            defualt: 'red',
+            ':hover': props.hoverColor,
+            ':active': props.activeColor
+          },
+          backgroundColor: props.hoverColor
+        })
+      )}
+    >
+    </div>
+  )
 }

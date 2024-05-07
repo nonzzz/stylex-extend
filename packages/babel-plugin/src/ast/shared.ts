@@ -27,6 +27,21 @@ export function callExpression(callee: CalleeExpression, args: types.Expression[
 export function arrowFunctionExpression(params: types.Identifier[], body: types.Expression) {
   return types.arrowFunctionExpression(params, body)
 }
+export function stringLiteral(value: string) {
+  return types.stringLiteral(value)
+}
+
+export function objectProperty(key: types.StringLiteral | types.Identifier, value: types.Expression) {
+  return types.objectProperty(key, value)
+}
+
+export function objectExpression(properties: types.ObjectProperty[]) {
+  return types.objectExpression(properties)
+}
+
+export function memberExpression(object: types.Expression, property: types.PrivateName | types.Expression, computed: boolean = false) {
+  return types.memberExpression(object, property, computed)
+}
 
 export function isObjectExpression(path: NodePath<types.Node>): path is NodePath<types.ObjectExpression > {
   return path.isObjectExpression()

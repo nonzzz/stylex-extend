@@ -1,11 +1,15 @@
 import { create as _create, props as _props } from "@stylexjs/stylex";
 const _styles = _create({
-  font: {
+  "#0": (propsHoverColor, propsActiveColor) => ({
     font: "16px",
-  },
-  display: {
     display: "inline-flex",
-  },
+    color: {
+      defualt: "red",
+      ":hover": propsHoverColor,
+      ":active": propsActiveColor,
+    },
+    backgroundColor: propsHoverColor,
+  }),
 });
 import { inline } from "@stylex-extend/core";
 import { create } from "@stylexjs/stylex";
@@ -15,8 +19,13 @@ const styles = create({
     color: "red",
   },
 });
-export function Component() {
+export function Component(props) {
   return (
-    <div {...props(styles.base, _styles["font"], _styles["display"])}></div>
+    <div
+      {...props(
+        styles.base,
+        _styles["#1"](props.hoverColor, props.activeColor)
+      )}
+    ></div>
   );
 }
