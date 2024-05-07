@@ -9,6 +9,10 @@ export function isStringLikeKind(path: NodePath<types.Node>): path is StringLike
   return path.isStringLiteral() || path.isIdentifier()
 }
 
+export function isIdentifier(path: NodePath<types.Node>): path is NodePath<types.Identifier> {
+  return path.isIdentifier()
+}
+
 export function getStringLikeKindValue(path: StringLikeKindPath) {
   if (path.node.type === 'StringLiteral') {
     return path.node.value
@@ -22,4 +26,20 @@ export function callExpression(callee: CalleeExpression, args: types.Expression[
 
 export function arrowFunctionExpression(params: types.Identifier[], body: types.Expression) {
   return types.arrowFunctionExpression(params, body)
+}
+
+export function isObjectExpression(path: NodePath<types.Node>): path is NodePath<types.ObjectExpression > {
+  return path.isObjectExpression()
+}
+
+export function isObjectProperty(path: NodePath<types.Node>): path is NodePath<types.ObjectProperty> {
+  return path.isObjectProperty()
+}
+
+export function isSpreadElement(path: NodePath<types.Node>): path is NodePath<types.SpreadElement> {
+  return path.isSpreadElement()
+}
+
+export function is(condit: boolean, message?: string) {
+  if (!condit) throw new Error(message ?? 'Invalid Error')
 }
