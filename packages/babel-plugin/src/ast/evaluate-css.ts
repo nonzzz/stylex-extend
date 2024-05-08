@@ -72,7 +72,12 @@ function handleMemebreExpression(path: NodePath<types.Node>) {
 function handleCallExpression(path: NodePath<types.Node>) {
   if (!path.isCallExpression()) return
   const callee = path.get('callee')
-  return handleIdentifier(callee) || handleMemebreExpression(callee)
+  const result = handleIdentifier(callee) || handleMemebreExpression(callee)
+  if (!result) return
+  return {
+    define: MARK.isReference(result.define) ? result.define : MARK.reference(result.define),
+    path
+  }
 }
 
 function cleanupDuplicateASTNode(paths: NodePath<types.Node>[], sortBy: string[] = []) {
@@ -207,19 +212,16 @@ class CSSParser {
       }
       case 'MemberExpression': {
         if (!valuePath.isMemberExpression()) break
-        const obj = valuePath.get('object')
-        const prop = valuePath.get('property')
-        if (isIdentifier(obj) && isStringLikeKind(prop)) {
-          CSSObject[attr] = MARK.reference(getStringLikeKindValue(obj) + capitalizeFirstLetter(getStringLikeKindValue(prop)))
-          isReference = true
-          this.recordCSSReference(valuePath)
-        }
+        const result = handleMemebreExpression(valuePath)!
+        CSSObject[attr] = result.define
+        isReference = true
+        this.recordCSSReference(valuePath)
         break
       }
       case 'CallExpression':
         if (valuePath.isCallExpression()) {
           const { define } = handleCallExpression(valuePath)!
-          CSSObject[attr] = MARK.reference(define)
+          CSSObject[attr] = define
           isReference = true
           this.recordCSSReference(valuePath)
         }
@@ -261,7 +263,6 @@ class CSSParser {
       is(arg.node.operator === '&&', MESSAGES.ONLY_LOGICAL_AND)
       const right = arg.get('right')
       if (!isObjectExpression(right)) throw new Error(MESSAGES.INVALID_SPREAD_SIDE)
-      this.recordCSSReference(arg.get('left'))
       const CSSObject: CSSObjectValue = {}
       let isReference = false
       for (const prop of right.get('properties')) {
@@ -272,6 +273,7 @@ class CSSParser {
           Object.assign(CSSObject, rule)
         }
       }
+      this.recordCSSReference(arg.get('left'), hash(JSON.stringify(CSSObject)))
       return { rule: CSSObject, isReference, isSpread: true }
     }
     throw new Error(MESSAGES.NOT_IMPLEMENETED)
@@ -281,12 +283,12 @@ class CSSParser {
     const properties = this.jsAST.get('properties')
     for (let i = 0; i < properties.length; i++) {
       const path = properties[i]
-      if (isSpreadElement(path)) {
-        this.duplicateDeclaration.clear()
-      }
       const rule = isObjectProperty(path) ? this.parseObjectProperty(path) : isSpreadElement(path) ? this.parseSpreadElement(path) : null
       if (typeof rule === 'object' && rule) {
         this.rules.push({ ...rule as CSSRule, vairableNames: union(this.duplicateDeclaration) })
+      }
+      if (isSpreadElement(path)) {
+        this.duplicateDeclaration.clear()
       }
       this.counter++
     }
@@ -300,6 +302,7 @@ class CSSParser {
     let step = 0
     let section = 0
     const mergedCSSRules: Array<Pick<CSSRule, 'rule' | 'vairableNames' | 'isSpread'> & { referencePaths: NodePath<types.Node>[] }> = []
+    
     while (step < this.counter) {
       const { rule, isReference, isSpread, vairableNames } = this.rules[step]
       const referencePaths: NodePath<types.Node>[] = []
@@ -316,8 +319,8 @@ class CSSParser {
         mergedCSSRules[section].rule = { ...mergedCSSRules[section].rule, ...rule }
         mergedCSSRules[section].vairableNames = union(mergedCSSRules[section].vairableNames, vairableNames)
         mergedCSSRules[section].referencePaths = [...mergedCSSRules[section].referencePaths, ...referencePaths]
+        mergedCSSRules[section].isSpread = isSpread
       }
-      mergedCSSRules[section].isSpread = isSpread
       if (isSpread) section++
       step++
     }
@@ -338,18 +341,22 @@ class CSSParser {
         const variables = [...vairableNames]
         let condit = null
         if (isSpread) {
-          variables.shift()
-          condit = referencePaths.shift()
+          variables.pop()
+          condit = referencePaths.pop()
         }
         const calleeArguments = cleanupDuplicateASTNode(referencePaths, variables)
         const callee = callExpression(expression, calleeArguments)
         if (condit) {
-          expressionAST.push(types.logicalExpression('&&', condit.node as types.Expression, callee))
+          expressionAST.push(types.logicalExpression('&&', condit.node as types.Expression, variables.length ? callee : expression))
         } else {
           expressionAST.push(callee)
         }
-        const fnAST = arrowFunctionExpression(variables.map((s) => types.identifier(MARK.isReference(s) ? s.slice(2) : s)), jsAST)
-        propertyAST.push(handleObjectProperty('#' + i, fnAST))
+        if (variables.length) {
+          const fnAST = arrowFunctionExpression(variables.map((s) => types.identifier(MARK.isReference(s) ? s.slice(2) : s)), jsAST)
+          propertyAST.push(handleObjectProperty('#' + i, fnAST))
+        } else {
+          propertyAST.push(handleObjectProperty('#' + i, jsAST))
+        }
         continue  
       }
       propertyAST.push(handleObjectProperty('#' + i, jsAST))
