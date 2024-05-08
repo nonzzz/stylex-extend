@@ -20,6 +20,7 @@ import {
   isSpreadElement,
   isStringLikeKind,
   memberExpression,
+  objectExpression,
   objectProperty,
   stringLiteral
 } from './shared'
@@ -51,6 +52,10 @@ function hash(s: string) {
 function union(...c: Set<string>[]) {
   // @ts-expect-error
   return new Set(c.reduce((acc, set) => [...acc, ...set], []))
+}
+
+const handleObjectProperty = (key: string, value: types.Expression) => {
+  return objectProperty(stringLiteral(key), value)
 }
 
 function handleIdentifier(path: NodePath<types.Node>) {
@@ -124,17 +129,18 @@ function ensureCSSValueASTKind(value: string | number | null | undefined) {
 
 function convertToAST(rule: CSSObjectValue) {
   const ast: types.ObjectProperty[] = []
+
   for (const attr in rule) {
     const value = rule[attr]
     if (typeof value === 'object' && value !== null) {
       const childAST = convertToAST(value)
-      ast.push(types.objectProperty(types.stringLiteral(attr), childAST))     
+      ast.push(handleObjectProperty(attr, childAST))
     } else {
       const v = ensureCSSValueASTKind(value)
-      ast.push(types.objectProperty(types.stringLiteral(attr), v))
+      ast.push(handleObjectProperty(attr, v))
     }
   }
-  return types.objectExpression(ast)
+  return objectExpression(ast)
 }
 
 // recursion is expensive, so we have to be patient when recording css referenecs.
@@ -327,10 +333,7 @@ class CSSParser {
 
     const propertyAST: types.ObjectProperty[] = []
     const expressionAST: types.Expression[] = []
-
-    const handleObjectProperty = (key: string, value: types.Expression) => {
-      return objectProperty(stringLiteral(key), value)
-    }
+  
     // Don't forget to handle reference
     for (let i = 0; i < mergedCSSRules.length; i++) {
       const CSSRule = mergedCSSRules[i]
@@ -363,7 +366,7 @@ class CSSParser {
       expressionAST.push(expression)
     }
 
-    return [types.objectExpression(propertyAST), this.variable, expressionAST, mergedCSSRules] as const
+    return [objectExpression(propertyAST), this.variable, expressionAST, mergedCSSRules] as const
   }
 }
 
