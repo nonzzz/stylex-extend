@@ -6,8 +6,23 @@
 
 import { types } from '@babel/core'
 import type { NodePath } from '@babel/core'
+import { utils } from '@stylexjs/shared'
 import type { CSSObjectValue } from '../interface'
-import { arrowFunctionExpression, callExpression, getStringLikeKindValue, is, isIdentifier, isMemberExpression, isObjectExpression, isObjectProperty, isSpreadElement, isStringLikeKind, memberExpression, objectProperty, stringLiteral } from './shared'
+import {
+  arrowFunctionExpression,
+  callExpression,
+  getStringLikeKindValue,
+  is,
+  isIdentifier,
+  isMemberExpression,
+  isObjectExpression,
+  isObjectProperty,
+  isSpreadElement,
+  isStringLikeKind,
+  memberExpression,
+  objectProperty,
+  stringLiteral
+} from './shared'
 import { MESSAGES } from './message'
 
 interface CSSRule {
@@ -19,13 +34,18 @@ interface CSSRule {
 
 // Mark is a collection that help us to define dynamic value in css object.
 // All dynamic token should be consumed at transform as JS AST step.
-const MARK = {
+export const MARK = {
   reference: (s: string) => '_#' + s,
-  isReference: (s: string) => s.startsWith('_#')
+  isReference: (s: string) => s.startsWith('_#'),
+  referenceSymbol: 'referenceName'
 }
 
 function capitalizeFirstLetter(s: string) {
   return s.charAt(0).toUpperCase() + s.slice(1)
+}
+
+function hash(s: string) {
+  return 'a' + utils.hash(s)
 }
 
 function union(...c: Set<string>[]) {
@@ -48,20 +68,26 @@ function handleMemebreExpression(path: NodePath<types.Node>) {
   }
 }
 
+function handleCallExpression(path: NodePath<types.Node>) {
+  if (!path.isCallExpression()) return
+  const callee = path.get('callee')
+  return handleIdentifier(callee) || handleMemebreExpression(callee)
+}
+
 function cleanupDuplicateASTNode(paths: NodePath<types.Node>[], sortBy: string[] = []) {
   const buckets: NodePath<types.Expression>[] = []
   const scenes = new Set<string>()
   for (const path of paths) {
-    const res = handleIdentifier(path) || handleMemebreExpression(path)
-    if (!res) continue
-    if (!scenes.has(res.define)) {
-      buckets.push(res.path)
-      scenes.add(res.define)
+    const define = path.getData(MARK.referenceSymbol)
+    if (!define) continue
+    if (!scenes.has(define)) {
+      buckets.push(path as NodePath<types.Expression>)
+      scenes.add(define)
     }
   }
   return buckets.sort((a, b) => {
-    const sceneA = sortBy.indexOf(handleIdentifier(a)?.define || handleMemebreExpression(a)?.define || '')
-    const sceneB = sortBy.indexOf(handleIdentifier(b)?.define || handleMemebreExpression(b)?.define || '')
+    const sceneA = sortBy.indexOf(a.getData(MARK.referenceSymbol))
+    const sceneB = sortBy.indexOf(b.getData(MARK.referenceSymbol))
     return sceneA - sceneB
   }).map((p) => p.node)
 }
@@ -123,18 +149,20 @@ class CSSParser {
     this.variable = this.jsAST.scope.generateUidIdentifier('styles')
   }
 
-  private recordCSSReference(path: NodePath<types.Node>) {
-    const reuslt = handleIdentifier(path) || handleMemebreExpression(path)
-    if (!reuslt) return
+  private recordCSSReference(path: NodePath<types.Node>, defineName?: string) {
+    let result = handleIdentifier(path) || handleMemebreExpression(path) || handleCallExpression(path) as { define: string, path: NodePath<types.Node> }
+    if (defineName && !result) result = { path, define: defineName }
+    if (!result) return
+    path.setData(MARK.referenceSymbol, result.define)
     if (this.cssReferences.has(this.counter)) {
       const previous = this.cssReferences.get(this.counter)!
-      if (!this.duplicateDeclaration.has(reuslt.define)) {
-        this.cssReferences.set(this.counter, [...previous, reuslt.path])
-        this.duplicateDeclaration.add(reuslt.define)
+      if (!this.duplicateDeclaration.has(result.define)) {
+        this.cssReferences.set(this.counter, [...previous, result.path])
+        this.duplicateDeclaration.add(result.define)
       }
     } else {
-      this.cssReferences.set(this.counter, [reuslt.path])
-      this.duplicateDeclaration.add(reuslt.define)
+      this.cssReferences.set(this.counter, [result.path])
+      this.duplicateDeclaration.add(result.define)
     }
   }
 
@@ -165,8 +193,17 @@ class CSSParser {
         CSSObject[attr] = value.value
         break
       case 'TemplateLiteral':
-      case 'ConditionalExpression':
+      case 'ConditionalExpression': {
+        if (value.type === 'TemplateLiteral' && !value.expressions.length) {
+          CSSObject[attr] = value.quasis[0].value.raw
+        } else {
+          const value = MARK.reference(hash(attr))
+          CSSObject[attr] = value
+          isReference = true
+          this.recordCSSReference(valuePath, value)
+        }
         break
+      }
       case 'MemberExpression': {
         if (!valuePath.isMemberExpression()) break
         const obj = valuePath.get('object')
@@ -179,7 +216,12 @@ class CSSParser {
         break
       }
       case 'CallExpression':
-        // 
+        if (valuePath.isCallExpression()) {
+          const { define } = handleCallExpression(valuePath)!
+          CSSObject[attr] = MARK.reference(define)
+          isReference = true
+          this.recordCSSReference(valuePath)
+        }
         break
       case 'ObjectExpression': {
         if (isObjectExpression(valuePath)) {
@@ -256,30 +298,27 @@ class CSSParser {
     if (!this.rules.length) return 
     let step = 0
     let section = 0
-    const mergedCSSRules: Array<Pick<CSSRule, 'rule' | 'vairableNames'> & { referencePaths: NodePath<types.Node>[] }> = []
+    const mergedCSSRules: Array<Pick<CSSRule, 'rule' | 'vairableNames' | 'isSpread'> & { referencePaths: NodePath<types.Node>[] }> = []
     while (step < this.counter) {
       const { rule, isReference, isSpread } = this.rules[step]
       const referencePaths: NodePath<types.Node>[] = []
       if (isSpread) section++
       if (isReference || isSpread) {
-        if (isSpread) {
-          const variables = [...this.rules[step].vairableNames]
-          variables.shift()
-          this.rules[step].vairableNames = new Set(variables)
-        }
         // pick up epxression
         if (this.cssReferences.has(step)) {
           referencePaths.push(...this.cssReferences.get(step)!)
         }
       }
       const { vairableNames } = this.rules[step]
-      if (!mergedCSSRules.length || section > mergedCSSRules.length) {
-        mergedCSSRules.push({ rule, vairableNames, referencePaths })
+      if (!mergedCSSRules.length || section >= mergedCSSRules.length) {
+        mergedCSSRules.push({ rule, vairableNames, referencePaths, isSpread })
       } else {
         mergedCSSRules[section].rule = { ...mergedCSSRules[section].rule, ...rule }
         mergedCSSRules[section].vairableNames = union(mergedCSSRules[section].vairableNames, vairableNames)
         mergedCSSRules[section].referencePaths = [...mergedCSSRules[section].referencePaths, ...referencePaths]
       }
+      mergedCSSRules[section].isSpread = isSpread
+      if (isSpread) section++
       step++
     }
 
@@ -293,13 +332,23 @@ class CSSParser {
     // Don't forget to handle reference
     for (let i = 0; i < mergedCSSRules.length; i++) {
       const CSSRule = mergedCSSRules[i]
-      const { rule, referencePaths, vairableNames } = CSSRule
+      const { rule, referencePaths, vairableNames, isSpread } = CSSRule
       const jsAST = convertToAST(rule)
-      const expression = memberExpression(this.variable, stringLiteral('#' + 1), true)
+      const expression = memberExpression(this.variable, stringLiteral('#' + i), true)
       if (vairableNames.size) {
         const variables = [...vairableNames]
+        let condit = null
+        if (isSpread) {
+          variables.shift()
+          condit = referencePaths.shift()
+        }
         const calleeArguments = cleanupDuplicateASTNode(referencePaths, variables)
-        expressionAST.push(callExpression(expression, calleeArguments))
+        const callee = callExpression(expression, calleeArguments)
+        if (condit) {
+          expressionAST.push(types.logicalExpression('&&', condit.node as types.Expression, callee))
+        } else {
+          expressionAST.push(callee)
+        }
         const fnAST = arrowFunctionExpression(variables.map((s) => types.identifier(MARK.isReference(s) ? s.slice(2) : s)), jsAST)
         propertyAST.push(handleObjectProperty('#' + i, fnAST))
         continue  
@@ -308,7 +357,7 @@ class CSSParser {
       expressionAST.push(expression)
     }
 
-    return [types.objectExpression(propertyAST), this.variable, expressionAST] as const
+    return [types.objectExpression(propertyAST), this.variable, expressionAST, mergedCSSRules] as const
   }
 }
 

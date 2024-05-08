@@ -4,7 +4,7 @@ import { types } from '@babel/core'
 import type { NodePath } from '@babel/core'
 import { Context } from '../state-context'
 import { scanObjectExpression } from '../ast/evaluate-css'
-import { callExpression, variableDeclaration } from './jsx-attribute'
+import { callExpression, variableDeclaration } from '../ast/shared'
 
 function pickupAllInlineMacro(args: NodePath<types.Expression>[], ctx: Context) {
   const result: NodePath<types.CallExpression>[] = []

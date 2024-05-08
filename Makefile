@@ -31,3 +31,8 @@ publish-all: build-shared build-core build-babel-plugin
 
 test:
 	pnpm -r run test
+
+cleanup-suite:
+	@echo "Cleanup babel plugin ouput suite..."
+	$(eval currentDir = $(CURDIR)/packages/babel-plugin/__tests__)
+	find $(currentDir) -type f -name "output.js" -exec rm -f {} \;

@@ -4,8 +4,13 @@ import type { NodePath } from '@babel/core'
 import { compile, serialize, stringify } from 'stylis'
 import { Context } from '../state-context'
 import type { CSSObjectValue } from '../interface'
-import { createCSSContext, scanObjectExpression } from './jsx-attribute'
+import { MARK, scanObjectExpression } from '../ast/evaluate-css'
 import { STYLEX_EXTEND } from './import-stmt'
+
+const KEBACASE = /[A-Z]+(?![a-z])|[A-Z]/g
+function kebabCase(s: string) {
+  return s.replace(KEBACASE, (_, ofs) => (ofs ? '-' : '') + _.toLowerCase())
+}
 
 function getCSSVarName(themeName: string, key: string, classNamePrefix: string) {
   return `var(--${classNamePrefix + utils.hash(`${themeName}.${key}`)})`
@@ -58,8 +63,8 @@ class Stringify {
           this.print(':')
           if (typeof content === 'string') {
             let c = content
-            if (content[0] === '_' && content[1] === '~') {
-              const [belong, attr] = content.slice(2).split('.')
+            if (MARK.isReference(c)) {
+              const [belong, attr] = kebabCase(content.slice(2)).split('-')
               if (this.ctx.fileNamesForHashing.has(belong)) {
                 const { fileName, exportName } = this.ctx.fileNamesForHashing.get(belong)!
                 const themeName = utils.genFileBasedIdentifier({ fileName, exportName })
@@ -85,10 +90,13 @@ export function transformInjectGlobalStyle(path: NodePath<types.CallExpression>,
   if (args.length > 1) throw new Error(`[stylex-extend]: ${node.callee.name} only accept one argument`)
   if (!args[0].isObjectExpression()) throw new Error('[stylex-extend]: can\'t pass not object value for attribute \'stylex\'.')
   const expression = args[0]
-  const CSSContext = createCSSContext(expression.node.properties.length, ctx.anchor)
-  scanObjectExpression(expression, CSSContext)
-  const sb = new Stringify(CSSContext.rules, ctx)
-  const CSS = serialize(compile(sb.css), stringify)
-  path.replaceWith(types.stringLiteral(''))
-  return CSS
+  const result = scanObjectExpression(expression)
+  if (result) {
+    // eslint-disable-next-line no-unused-vars
+    const [_, __1, ___2, cssRules] = result
+    const sb = new Stringify(cssRules.map(r => r.rule), ctx)
+    const CSS = serialize(compile(sb.css), stringify)
+    path.replaceWith(types.stringLiteral(''))
+    return CSS
+  }
 }

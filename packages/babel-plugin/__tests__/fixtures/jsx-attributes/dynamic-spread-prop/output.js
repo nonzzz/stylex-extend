@@ -1,24 +1,22 @@
 import { create as _create, props as _props } from "@stylexjs/stylex";
 const _styles = _create({
-  color: (_$color) => ({
-    color: _$color,
-  }),
-  "#1": {
+  "#0": (visible, propsFontSize, propsFontSizeActive, propsColor, flex) => ({
+    color: color,
     display: "flex",
-  },
-  "#2": (_$fontSize, _$fontSizeActive, _$color, _$flex) => ({
+  }),
+  "#1": (propsFontSize, propsFontSizeActive, propsColor, flex) => ({
     fontSize: {
       default: "18px",
       "@media (max-width: 768px)": "20px",
-      ":hover": _$fontSize,
-      ":active": _$fontSizeActive,
-      ":focus": _$fontSize,
+      ":hover": propsFontSize,
+      ":active": propsFontSizeActive,
+      ":focus": propsFontSize,
     },
     color: {
       default: "pink",
-      hover: _$color,
+      hover: propsColor,
     },
-    display: _$flex,
+    display: flex,
   }),
 });
 const visible = true;
@@ -27,10 +25,9 @@ export function Component(props) {
   return (
     <div
       {..._props(
-        _styles["color"](color),
-        _styles["#1"],
+        _styles["#0"](color),
         visible &&
-          _styles["#2"](props.fontSize, props.fontSizeActive, props.color, flex)
+          _styles["#1"](props.fontSize, props.fontSizeActive, props.color, flex)
       )}
     />
   );

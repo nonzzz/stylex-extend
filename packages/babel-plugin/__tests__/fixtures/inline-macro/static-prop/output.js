@@ -24,7 +24,7 @@ export function Component(props) {
     <div
       {...props(
         styles.base,
-        _styles["#1"](props.hoverColor, props.activeColor)
+        _styles["#0"](props.hoverColor, props.activeColor)
       )}
     ></div>
   );

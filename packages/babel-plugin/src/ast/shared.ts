@@ -1,7 +1,9 @@
 import { types } from '@babel/core'
-import type { NodePath } from '@babel/core'
+import { NodePath } from '@babel/core'
 
 export type StringLikeKindPath = NodePath<types.StringLiteral | types.Identifier> 
+
+export type StringLikeKind = types.StringLiteral | types.Identifier
 
 export type CalleeExpression = types.Expression | types.V8IntrinsicIdentifier
 
@@ -13,11 +15,12 @@ export function isIdentifier(path: NodePath<types.Node>): path is NodePath<types
   return path.isIdentifier()
 }
 
-export function getStringLikeKindValue(path: StringLikeKindPath) {
-  if (path.node.type === 'StringLiteral') {
-    return path.node.value
+export function getStringLikeKindValue(path: StringLikeKindPath | StringLikeKind) {
+  if (!('node' in path)) {
+    if (path.type === 'StringLiteral') return path.value
+    return path.name
   }
-  return path.node.name
+  return getStringLikeKindValue(path.node)
 }
 
 export function callExpression(callee: CalleeExpression, args: types.Expression[]) {
@@ -43,6 +46,11 @@ export function memberExpression(object: types.Expression, property: types.Priva
   return types.memberExpression(object, property, computed)
 }
 
+export function variableDeclaration(identifier: types.Identifier | string, ast: types.Expression) {
+  return types.variableDeclaration('const', [
+    types.variableDeclarator(typeof identifier === 'string' ? types.identifier(identifier) : identifier, ast)])
+}
+
 export function isObjectExpression(path: NodePath<types.Node>): path is NodePath<types.ObjectExpression > {
   return path.isObjectExpression()
 }
@@ -57,6 +65,14 @@ export function isSpreadElement(path: NodePath<types.Node>): path is NodePath<ty
 
 export function isMemberExpression(path: NodePath<types.Node>): path is NodePath<types.MemberExpression> {
   return path.isMemberExpression()
+}
+
+export function isTemplateLiteral(path: NodePath<types.Node>): path is NodePath<types.TemplateLiteral> {
+  return path.isTemplateLiteral()
+}
+
+export function isCallExpression(path: NodePath<types.Node>): path is NodePath<types.CallExpression> {
+  return path.isCallExpression()
 }
 
 export function is(condit: boolean, message: string = 'Invalid Error') {

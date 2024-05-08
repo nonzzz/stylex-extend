@@ -3,7 +3,7 @@ import { parseSync, traverse } from '@babel/core'
 import { types } from '@babel/core'
 import type { NodePath } from '@babel/core'
 import { Context, matchesFileSuffix } from '../state-context'
-import { getStringValue } from './jsx-attribute'
+import { getStringLikeKindValue } from '../ast/shared'
 
 export const STYLEX_EXTEND = '@stylex-extend/core'
 
@@ -24,7 +24,7 @@ export function scanImportStmt(stmts: NodePath<types.Statement>[], ctx: Context)
         const [filePath, fileName] = ctx.importPathResolver(stmt.node.source.value)
         const codeContent = fs.readFileSync(filePath, 'utf-8')
         const ast = parseSync(codeContent, { babelrc: true, parserOpts: { plugins: ['jsx', 'typescript'] } })
-        const seens = new Set<string>(specs.map((s) => getStringValue(s.imported)))
+        const seens = new Set<string>(specs.map((s) => getStringLikeKindValue(s.imported)))
         traverse(ast!, {
           VariableDeclaration(path) {
             if (isTopLevelCalled(path)) {
