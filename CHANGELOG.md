@@ -1,3 +1,10 @@
+## v0.3.0 (2024-05-08)
+
+### Features
+
+- Add new api `inline`. Details see [RFC](https://github.com/facebook/stylex/issues/534)
+
+
 ## v0.2.3 (2024-04-29)
 
 ### Patches
