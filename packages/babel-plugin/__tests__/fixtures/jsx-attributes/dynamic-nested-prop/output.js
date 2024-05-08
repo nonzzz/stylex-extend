@@ -1,21 +1,15 @@
 import { create as _create, props as _props } from "@stylexjs/stylex";
 const _styles = _create({
-  color: (_$color) => ({
-    color: _$color,
-  }),
-  fontSize: {
+  "#0": (color, propsDisplay, propsNormalRadius, propsMaxRadius) => ({
+    color: color,
     fontSize: "20px",
-  },
-  display: (_$display) => ({
     display: {
       display: "flex",
-      "@media (max-width: 600px)": _$display,
+      "@media (max-width: 600px)": propsDisplay,
     },
-  }),
-  borderRadius: (_$normalRadius, _$maxRadius) => ({
     borderRadius: {
-      default: _$normalRadius,
-      "@media (max-width: 600px)": _$maxRadius,
+      default: propsNormalRadius,
+      "@media (max-width: 600px)": propsMaxRadius,
     },
   }),
 });
@@ -24,10 +18,7 @@ export function Component(props) {
   return (
     <div
       {..._props(
-        _styles["color"](color),
-        _styles["fontSize"],
-        _styles["display"](props.display),
-        _styles["borderRadius"](props.normalRadius, props.maxRadius)
+        _styles["#0"](color, props.display, props.normalRadius, props.maxRadius)
       )}
     />
   );

@@ -82,9 +82,8 @@ export class Context {
   options: InternalPluginOptions
   importIdentifiers: ImportIdentifiers
   stmts: types.VariableDeclaration[]
-  lastBindingPos: number
   anchor: number
-  imports: Set<string>
+  imports: Map<string, string>
   filename: string | undefined
   fileNamesForHashing: Map<string, FileNamesForHashing>
   constructor() {
@@ -92,8 +91,7 @@ export class Context {
     this.importIdentifiers = Object.create(null)
     this.stmts = []
     this.anchor = 0
-    this.imports = new Set()
-    this.lastBindingPos = 0
+    this.imports = new Map()
     this.filename = undefined
     this.fileNamesForHashing = new Map()
   }
@@ -130,7 +128,7 @@ export class Context {
     }
   }
 
-  addImports(next: string[]) {
-    this.imports = new Set([...this.imports, ...next])
+  addImports(next: string[][]) {
+    next.forEach(([k, v]) => this.imports.set(k, v))
   }
 }
