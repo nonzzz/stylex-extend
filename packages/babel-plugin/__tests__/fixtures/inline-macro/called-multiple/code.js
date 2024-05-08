@@ -14,15 +14,9 @@ export function Component(props) {
       {...stylex.props(
         styles.base,
         inline({
-          font: '16px',
-          display: 'inline-flex',
-          color: {
-            defualt: 'red',
-            ':hover': props.hoverColor,
-            ':active': props.activeColor
-          },
-          backgroundColor: props.hoverColor
-        })
+          font: '16px'
+        }),
+        inline({ color: 'pink', display: 'flex' })
       )}
     >
     </div>

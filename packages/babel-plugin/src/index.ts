@@ -86,7 +86,7 @@ function declare({ types: t }: typeof b): PluginObj {
         },
         exit(path) {
           const body = path.get('body')
-          const anchor = ctx.anchor + ctx.lastBindingPos
+          const anchor = ctx.anchor
           if (anchor !== -1 && ctx.stmts.length) body[anchor].insertAfter(ctx.stmts)
           ctx.stmts = []
         }

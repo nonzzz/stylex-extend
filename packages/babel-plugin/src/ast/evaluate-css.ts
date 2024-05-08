@@ -2,7 +2,7 @@
 // There are three steps
 // 1. Scan input JS AST and transform as css rules.
 // 2. Compose css rules to a whole JS Object. At the same time, do generation optmization
-// 3. Generate final JS AST
+// 3. Generate final JS AST (ensure node order)
 
 import { types } from '@babel/core'
 import type { NodePath } from '@babel/core'
@@ -49,7 +49,8 @@ function hash(s: string) {
 }
 
 function union(...c: Set<string>[]) {
-  return new Set(...c)
+  // @ts-expect-error
+  return new Set(c.reduce((acc, set) => [...acc, ...set], []))
 }
 
 function handleIdentifier(path: NodePath<types.Node>) {
@@ -285,7 +286,7 @@ class CSSParser {
       }
       const rule = isObjectProperty(path) ? this.parseObjectProperty(path) : isSpreadElement(path) ? this.parseSpreadElement(path) : null
       if (typeof rule === 'object' && rule) {
-        this.rules.push({ ...rule as CSSRule, vairableNames: this.duplicateDeclaration })
+        this.rules.push({ ...rule as CSSRule, vairableNames: union(this.duplicateDeclaration) })
       }
       this.counter++
     }
@@ -300,7 +301,7 @@ class CSSParser {
     let section = 0
     const mergedCSSRules: Array<Pick<CSSRule, 'rule' | 'vairableNames' | 'isSpread'> & { referencePaths: NodePath<types.Node>[] }> = []
     while (step < this.counter) {
-      const { rule, isReference, isSpread } = this.rules[step]
+      const { rule, isReference, isSpread, vairableNames } = this.rules[step]
       const referencePaths: NodePath<types.Node>[] = []
       if (isSpread) section++
       if (isReference || isSpread) {
@@ -309,7 +310,6 @@ class CSSParser {
           referencePaths.push(...this.cssReferences.get(step)!)
         }
       }
-      const { vairableNames } = this.rules[step]
       if (!mergedCSSRules.length || section >= mergedCSSRules.length) {
         mergedCSSRules.push({ rule, vairableNames, referencePaths, isSpread })
       } else {
@@ -328,7 +328,6 @@ class CSSParser {
     const handleObjectProperty = (key: string, value: types.Expression) => {
       return objectProperty(stringLiteral(key), value)
     }
-
     // Don't forget to handle reference
     for (let i = 0; i < mergedCSSRules.length; i++) {
       const CSSRule = mergedCSSRules[i]

@@ -82,7 +82,6 @@ export class Context {
   options: InternalPluginOptions
   importIdentifiers: ImportIdentifiers
   stmts: types.VariableDeclaration[]
-  lastBindingPos: number
   anchor: number
   imports: Map<string, string>
   filename: string | undefined
@@ -93,7 +92,6 @@ export class Context {
     this.stmts = []
     this.anchor = 0
     this.imports = new Map()
-    this.lastBindingPos = 0
     this.filename = undefined
     this.fileNamesForHashing = new Map()
   }

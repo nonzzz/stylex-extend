@@ -5,6 +5,7 @@ import type { NodePath } from '@babel/core'
 import { Context } from '../state-context'
 import { scanObjectExpression } from '../ast/evaluate-css'
 import { callExpression, variableDeclaration } from '../ast/shared'
+import { MESSAGES } from '../ast/message'
 
 function pickupAllInlineMacro(args: NodePath<types.Expression>[], ctx: Context) {
   const result: NodePath<types.CallExpression>[] = []
@@ -25,7 +26,7 @@ export function transformInline(path: NodePath<types.CallExpression>, ctx: Conte
   const expressions: types.Expression[][] = []
   for (const inlineCall of inlineCalles) {
     const calleeArgs = inlineCall.get('arguments')
-    if (calleeArgs.length > 1) throw new Error(`[stylex-extend]: ${(inlineCall.node.callee as types.Identifier).name} only accept one argument.`)
+    if (calleeArgs.length > 1) throw new Error(MESSAGES.INLINE_ONLY_ONE_ARGUMENT)
     const expression = calleeArgs[0]
     if (expression.isObjectExpression()) {
       const result = scanObjectExpression(expression)

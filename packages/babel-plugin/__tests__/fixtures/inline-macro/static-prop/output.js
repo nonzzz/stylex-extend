@@ -13,7 +13,7 @@ const _styles = _create({
 });
 import { inline } from "@stylex-extend/core";
 import { create } from "@stylexjs/stylex";
-import { props } from "@stylexjs/stylex";
+import stylex from "@stylexjs/stylex";
 const styles = create({
   base: {
     color: "red",
@@ -22,7 +22,7 @@ const styles = create({
 export function Component(props) {
   return (
     <div
-      {...props(
+      {...stylex.props(
         styles.base,
         _styles["#0"](props.hoverColor, props.activeColor)
       )}

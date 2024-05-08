@@ -1,6 +1,6 @@
 import { create as _create, props as _props } from "@stylexjs/stylex";
 const _styles = _create({
-  "#0": {
+  "#0": (pulse) => ({
     color: "red",
     display: "flex",
     pulse: {
@@ -12,7 +12,7 @@ const _styles = _create({
       default: "18px",
       "@media (max-width: 768px)": "20px",
     },
-  },
+  }),
 });
 const pulse = stylex.keyframes({
   "0%": {
@@ -26,5 +26,5 @@ const pulse = stylex.keyframes({
   },
 });
 export function Component() {
-  return <div {..._props(_styles["#0"])} />;
+  return <div {..._props(_styles["#0"](pulse))} />;
 }

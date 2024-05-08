@@ -5,6 +5,7 @@ import { compile, serialize, stringify } from 'stylis'
 import { Context } from '../state-context'
 import type { CSSObjectValue } from '../interface'
 import { MARK, scanObjectExpression } from '../ast/evaluate-css'
+import { MESSAGES } from '../ast/message'
 import { STYLEX_EXTEND } from './import-stmt'
 
 const KEBACASE = /[A-Z]+(?![a-z])|[A-Z]/g
@@ -87,8 +88,8 @@ export function transformInjectGlobalStyle(path: NodePath<types.CallExpression>,
   if (!node || node.callee.type !== 'Identifier' || !ctx.imports.has(node.callee.name)) return
   if (ctx.imports.get(node.callee.name) !== STYLEX_EXTEND || node.callee.name !== 'injectGlobalStyle') return
   const args = path.get('arguments')
-  if (args.length > 1) throw new Error(`[stylex-extend]: ${node.callee.name} only accept one argument`)
-  if (!args[0].isObjectExpression()) throw new Error('[stylex-extend]: can\'t pass not object value for attribute \'stylex\'.')
+  if (args.length > 1) throw new Error(MESSAGES.GLOBAL_STYLE_ONLY_ONE_ARGUMENT)
+  if (!args[0].isObjectExpression()) throw new Error(MESSAGES.INVALID_CSS_AST_KIND)
   const expression = args[0]
   const result = scanObjectExpression(expression)
   if (result) {
