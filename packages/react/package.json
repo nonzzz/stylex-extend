@@ -4,6 +4,8 @@
   "module": "./src/index.js",
   "types": "./src/index.d.ts",
   "version": "0.3.1",
+  "repository": "https://github.com/nonzzz/stylex-extend.git",
+  "license": "MIT",
   "devDependencies": {
     "@types/react": "^18.2.69"
   },

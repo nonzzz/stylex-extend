@@ -5,6 +5,7 @@
   "module": "dist/index.mjs",
   "version": "0.3.1",
   "license": "MIT",
+  "repository": "https://github.com/nonzzz/stylex-extend.git",
   "scripts": {
     "build": "tsup"
   },

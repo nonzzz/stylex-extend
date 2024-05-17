@@ -5,6 +5,7 @@
   "license": "MIT",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
+  "repository": "https://github.com/nonzzz/stylex-extend.git",
   "files": [
     "dist",
     "README.md"

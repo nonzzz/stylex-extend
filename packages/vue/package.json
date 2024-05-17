@@ -4,6 +4,8 @@
   "module": "./index.js",
   "types": "./index.d.ts",
   "version": "0.3.1",
+  "license": "MIT",
+  "repository": "https://github.com/nonzzz/stylex-extend.git",
   "devDependencies": {
     "vue": "^3.4.21"
   },
