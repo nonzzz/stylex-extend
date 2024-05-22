@@ -10,7 +10,6 @@ const _styles2 = _create({
     display: "flex",
   },
 });
-import { inline } from "@stylex-extend/core";
 import { create } from "@stylexjs/stylex";
 import stylex from "@stylexjs/stylex";
 const styles = create({
