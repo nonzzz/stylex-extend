@@ -4,9 +4,10 @@ import { scanImportStmt, transformInjectGlobalStyle, transformInline, transformS
 import { Context } from './state-context'
 import type { StylexExtendBabelPluginOptions } from './interface'
 import type { ImportIdentifiers, InternalPluginOptions } from './state-context'
-import { STYLEX_EXTEND } from './visitor/import-stmt'
 import { ENABLED_PKGS, handleImportStmt } from './ast/handle-import'
-import { getStringLikeKindValue } from './ast/shared'
+import { EXTEND_INJECT_GLOBAL_STYLE, EXTEND_INLINE } from './visitor/import-stmt'
+import { findNearestStatementAncestor, getStringLikeKindValue, isIdentifier, isTopLevelCalled } from './ast/shared'
+import { MESSAGES } from './ast/message'
 
 const JSX_ATTRIBUTE_NAME = 'stylex'
 
@@ -77,9 +78,19 @@ function declare(): PluginObj {
             if (ctx.options.enableInjectGlobalStyle) {
               path.traverse({
                 CallExpression(path) {
-                  const CSS = transformInjectGlobalStyle(path, ctx)
-                  if (CSS) {
-                    Reflect.set(state.file.metadata, 'globalStyle', CSS)
+                  const callee = path.get('callee')
+                  if (isIdentifier(callee)) {
+                    const identifier = getStringLikeKindValue(callee)
+                    if (ctx.imports.get(identifier) === EXTEND_INJECT_GLOBAL_STYLE) {
+                      const nearestStmt = findNearestStatementAncestor(path)
+                      if (!isTopLevelCalled(nearestStmt)) {
+                        throw new Error(MESSAGES.ONLY_TOP_LEVEL_INJECT_GLOBAL_STYLE)
+                      }
+                      const CSS = transformInjectGlobalStyle(path, ctx)
+                      if (CSS) {
+                        Reflect.set(state.file.metadata, 'globalStyle', CSS)
+                      }
+                    }
                   }
                 }
               })
@@ -88,9 +99,7 @@ function declare(): PluginObj {
               CallExpression(path) {
                 const { arguments: args } = path.node
                 if (!args.length) return
-                const maybeHave = args.find(a => a.type === 'CallExpression' &&
-                 a.callee.type === 'Identifier' && 
-                ctx.imports.get(a.callee.name) === STYLEX_EXTEND)
+                const maybeHave = args.find(a => a.type === 'CallExpression' && a.callee.type === 'Identifier' && ctx.imports.get(getStringLikeKindValue(a.callee)) === EXTEND_INLINE)
                 if (!maybeHave) return
                 transformInline(path, ctx) 
                 path.skip()

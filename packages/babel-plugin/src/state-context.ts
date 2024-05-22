@@ -1,5 +1,3 @@
-import path from 'path'
-import { createRequire } from 'module'
 import { types } from '@babel/core'
 import type { StylexBindingMeta, StylexExtendBabelPluginOptions } from './interface'
 
@@ -7,75 +5,9 @@ export type InternalPluginOptions = Required<Omit<StylexExtendBabelPluginOptions
 
 export type ImportIdentifiers = Record<string, types.Identifier>
 
-const _require = createRequire(__filename)
-
 interface FileNamesForHashing {
   fileName: string
   exportName: string
-}
-
-export function matchesFileSuffix(allowedSuffix: string) {
-  return (filename: string) => filename.endsWith(`${allowedSuffix}.js`) ||
-  filename.endsWith(`${allowedSuffix}.ts`) ||
-  filename.endsWith(`${allowedSuffix}.tsx`) ||
-  filename.endsWith(`${allowedSuffix}.jsx`) ||
-  filename.endsWith(`${allowedSuffix}.mjs`) ||
-  filename.endsWith(`${allowedSuffix}.cjs`) ||
-  filename.endsWith(allowedSuffix)
-}
-
-const EXTENSIONS = ['.js', '.ts', '.tsx', '.jsx', '.mjs', '.cjs']
-
-function possibleAliasedPaths(importPath: string, aliases: StylexExtendBabelPluginOptions['aliases']) {
-  const result = [importPath]
-  if (aliases == null || Object.keys(aliases).length === 0) {
-    return result
-  }
-  for (const [alias, _value] of Object.entries(aliases)) {
-    const value = Array.isArray(_value) ? _value : [_value]
-    if (alias.includes('*')) {
-      const [before, after] = alias.split('*')
-      if (importPath.startsWith(before) && importPath.endsWith(after)) {
-        const replacementString = importPath.slice(
-          before.length,
-          after.length > 0 ? -after.length : undefined
-        )
-        value.forEach((v) => {
-          result.push(v.split('*').join(replacementString))
-        })
-      }
-    } else if (alias === importPath) {
-      value.forEach((v) => {
-        result.push(v)
-      })
-    }
-  }
-
-  return result
-}
-
-function filePathResolver(relativePath: string, sourceFilePath: string, aliases: StylexExtendBabelPluginOptions['aliases']) {
-  for (const ext of ['', ...EXTENSIONS]) {
-    const importPathStr = relativePath + ext
-    if (importPathStr.startsWith('.')) {
-      try {
-        return _require.resolve(importPathStr, {
-          paths: [path.dirname(sourceFilePath)]
-        })
-      } catch {
-        
-      }
-    }
-    const allAliases = possibleAliasedPaths(importPathStr, aliases)
-    for (const possiblePath of allAliases) {
-      try {
-        return require.resolve(possiblePath, {
-          paths: [path.dirname(sourceFilePath)]
-        })
-      } catch {}
-    }
-  } 
-  return null
 }
 
 export class Context {
@@ -114,21 +46,11 @@ export class Context {
     return !!this.options.stylex.helper
   }
 
-  importPathResolver(importPath: string) {
-    if (!this.filename) throw new Error('filename is not defined')
-    const importerPath = filePathResolver(importPath, this.filename, this.options.aliases)
-    if (!importerPath) throw new Error(`[stylex-extend]: Cannot resolve module ${importPath}`)
-    switch (this.options.unstable_moduleResolution.type) {
-      case 'commonJS':
-        return [importerPath, path.relative(this.options.unstable_moduleResolution.rootDir, importerPath)]
-      case 'haste':
-        return [importerPath, importerPath]
-      case 'experimental_crossFileParsing':
-        return [importerPath, importerPath]
-    }
+  get themeFileExtension() {
+    return this.options.unstable_moduleResolution.themeFileExtension ?? '.stylex'
   }
 
-  addImports(next: string[][]) {
-    next.forEach(([k, v]) => this.imports.set(k, v))
+  addImports(i: string, o: string) {
+    this.imports.set(i, o)
   }
 }

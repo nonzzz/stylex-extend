@@ -6,6 +6,7 @@ import { Context } from '../state-context'
 import { scanObjectExpression } from '../ast/evaluate-css'
 import { callExpression, variableDeclaration } from '../ast/shared'
 import { MESSAGES } from '../ast/message'
+import { EXTEND_INLINE } from './import-stmt'
 
 function pickupAllInlineMacro(args: NodePath<types.Expression>[], ctx: Context) {
   const result: NodePath<types.CallExpression>[] = []
@@ -45,7 +46,7 @@ export function transformInline(path: NodePath<types.CallExpression>, ctx: Conte
       finallExpression.push(path.node)
     } else {
       const callee = path.get('callee')
-      if (callee.isIdentifier() && ctx.imports.has(callee.node.name)) {
+      if (callee.isIdentifier() && ctx.imports.get(callee.node.name) === EXTEND_INLINE) {
         finallExpression.push(...(expressions.shift() ?? []))
       } else {
         finallExpression.push(path.node)
