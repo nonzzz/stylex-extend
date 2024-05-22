@@ -11,24 +11,19 @@ type CSSPropertiesMoreValue<T> = {
 } & Partial<Record<SelectOrAtRules, T>>
 
 export type CSSPropertiesWithMultiValues = {
-  [K in CSSPropertiesKey]?:
-  K extends keyof CSSProperties
-    ? (CSSProperties[K] | CSSPropertiesMoreValue<CSSProperties[K]>)
+  [K in CSSPropertiesKey]?: K extends keyof CSSProperties ? (CSSProperties[K] | CSSPropertiesMoreValue<CSSProperties[K]>)
     : CSSPropertiesWithMultiValues | (string & {}) | number
 }
 
-export interface CSSObject
-  extends CSSPropertiesWithMultiValues { }
+export interface CSSObject extends CSSPropertiesWithMultiValues {}
 
 export type StylexProperty = CSSObject | ((...args: any[]) => CSSObject)
 
 type CSSPropertiesAndSubKey = (keyof CSSProperties) | CSS.AtRules | `&${CSS.Pseudos}` | (string & {})
 
 export type StylexCSSObject = {
-  [K in CSSPropertiesAndSubKey]?:
-  K extends keyof CSSProperties
-    ? CSSProperties[K]
+  [K in CSSPropertiesAndSubKey]?: K extends keyof CSSProperties ? CSSProperties[K]
     : StylexCSSObject | (string & {}) | ((...args: any[]) => StylexCSSObject) | number
 }
 
-export type StylexCSS = StylexCSSObject | ((...args: any[]) => StylexCSSObject) 
+export type StylexCSS = StylexCSSObject | ((...args: any[]) => StylexCSSObject)

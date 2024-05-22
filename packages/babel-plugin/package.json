@@ -7,8 +7,8 @@
   "types": "./dist/index.d.ts",
   "scripts": {
     "test": "vitest",
-    "dev": "tsup --watch",
-    "build": "tsup"
+    "dev": "rollup --config rollup.config.ts --configPlugin swc3 --watch",
+    "build": "rollup --config rollup.config.ts --configPlugin swc3"
   },
   "license": "MIT",
   "repository": "https://github.com/nonzzz/stylex-extend.git",
@@ -21,7 +21,6 @@
     "./*": "./*"
   },
   "devDependencies": {
-    "@stylex-extend/react": "workspace:*",
     "@types/babel__core": "^7.20.5",
     "@types/stylis": "^4.2.5",
     "babel-plugin-tester": "^11.0.4"

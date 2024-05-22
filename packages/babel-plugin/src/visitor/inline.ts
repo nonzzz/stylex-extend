@@ -2,10 +2,10 @@
 
 import { types } from '@babel/core'
 import type { NodePath } from '@babel/core'
-import { Context } from '../state-context'
 import { scanObjectExpression } from '../ast/evaluate-css'
-import { callExpression, variableDeclaration } from '../ast/shared'
 import { MESSAGES } from '../ast/message'
+import { callExpression, variableDeclaration } from '../ast/shared'
+import { Context } from '../state-context'
 import { EXTEND_INLINE } from './import-stmt'
 
 function pickupAllInlineMacro(args: NodePath<types.Expression>[], ctx: Context) {

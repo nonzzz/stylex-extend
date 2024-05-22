@@ -1,11 +1,11 @@
 import { types } from '@babel/core'
-import { utils } from '@stylexjs/shared'
 import type { NodePath } from '@babel/core'
+import { utils } from '@stylexjs/shared'
 import { compile, serialize, stringify } from 'stylis'
-import { Context } from '../state-context'
-import type { CSSObjectValue } from '../interface'
 import { MARK, scanObjectExpression } from '../ast/evaluate-css'
 import { MESSAGES } from '../ast/message'
+import type { CSSObjectValue } from '../interface'
+import { Context } from '../state-context'
 
 const KEBACASE = /[A-Z]+(?![a-z])|[A-Z]/g
 function kebabCase(s: string) {

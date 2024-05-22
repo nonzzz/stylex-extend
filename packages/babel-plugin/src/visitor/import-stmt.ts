@@ -1,12 +1,12 @@
-import path from 'path'
 import { createRequire } from 'module'
+import path from 'path'
 import { types } from '@babel/core'
 import type { NodePath } from '@babel/core'
-import { Context } from '../state-context'
-import { getStringLikeKindValue } from '../ast/shared'
-import { MESSAGES } from '../ast/message'
 import { ENABLED_PKGS, handleImportStmt } from '../ast/handle-import'
+import { MESSAGES } from '../ast/message'
+import { getStringLikeKindValue } from '../ast/shared'
 import type { StylexExtendBabelPluginOptions } from '../interface'
+import { Context } from '../state-context'
 
 export const EXTEND_INJECT_GLOBAL_STYLE = 'injectGlobalStyle'
 
@@ -81,7 +81,7 @@ function resolveRelativePath(relativePath: string, ctx: Context) {
         break
       } catch {}
     }
-  } 
+  }
   if (!filePath) throw new Error(MESSAGES.INVALID_FILE)
 
   switch (ctx.options.unstable_moduleResolution.type) {

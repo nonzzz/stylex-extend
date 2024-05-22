@@ -1,13 +1,13 @@
 import type { NodePath, PluginObj } from '@babel/core'
 import { types } from '@babel/core'
-import { scanImportStmt, transformInjectGlobalStyle, transformInline, transformStylexAttrs } from './visitor'
-import { Context } from './state-context'
-import type { StylexExtendBabelPluginOptions } from './interface'
-import type { ImportIdentifiers, InternalPluginOptions } from './state-context'
 import { ENABLED_PKGS, handleImportStmt } from './ast/handle-import'
-import { EXTEND_INJECT_GLOBAL_STYLE, EXTEND_INLINE } from './visitor/import-stmt'
-import { findNearestStatementAncestor, getStringLikeKindValue, isIdentifier, isTopLevelCalled } from './ast/shared'
 import { MESSAGES } from './ast/message'
+import { findNearestStatementAncestor, getStringLikeKindValue, isIdentifier, isTopLevelCalled } from './ast/shared'
+import type { StylexExtendBabelPluginOptions } from './interface'
+import { Context } from './state-context'
+import type { ImportIdentifiers, InternalPluginOptions } from './state-context'
+import { scanImportStmt, transformInjectGlobalStyle, transformInline, transformStylexAttrs } from './visitor'
+import { EXTEND_INJECT_GLOBAL_STYLE, EXTEND_INLINE } from './visitor/import-stmt'
 
 const JSX_ATTRIBUTE_NAME = 'stylex'
 
@@ -67,7 +67,10 @@ function declare(): PluginObj {
           const body = path.get('body')
           if (pluginOptions.stylex.helper) {
             const modules = ['create', pluginOptions.stylex.helper]
-            const identifiers = modules.reduce<ImportIdentifiers>((acc, cur) => ({ ...acc, [cur]: path.scope.generateUidIdentifier(cur) }), {})
+            const identifiers = modules.reduce<ImportIdentifiers>(
+              (acc, cur) => ({ ...acc, [cur]: path.scope.generateUidIdentifier(cur) }),
+              {}
+            )
             const importSpecs = Object.values(identifiers).map((a, i) => types.importSpecifier(a, types.identifier(modules[i])))
             const importStmt = types.importDeclaration(importSpecs, types.stringLiteral('@stylexjs/stylex'))
             path.unshiftContainer('body', importStmt)
@@ -99,9 +102,12 @@ function declare(): PluginObj {
               CallExpression(path) {
                 const { arguments: args } = path.node
                 if (!args.length) return
-                const maybeHave = args.find(a => a.type === 'CallExpression' && a.callee.type === 'Identifier' && ctx.imports.get(getStringLikeKindValue(a.callee)) === EXTEND_INLINE)
+                const maybeHave = args.find(a =>
+                  a.type === 'CallExpression' && a.callee.type === 'Identifier' &&
+                  ctx.imports.get(getStringLikeKindValue(a.callee)) === EXTEND_INLINE
+                )
                 if (!maybeHave) return
-                transformInline(path, ctx) 
+                transformInline(path, ctx)
                 path.skip()
               }
             })
@@ -133,7 +139,7 @@ function withOptions(options: Partial<StylexExtendBabelPluginOptions>) {
 declare.withOptions = withOptions
 
 export type StylexExtendTransformObject = {
-  (): PluginObj,
+  (): PluginObj
   withOptions: typeof withOptions
 }
 

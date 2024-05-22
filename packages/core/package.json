@@ -7,7 +7,7 @@
   "license": "MIT",
   "repository": "https://github.com/nonzzz/stylex-extend.git",
   "scripts": {
-    "build": "tsup"
+    "build": "rollup --config rollup.config.ts --configPlugin swc3"
   },
   "dependencies": {
     "@stylex-extend/shared": "workspace:*"

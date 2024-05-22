@@ -36,3 +36,11 @@ cleanup-suite:
 	@echo "Cleanup babel plugin ouput suite..."
 	$(eval currentDir = $(CURDIR)/packages/babel-plugin/__tests__)
 	find $(currentDir) -type f -name "output.js" -exec rm -f {} \;
+
+lint:
+	@echo "Linting code..."
+	pnpm exec eslint --fix "packages/**/*{.ts,.tsx,.js}"
+
+format:
+	@echo "formatting code..."
+	pnpm exec dprint fmt

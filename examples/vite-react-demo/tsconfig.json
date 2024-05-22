@@ -1,11 +1,11 @@
 {
-    "extends":"../../tsconfig.json",
-    "compilerOptions": {
-        "lib": ["DOM"],
-        "esModuleInterop": true,
-        "jsx": "react-jsx",
-        "moduleResolution": "Node",
-        "types": ["vite/client","react","react-dom"],
-        "jsxImportSource": "@stylex-extend/react",
-    },
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "lib": ["DOM"],
+    "esModuleInterop": true,
+    "jsx": "react-jsx",
+    "moduleResolution": "Node",
+    "types": ["vite/client", "react", "react-dom"],
+    "jsxImportSource": "@stylex-extend/react"
+  }
 }

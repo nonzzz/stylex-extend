@@ -1,5 +1,6 @@
-<div stylex={{
-  color: 'red',
-  fontSize: '16px'
-}}
+<div
+  stylex={{
+    color: 'red',
+    fontSize: '16px'
+  }}
 />

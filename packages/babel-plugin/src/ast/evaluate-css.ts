@@ -8,6 +8,7 @@ import { types } from '@babel/core'
 import type { NodePath } from '@babel/core'
 import { utils } from '@stylexjs/shared'
 import type { CSSObjectValue } from '../interface'
+import { MESSAGES } from './message'
 import {
   arrowFunctionExpression,
   callExpression,
@@ -24,7 +25,6 @@ import {
   objectProperty,
   stringLiteral
 } from './shared'
-import { MESSAGES } from './message'
 
 interface CSSRule {
   rule: CSSObjectValue
@@ -69,7 +69,7 @@ function handleMemebreExpression(path: NodePath<types.Node>) {
   const prop = path.get('property')
   if (isIdentifier(obj) && isStringLikeKind(prop)) {
     // Prevent the same name as identifier
-    const define = getStringLikeKindValue(obj) + capitalizeFirstLetter(getStringLikeKindValue(prop)) 
+    const define = getStringLikeKindValue(obj) + capitalizeFirstLetter(getStringLikeKindValue(prop))
     return { path, define: MARK.reference(define) }
   }
 }
@@ -162,7 +162,8 @@ class CSSParser {
   }
 
   private recordCSSReference(path: NodePath<types.Node>, defineName?: string) {
-    let result = handleIdentifier(path) || handleMemebreExpression(path) || handleCallExpression(path) as { define: string, path: NodePath<types.Node> }
+    let result = handleIdentifier(path) || handleMemebreExpression(path) ||
+      handleCallExpression(path) as { define: string; path: NodePath<types.Node> }
     if (defineName && !result) result = { path, define: defineName }
     if (!result) return
     path.setData(MARK.referenceSymbol, result.define)
@@ -187,7 +188,7 @@ class CSSParser {
     const CSSObject: CSSObjectValue = {}
     const attr = getStringLikeKindValue(attribute)
     let isReference = false
-    
+
     switch (value.type) {
       case 'NullLiteral':
         CSSObject[attr] = null
@@ -304,11 +305,11 @@ class CSSParser {
     // 1. merge css
     // 2. evaluate css reference
     // 3. if reference is exists, hoist them and generate arrowFunction AST
-    if (!this.rules.length) return 
+    if (!this.rules.length) return
     let step = 0
     let section = 0
     const mergedCSSRules: Array<Pick<CSSRule, 'rule' | 'vairableNames' | 'isSpread'> & { referencePaths: NodePath<types.Node>[] }> = []
-    
+
     while (step < this.counter) {
       const { rule, isReference, isSpread, vairableNames } = this.rules[step]
       const referencePaths: NodePath<types.Node>[] = []
@@ -333,7 +334,7 @@ class CSSParser {
 
     const propertyAST: types.ObjectProperty[] = []
     const expressionAST: types.Expression[] = []
-  
+
     // Don't forget to handle reference
     for (let i = 0; i < mergedCSSRules.length; i++) {
       const CSSRule = mergedCSSRules[i]
@@ -360,7 +361,7 @@ class CSSParser {
         } else {
           propertyAST.push(handleObjectProperty('#' + i, jsAST))
         }
-        continue  
+        continue
       }
       propertyAST.push(handleObjectProperty('#' + i, jsAST))
       expressionAST.push(expression)

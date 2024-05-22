@@ -4,18 +4,18 @@ export interface StylexBindingMeta {
 
 export interface ModuleResolutionCommonJS {
   type: 'commonJS' | 'haste'
-  rootDir: string,
+  rootDir: string
   themeFileExtension?: null | undefined | string
 }
 
 export interface MOduleResolutionHaste {
-  type: 'haste', 
+  type: 'haste'
   themeFileExtension?: null | undefined | string
 }
 
 export interface ModuleResolutionExperimentalCrossFileParsing {
-  type: 'experimental_crossFileParsing',
-  rootDir: string,
+  type: 'experimental_crossFileParsing'
+  rootDir: string
   themeFileExtension?: null | undefined | string
 }
 

@@ -9,7 +9,6 @@ All of features are based on the `@stylexjs` RFC or some interesting ideas.
 > JSXAttribute
 
 ```jsx
-
 // acceptable syntax
 
 const color = 'red'
@@ -34,5 +33,4 @@ return <div stylex={{
 }
 
 // We don't support overly complex syntax. don't write nested spreads syntax.
-
 ```

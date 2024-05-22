@@ -11,8 +11,8 @@
     "README.md"
   ],
   "scripts": {
-    "dev": "tsup --watch",
-    "build": "tsup"
+    "dev": "rollup --config rollup.config.ts --configPlugin swc3 --watch",
+    "build": "rollup --config rollup.config.ts --configPlugin swc3"
   },
   "dependencies": {
     "csstype": "^3.1.3"

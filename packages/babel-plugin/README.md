@@ -5,9 +5,7 @@
 ### Install
 
 ```bash
-
 yarn add @stylex-extend/babel-plugin
-
 ```
 
 ### Usage
@@ -16,6 +14,6 @@ yarn add @stylex-extend/babel-plugin
 // .babelrc.js
 
 module.exports = {
-  plugins: ["@stylex-extend/babel-plugin", "@stylexjs/babel-plugin"],
-};
+  plugins: ['@stylex-extend/babel-plugin', '@stylexjs/babel-plugin']
+}
 ```

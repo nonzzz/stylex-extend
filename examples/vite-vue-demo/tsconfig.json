@@ -1,10 +1,10 @@
 {
-    "extends":"../../tsconfig.json",
-    "compilerOptions": {
-        "lib": ["DOM","DOM.Iterable"],
-        "esModuleInterop": true,
-        "types": ["vite/client","@stylex-extend/vue"],
-        "jsx": "preserve",
-        "jsxImportSource": "vue",
-    }
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "lib": ["DOM", "DOM.Iterable"],
+    "esModuleInterop": true,
+    "types": ["vite/client", "@stylex-extend/vue"],
+    "jsx": "preserve",
+    "jsxImportSource": "vue"
+  }
 }

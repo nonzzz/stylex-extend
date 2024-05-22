@@ -6,21 +6,22 @@ const pulse = stylex.keyframes({
 
 export function Component() {
   return (
-    <div stylex={{
-      color: 'red',
-      ...{ display: 'flex' },
-      pulse: {
-        animationName: pulse,
-        animationDuration: '1s',
-        animationIterationCount: 'infinite'
-      },
-      ...{ 
-        fontSize: {
-          default: '18px',
-          '@media (max-width: 768px)': '20px'
+    <div
+      stylex={{
+        color: 'red',
+        ...{ display: 'flex' },
+        pulse: {
+          animationName: pulse,
+          animationDuration: '1s',
+          animationIterationCount: 'infinite'
+        },
+        ...{
+          fontSize: {
+            default: '18px',
+            '@media (max-width: 768px)': '20px'
+          }
         }
-      }
-    }}
+      }}
     />
   )
 }

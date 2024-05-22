@@ -1,8 +1,8 @@
 import { NodePath, types } from '@babel/core'
-import { Context } from '../state-context'
 import { scanObjectExpression } from '../ast/evaluate-css'
-import { callExpression, variableDeclaration } from '../ast/shared'
 import { MESSAGES } from '../ast/message'
+import { callExpression, variableDeclaration } from '../ast/shared'
+import { Context } from '../state-context'
 
 export function transformStylexAttrs(path: NodePath<types.JSXAttribute>, ctx: Context) {
   const value = path.get('value')

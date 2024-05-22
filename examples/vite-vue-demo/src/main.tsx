@@ -1,6 +1,6 @@
-import { createApp, defineComponent } from 'vue'
-import { keyframes } from '@stylexjs/stylex'
 import { injectGlobalStyle } from '@stylex-extend/core'
+import { keyframes } from '@stylexjs/stylex'
+import { createApp, defineComponent } from 'vue'
 import { colors } from './colors.stylex'
 
 const pulse = keyframes({
@@ -24,7 +24,6 @@ injectGlobalStyle({
 })
 
 const App = defineComponent({
-
   setup() {
     return () => (
       <>
@@ -32,12 +31,13 @@ const App = defineComponent({
           456
         </div>
         <p>text</p>
-        <A stylex={{ 
-          color,
-          animationName: pulse,
-          animationDuration: '1s',
-          animationIterationCount: 'infinite'
-        }}
+        <A
+          stylex={{
+            color,
+            animationName: pulse,
+            animationDuration: '1s',
+            animationIterationCount: 'infinite'
+          }}
         >
         </A>
       </>

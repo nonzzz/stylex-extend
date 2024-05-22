@@ -1,7 +1,7 @@
 import { types } from '@babel/core'
 import { NodePath } from '@babel/core'
 
-export type StringLikeKindPath = NodePath<types.StringLiteral | types.Identifier> 
+export type StringLikeKindPath = NodePath<types.StringLiteral | types.Identifier>
 
 export type StringLikeKind = types.StringLiteral | types.Identifier
 
@@ -48,10 +48,11 @@ export function memberExpression(object: types.Expression, property: types.Priva
 
 export function variableDeclaration(identifier: types.Identifier | string, ast: types.Expression) {
   return types.variableDeclaration('const', [
-    types.variableDeclarator(typeof identifier === 'string' ? types.identifier(identifier) : identifier, ast)])
+    types.variableDeclarator(typeof identifier === 'string' ? types.identifier(identifier) : identifier, ast)
+  ])
 }
 
-export function isObjectExpression(path: NodePath<types.Node>): path is NodePath<types.ObjectExpression > {
+export function isObjectExpression(path: NodePath<types.Node>): path is NodePath<types.ObjectExpression> {
   return path.isObjectExpression()
 }
 

@@ -1,12 +1,11 @@
 {
-    "extends": "../../tsconfig.json",
-    "compilerOptions": {
-        "baseUrl": ".",
-        "paths": {
-            "@/*":["src/*"]
-        },
-        "jsx": "react-jsx",
-        "jsxImportSource": "@stylex-extend/react",
-        "types": ["node","@stylex-extend/react","vitest/globals"],
-    }
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"]
+    },
+    "jsx": "react-jsx",
+    "types": ["node", "vitest/globals"]
+  }
 }

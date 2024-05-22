@@ -26,11 +26,9 @@ export namespace StyledJSX {
   export type ElementType = ReactJSXElementType
   export interface Element extends ReactJSXElement {}
   export interface ElementClass extends ReactJSXElementClass {}
-  export interface ElementAttributesProperty
-    extends ReactJSXElementAttributesProperty {}
+  export interface ElementAttributesProperty extends ReactJSXElementAttributesProperty {}
   export interface ElementChildrenAttribute extends ReactJSXElementChildrenAttribute {}
 
   export interface IntrinsicAttributes extends ReactJSXIntrinsicAttributes {}
-  export interface IntrinsicClassAttributes<T>
-    extends ReactJSXIntrinsicClassAttributes<T> {}
+  export interface IntrinsicClassAttributes<T> extends ReactJSXIntrinsicClassAttributes<T> {}
 }

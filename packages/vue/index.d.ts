@@ -1,4 +1,4 @@
-import { } from 'vue'
+import {} from 'vue'
 import { StylexProperty } from '@stylex-extend/shared'
 
 declare module 'vue' {
@@ -10,4 +10,4 @@ declare module 'vue' {
   }
 }
 
-export { }
+export {}
