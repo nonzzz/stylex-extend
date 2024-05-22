@@ -17,9 +17,9 @@
     "./jsx-runtime": {
       "import": "./src/jsx-runtime.mjs",
       "require": "./src/jsx-runtime.js",
-      "types":"./src/jsx-dev-runtime.d.ts"
+      "types":"./src/jsx-runtime.d.ts"
     },
-    "./jsx-dev-runtime.js": {
+    "./jsx-dev-runtime": {
       "import": "./src/jsx-dev-runtime.mjs",
       "require": "./src/jsx-dev-runtime.js",
       "types":"./src/jsx-dev-runtime.d.ts"
