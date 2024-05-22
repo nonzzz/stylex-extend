@@ -11,7 +11,6 @@ const _styles = _create({
     backgroundColor: propsHoverColor,
   }),
 });
-import { inline } from "@stylex-extend/core";
 import { create } from "@stylexjs/stylex";
 import stylex from "@stylexjs/stylex";
 const styles = create({

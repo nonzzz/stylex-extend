@@ -7,5 +7,9 @@ export const MESSAGES = {
   INVALID_SPREAD_SIDE: 'Only object expression is allowed on the right side of the spread element.',
   INVALID_ATTRS_KIND: 'Only object expression is allowed for jsx attribute \'stylex\'',
   INLINE_ONLY_ONE_ARGUMENT: 'function inline() only accept one argument.',
-  GLOBAL_STYLE_ONLY_ONE_ARGUMENT: 'function injectGlobalStyle() only accept one argument.'
+  GLOBAL_STYLE_ONLY_ONE_ARGUMENT: 'function injectGlobalStyle() only accept one argument.',
+  IMPORT_EXTEND_PKG_ERROR: '\'@stylex-extend/core\' only support named import.',
+  INVALID_FILE: 'Invalid file path',
+  ONLY_TOP_LEVEL_INJECT_GLOBAL_STYLE: 'function injectGlobalStyle() must be called at the top level of the module.'
+  
 }

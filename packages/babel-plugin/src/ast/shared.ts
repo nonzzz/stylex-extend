@@ -75,6 +75,22 @@ export function isCallExpression(path: NodePath<types.Node>): path is NodePath<t
   return path.isCallExpression()
 }
 
+export function isTopLevelCalled(path: NodePath<types.Node>) {
+  return types.isProgram(path.parent) || types.isExportDefaultDeclaration(path.parent) || types.isExportNamedDeclaration(path.parent)
+}
+
+export function isStmt(path: NodePath<types.Node>): path is NodePath<types.Statement> {
+  return path.isStatement()
+}
+
 export function is(condit: boolean, message: string = 'Invalid Error') {
   if (!condit) throw new Error(message)
+}
+
+export function findNearestStatementAncestor(path: NodePath<types.Node>): NodePath<types.Statement> {
+  if (isStmt(path)) return path
+  if (path.parentPath == null) {
+    throw new Error('Unexpected Path found that is not part of the AST.')
+  }
+  return findNearestStatementAncestor(path.parentPath)
 }

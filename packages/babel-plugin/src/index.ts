@@ -1,10 +1,13 @@
-import * as b from '@babel/core'
-import type { PluginObj } from '@babel/core'
+import type { NodePath, PluginObj } from '@babel/core'
+import { types } from '@babel/core'
 import { scanImportStmt, transformInjectGlobalStyle, transformInline, transformStylexAttrs } from './visitor'
 import { Context } from './state-context'
 import type { StylexExtendBabelPluginOptions } from './interface'
 import type { ImportIdentifiers, InternalPluginOptions } from './state-context'
-import { STYLEX_EXTEND } from './visitor/import-stmt'
+import { ENABLED_PKGS, handleImportStmt } from './ast/handle-import'
+import { EXTEND_INJECT_GLOBAL_STYLE, EXTEND_INLINE } from './visitor/import-stmt'
+import { findNearestStatementAncestor, getStringLikeKindValue, isIdentifier, isTopLevelCalled } from './ast/shared'
+import { MESSAGES } from './ast/message'
 
 const JSX_ATTRIBUTE_NAME = 'stylex'
 
@@ -22,7 +25,19 @@ const defaultOptions: InternalPluginOptions = {
   aliases: {}
 }
 
-function declare({ types: t }: typeof b): PluginObj {
+function ensureWithExtendPkg(stmts: NodePath<types.Statement>[]) {
+  let enable = false
+  handleImportStmt(stmts, (path) => {
+    if (path.node.source.value === ENABLED_PKGS.extend) {
+      enable = true
+      return true
+    }
+  })
+
+  return enable
+}
+
+function declare(): PluginObj {
   const ctx = new Context()
 
   return {
@@ -50,44 +65,56 @@ function declare({ types: t }: typeof b): PluginObj {
           }
           ctx.filename = state.filename || (state.file.opts?.sourceFileName ?? undefined)
           const body = path.get('body')
-          const modules = ['create']
-          if (pluginOptions.stylex.helper) modules.push(pluginOptions.stylex.helper)
-          const identifiers = modules.reduce<ImportIdentifiers>((acc, cur) => ({ ...acc, [cur]: path.scope.generateUidIdentifier(cur) }), {})
           if (pluginOptions.stylex.helper) {
-            const importSpecs = Object.values(identifiers).map((a, i) => t.importSpecifier(a, t.identifier(modules[i])))
-            const importStmt = t.importDeclaration(importSpecs, t.stringLiteral('@stylexjs/stylex'))
+            const modules = ['create', pluginOptions.stylex.helper]
+            const identifiers = modules.reduce<ImportIdentifiers>((acc, cur) => ({ ...acc, [cur]: path.scope.generateUidIdentifier(cur) }), {})
+            const importSpecs = Object.values(identifiers).map((a, i) => types.importSpecifier(a, types.identifier(modules[i])))
+            const importStmt = types.importDeclaration(importSpecs, types.stringLiteral('@stylexjs/stylex'))
             path.unshiftContainer('body', importStmt)
+            ctx.setupOptions(pluginOptions, identifiers, 0)
           }
-          const anchor = body.findIndex(p => t.isImportDeclaration(p.node))
-          ctx.setupOptions(pluginOptions, identifiers, anchor === -1 ? 0 : anchor)
-          scanImportStmt(body, ctx)
-          if (ctx.options.enableInjectGlobalStyle) {
+          if (ensureWithExtendPkg(body)) {
+            scanImportStmt(body, ctx)
+            if (ctx.options.enableInjectGlobalStyle) {
+              path.traverse({
+                CallExpression(path) {
+                  const callee = path.get('callee')
+                  if (isIdentifier(callee)) {
+                    const identifier = getStringLikeKindValue(callee)
+                    if (ctx.imports.get(identifier) === EXTEND_INJECT_GLOBAL_STYLE) {
+                      const nearestStmt = findNearestStatementAncestor(path)
+                      if (!isTopLevelCalled(nearestStmt)) {
+                        throw new Error(MESSAGES.ONLY_TOP_LEVEL_INJECT_GLOBAL_STYLE)
+                      }
+                      const CSS = transformInjectGlobalStyle(path, ctx)
+                      if (CSS) {
+                        Reflect.set(state.file.metadata, 'globalStyle', CSS)
+                      }
+                    }
+                  }
+                }
+              })
+            }
             path.traverse({
               CallExpression(path) {
-                const CSS = transformInjectGlobalStyle(path, ctx)
-                if (CSS) {
-                  Reflect.set(state.file.metadata, 'globalStyle', CSS)
-                }
+                const { arguments: args } = path.node
+                if (!args.length) return
+                const maybeHave = args.find(a => a.type === 'CallExpression' && a.callee.type === 'Identifier' && ctx.imports.get(getStringLikeKindValue(a.callee)) === EXTEND_INLINE)
+                if (!maybeHave) return
+                transformInline(path, ctx) 
+                path.skip()
               }
             })
           }
-          path.traverse({
-            CallExpression(path) {
-              const { arguments: args } = path.node
-              if (!args.length) return
-              const maybeHave = args.find(a => a.type === 'CallExpression' &&
-               a.callee.type === 'Identifier' && 
-              ctx.imports.get(a.callee.name) === STYLEX_EXTEND)
-              if (!maybeHave) return
-              transformInline(path, ctx) 
-              path.skip()
-            }
-          })
         },
         exit(path) {
           const body = path.get('body')
-          const anchor = ctx.anchor
-          if (anchor !== -1 && ctx.stmts.length) body[anchor].insertAfter(ctx.stmts)
+          handleImportStmt(body, (path) => {
+            if (getStringLikeKindValue(path.get('source')) === ENABLED_PKGS.extend) {
+              path.remove()
+            }
+          })
+          ctx.stmts.length && body[0].insertAfter(ctx.stmts)
           ctx.stmts = []
         }
       },

@@ -6,7 +6,6 @@ import { Context } from '../state-context'
 import type { CSSObjectValue } from '../interface'
 import { MARK, scanObjectExpression } from '../ast/evaluate-css'
 import { MESSAGES } from '../ast/message'
-import { STYLEX_EXTEND } from './import-stmt'
 
 const KEBACASE = /[A-Z]+(?![a-z])|[A-Z]/g
 function kebabCase(s: string) {
@@ -84,9 +83,6 @@ class Stringify {
 }
 
 export function transformInjectGlobalStyle(path: NodePath<types.CallExpression>, ctx: Context) {
-  const { node } = path
-  if (!node || node.callee.type !== 'Identifier' || !ctx.imports.has(node.callee.name)) return
-  if (ctx.imports.get(node.callee.name) !== STYLEX_EXTEND || node.callee.name !== 'injectGlobalStyle') return
   const args = path.get('arguments')
   if (args.length > 1) throw new Error(MESSAGES.GLOBAL_STYLE_ONLY_ONE_ARGUMENT)
   if (!args[0].isObjectExpression()) throw new Error(MESSAGES.INVALID_CSS_AST_KIND)
