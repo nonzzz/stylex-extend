@@ -4,21 +4,13 @@ layout: home
 
 hero:
   name: "stylex-extend"
-  text: "An unoffical stylexjs experimental project"
-  tagline: My great project tagline
+  text: "An unofficial stylexjs experimental project"
   actions:
     - theme: brand
-      text: Markdown Examples
-      link: /markdown-examples
+      text: Get started
+      link: /guide/reference
     - theme: alt
-      text: API Examples
-      link: /api-examples
+      text: View on Github
+      link: https://github.com/nonzzz/stylex-extend
 
-features:
-  - title: Feature A
-    details: Lorem ipsum dolor sit amet, consectetur adipiscing elit
-  - title: Feature B
-    details: Lorem ipsum dolor sit amet, consectetur adipiscing elit
-  - title: Feature C
-    details: Lorem ipsum dolor sit amet, consectetur adipiscing elit
 ---

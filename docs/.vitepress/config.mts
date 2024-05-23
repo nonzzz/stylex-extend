@@ -4,25 +4,35 @@ import { defineConfig } from 'vitepress'
 export default defineConfig({
   title: 'stylex-extend',
   description: 'An unoffical stylexjs experimental project',
+  cleanUrls: true,
   themeConfig: {
     // https://vitepress.dev/reference/default-theme-config
     nav: [
-      { text: 'Home', link: '/' },
-      { text: 'Examples', link: '/markdown-examples' }
+      { text: 'Guide', link: '/guide/reference', activeMatch: '/guide/' }
     ],
-
     sidebar: [
       {
-        text: 'Examples',
+        text: 'Guide',
         items: [
-          { text: 'Markdown Examples', link: '/markdown-examples' },
-          { text: 'Runtime API Examples', link: '/api-examples' }
+          { text: 'Reference', link: '/guide/reference' },
+          { text: 'Configuration', link: '/guide/configuration' },
+          { text: 'APIs', link: '/guide/api' }
         ]
       }
     ],
-
     socialLinks: [
       { icon: 'github', link: 'https://github.com/vuejs/vitepress' }
-    ]
+    ],
+    footer: {
+      message: 'Released under the MIT License.',
+      copyright: 'Copyright © 2024-present Kanno'
+    },
+    lastUpdated: {
+      text: 'Last Modified',
+      formatOptions: {
+        dateStyle: 'full',
+        timeStyle: 'medium'
+      }
+    }
   }
 })
