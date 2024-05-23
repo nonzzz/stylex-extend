@@ -9,8 +9,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: make
-        run: corepack enable
+      - name: Install Dependencies
+        run:  make
       - uses: actions/setup-node@v3
         with:
           node-version: 20.5.1
@@ -21,6 +21,6 @@ jobs:
         uses: JamesIves/github-pages-deploy-action@v4.4.3
         with:
           branch: gh-page
-          folder: docs
+          folder: docs/.vitepress/dist
           single-commit: true
           clean: true

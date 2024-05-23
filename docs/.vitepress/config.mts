@@ -2,6 +2,7 @@ import { defineConfig } from 'vitepress'
 
 // https://vitepress.dev/reference/site-config
 export default defineConfig({
+  base: '/stylex-extend/',
   title: 'stylex-extend',
   description: 'An unoffical stylexjs experimental project',
   cleanUrls: true,

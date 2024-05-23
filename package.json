@@ -4,7 +4,6 @@
   "scripts": {
     "test": "pnpm -r run test"
   },
-  "keywords": [],
   "author": "kanno",
   "license": "MIT",
   "packageManager": "pnpm@9.0.1",
