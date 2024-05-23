@@ -44,3 +44,11 @@ lint:
 format:
 	@echo "formatting code..."
 	pnpm exec dprint fmt
+
+dev-site:
+	@echo "Starting dev site..."
+	pnpm -C $(currentDir)/docs run dev
+
+build-site:
+	@echo "Building site..."
+	pnpm -C $(currentDir)/docs run build
