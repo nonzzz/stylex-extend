@@ -1,5 +1,5 @@
 export const MESSAGES = {
-  NOT_IMPLEMENETED: 'Not implemented.',
+  NOT_IMPLEMENTED: 'Not implemented.',
   INVALID_CSS_AST_KIND: 'Only accept a style object.',
   NO_STATIC_ATTRIBUTE: 'Only static attribute is allowed in style object.',
   NO_NESTED_SPREAD: 'Nested spread syntax is not allowed in style object.',

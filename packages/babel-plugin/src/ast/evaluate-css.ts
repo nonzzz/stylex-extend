@@ -63,7 +63,7 @@ function handleIdentifier(path: NodePath<types.Node>) {
   return { path, define: path.node.name }
 }
 
-function handleMemebreExpression(path: NodePath<types.Node>) {
+function handleMemeberExpression(path: NodePath<types.Node>) {
   if (!isMemberExpression(path)) return
   const obj = path.get('object')
   const prop = path.get('property')
@@ -77,7 +77,7 @@ function handleMemebreExpression(path: NodePath<types.Node>) {
 function handleCallExpression(path: NodePath<types.Node>) {
   if (!path.isCallExpression()) return
   const callee = path.get('callee')
-  const result = handleIdentifier(callee) || handleMemebreExpression(callee)
+  const result = handleIdentifier(callee) || handleMemeberExpression(callee)
   if (!result) return
   return {
     define: MARK.isReference(result.define) ? result.define : MARK.reference(result.define),
@@ -86,17 +86,14 @@ function handleCallExpression(path: NodePath<types.Node>) {
 }
 
 function cleanupDuplicateASTNode(paths: NodePath<types.Node>[], sortBy: string[] = []) {
-  const buckets: NodePath<types.Expression>[] = []
-  const scenes = new Set<string>()
+  const seen = new Map<string, NodePath<types.Expression>>()
   for (const path of paths) {
     const define = path.getData(MARK.referenceSymbol)
-    if (!define) continue
-    if (!scenes.has(define)) {
-      buckets.push(path as NodePath<types.Expression>)
-      scenes.add(define)
+    if (define && !seen.has(define)) {
+      seen.set(define, path as NodePath<types.Expression>)
     }
   }
-  return buckets.sort((a, b) => {
+  return [...seen.values()].sort((a, b) => {
     const sceneA = sortBy.indexOf(a.getData(MARK.referenceSymbol))
     const sceneB = sortBy.indexOf(b.getData(MARK.referenceSymbol))
     return sceneA - sceneB
@@ -127,13 +124,13 @@ function ensureCSSValueASTKind(value: string | number | null | undefined) {
   return ast
 }
 
-function convertToAST(rule: CSSObjectValue) {
+function convertCSSRuleToAST(rule: CSSObjectValue) {
   const ast: types.ObjectProperty[] = []
 
   for (const attr in rule) {
     const value = rule[attr]
     if (typeof value === 'object' && value !== null) {
-      const childAST = convertToAST(value)
+      const childAST = convertCSSRuleToAST(value)
       ast.push(handleObjectProperty(attr, childAST))
     } else {
       const v = ensureCSSValueASTKind(value)
@@ -162,7 +159,7 @@ class CSSParser {
   }
 
   private recordCSSReference(path: NodePath<types.Node>, defineName?: string) {
-    let result = handleIdentifier(path) || handleMemebreExpression(path) ||
+    let result = handleIdentifier(path) || handleMemeberExpression(path) ||
       handleCallExpression(path) as { define: string; path: NodePath<types.Node> }
     if (defineName && !result) result = { path, define: defineName }
     if (!result) return
@@ -219,7 +216,7 @@ class CSSParser {
       }
       case 'MemberExpression': {
         if (!valuePath.isMemberExpression()) break
-        const result = handleMemebreExpression(valuePath)!
+        const result = handleMemeberExpression(valuePath)!
         CSSObject[attr] = result.define
         isReference = true
         this.recordCSSReference(valuePath)
@@ -283,7 +280,7 @@ class CSSParser {
       this.recordCSSReference(arg.get('left'), hash(JSON.stringify(CSSObject)))
       return { rule: CSSObject, isReference, isSpread: true }
     }
-    throw new Error(MESSAGES.NOT_IMPLEMENETED)
+    throw new Error(MESSAGES.NOT_IMPLEMENTED)
   }
 
   parse() {
@@ -339,7 +336,7 @@ class CSSParser {
     for (let i = 0; i < mergedCSSRules.length; i++) {
       const CSSRule = mergedCSSRules[i]
       const { rule, referencePaths, vairableNames, isSpread } = CSSRule
-      const jsAST = convertToAST(rule)
+      const jsAST = convertCSSRuleToAST(rule)
       const expression = memberExpression(this.variable, stringLiteral('#' + i), true)
       if (vairableNames.size) {
         const variables = [...vairableNames]
