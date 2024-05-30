@@ -71,10 +71,8 @@ function declare(): PluginObj {
               (acc, cur) => ({ ...acc, [cur]: path.scope.generateUidIdentifier(cur) }),
               {}
             )
-            const importSpecs = Object.values(identifiers).map((a, i) => types.importSpecifier(a, types.identifier(modules[i])))
-            const importStmt = types.importDeclaration(importSpecs, types.stringLiteral('@stylexjs/stylex'))
-            path.unshiftContainer('body', importStmt)
-            ctx.setupOptions(pluginOptions, identifiers, 0)
+
+            ctx.setupOptions(pluginOptions, identifiers, modules)
           }
           if (ensureWithExtendPkg(body)) {
             scanImportStmt(body, ctx)
@@ -120,7 +118,13 @@ function declare(): PluginObj {
               path.remove()
             }
           })
-          ctx.stmts.length && body[0].insertAfter(ctx.stmts)
+          if (ctx.stmts.length) {
+            const { importIdentifiers: identifiers, modules } = ctx
+            const importSpecs = Object.values(identifiers).map((a, i) => types.importSpecifier(a, types.identifier(modules[i])))
+            const importStmt = types.importDeclaration(importSpecs, types.stringLiteral('@stylexjs/stylex'))
+            path.unshiftContainer('body', ctx.stmts)
+            path.unshiftContainer('body', importStmt)
+          }
           ctx.stmts = []
         }
       },

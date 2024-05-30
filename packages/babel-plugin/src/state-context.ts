@@ -14,24 +14,24 @@ export class Context {
   options: InternalPluginOptions
   importIdentifiers: ImportIdentifiers
   stmts: types.VariableDeclaration[]
-  anchor: number
   imports: Map<string, string>
   filename: string | undefined
   fileNamesForHashing: Map<string, FileNamesForHashing>
+  modules: string[]
   constructor() {
     this.options = Object.create(null)
     this.importIdentifiers = Object.create(null)
     this.stmts = []
-    this.anchor = 0
     this.imports = new Map()
     this.filename = undefined
     this.fileNamesForHashing = new Map()
+    this.modules = []
   }
 
-  setupOptions(pluginOptions: InternalPluginOptions, identifiers: ImportIdentifiers, anchor: number) {
+  setupOptions(pluginOptions: InternalPluginOptions, identifiers: ImportIdentifiers, modules: string[]) {
     this.options = { ...this.options, ...pluginOptions }
     this.importIdentifiers = identifiers
-    this.anchor = anchor
+    this.modules = modules
   }
 
   get attach() {
