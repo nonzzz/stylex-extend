@@ -1,3 +1,9 @@
+## v0.3.2 (2024-05-30)
+
+### Patches
+
+- Fix `@stylex-extend/react` types error.
+
 ## v0.3.1 (2024-05-08)
 
 ### Patches
