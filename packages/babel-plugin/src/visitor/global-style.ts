@@ -2,10 +2,12 @@ import { types } from '@babel/core'
 import type { NodePath } from '@babel/core'
 import { utils } from '@stylexjs/shared'
 import { compile, serialize, stringify } from 'stylis'
-import { MARK, scanObjectExpression } from '../ast/evaluate-css'
+import { handleMemeberExpression, MARK, pickupDuplicateASTNode, scanObjectExpression } from '../ast/evaluate-css'
+import type { CSSRuleWithReference } from '../ast/evaluate-css'
 import { MESSAGES } from '../ast/message'
 import type { CSSObjectValue } from '../interface'
 import { Context } from '../state-context'
+import { isTemplateLiteral } from '../ast/shared'
 
 const KEBACASE = /[A-Z]+(?![a-z])|[A-Z]/g
 function kebabCase(s: string) {
@@ -29,10 +31,12 @@ function processStyleName(prop: string) {
 class Stringify {
   css: string
   ctx: Context
-  constructor(rules: CSSObjectValue[], ctx: Context) {
+  rules: CSSRuleWithReference[]
+  constructor(rules: CSSRuleWithReference[], ctx: Context) {
     this.css = ''
     this.ctx = ctx
-    this.run(rules)
+    this.rules = rules
+    this.parse()
   }
 
   print(s: string | number) {
@@ -43,10 +47,51 @@ class Stringify {
     return this.ctx.options.classNamePrefix
   }
 
-  run(rule: CSSObjectValue[] | CSSObjectValue) {
+  parse() {
+    for (const rule of this.rules) {
+      const { referencePaths, rule: cssRule } = rule
+      const jsAST = pickupDuplicateASTNode(referencePaths)
+      this.run(cssRule, jsAST)
+    }
+  }
+
+  evaluateCSSVariableFromStylex(s: string, jsAST: Map<string, NodePath<types.Expression>>) {
+    const spliter = (s: string) => kebabCase(s.slice(2)).split('-')
+    const getCssValue = (belong: string, attr: string) => {
+      if (this.ctx.fileNamesForHashing.has(belong)) {
+        const { fileName, exportName } = this.ctx.fileNamesForHashing.get(belong)!
+        const themeName = utils.genFileBasedIdentifier({ fileName, exportName })
+        return getCSSVarName(themeName, attr, this.classNamePrefix)
+      }
+      return belong
+    }
+    const [belong, attr] = spliter(s)
+    if (!attr && jsAST.has(s)) {
+      let css = ''
+      const path = jsAST.get(s)!
+      if (!isTemplateLiteral(path)) throw new Error(MESSAGES.INVALID_CSS_TOKEN)
+      const { quasis } = path.node
+      const expressions = path.get('expressions')
+      let cap = expressions.length
+      css += quasis[0].value.raw
+      while (cap) {
+        const { define } = handleMemeberExpression(expressions.shift()!)!
+        const [belong, attr] = spliter(define)
+        if (belong && attr) {
+          css += getCssValue(belong, attr)
+        }
+        cap--
+      }
+      return css
+    }
+
+    return getCssValue(belong, attr)
+  }
+
+  run(rule: CSSObjectValue[] | CSSObjectValue, jsAST: Map<string, NodePath<types.Expression>>) {
     if (Array.isArray(rule)) {
       for (const r of rule) {
-        this.run(r)
+        this.run(r, jsAST)
       }
     } else {
       for (const selector in rule) {
@@ -56,7 +101,7 @@ class Stringify {
         if (typeof content === 'object') {
           this.print(selector)
           this.print('{')
-          this.run(content)
+          this.run(content, jsAST)
           this.print('}')
         } else {
           this.print(processStyleName(selector))
@@ -64,12 +109,7 @@ class Stringify {
           if (typeof content === 'string') {
             let c = content
             if (MARK.isReference(c)) {
-              const [belong, attr] = kebabCase(content.slice(2)).split('-')
-              if (this.ctx.fileNamesForHashing.has(belong)) {
-                const { fileName, exportName } = this.ctx.fileNamesForHashing.get(belong)!
-                const themeName = utils.genFileBasedIdentifier({ fileName, exportName })
-                c = getCSSVarName(themeName, attr, this.classNamePrefix)
-              }
+              c = this.evaluateCSSVariableFromStylex(c, jsAST)
             }
             this.print(`${c}`)
           } else {
@@ -91,7 +131,7 @@ export function transformInjectGlobalStyle(path: NodePath<types.CallExpression>,
   if (result) {
     // eslint-disable-next-line no-unused-vars
     const [_, __1, ___2, cssRules] = result
-    const sb = new Stringify(cssRules.map(r => r.rule), ctx)
+    const sb = new Stringify(cssRules, ctx)
     const CSS = serialize(compile(sb.css), stringify)
     path.replaceWith(types.stringLiteral(''))
     return CSS

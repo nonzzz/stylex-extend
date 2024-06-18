@@ -33,6 +33,8 @@ interface CSSRule {
   vairableNames: Set<string>
 }
 
+export type CSSRuleWithReference = Pick<CSSRule, 'rule' | 'vairableNames' | 'isSpread'> & { referencePaths: NodePath<types.Node>[] }
+
 // Mark is a collection that help us to define dynamic value in css object.
 // All dynamic token should be consumed at transform as JS AST step.
 export const MARK = {
@@ -63,7 +65,7 @@ function handleIdentifier(path: NodePath<types.Node>) {
   return { path, define: path.node.name }
 }
 
-function handleMemeberExpression(path: NodePath<types.Node>) {
+export function handleMemeberExpression(path: NodePath<types.Node>) {
   if (!isMemberExpression(path)) return
   const obj = path.get('object')
   const prop = path.get('property')
@@ -85,7 +87,7 @@ function handleCallExpression(path: NodePath<types.Node>) {
   }
 }
 
-function cleanupDuplicateASTNode(paths: NodePath<types.Node>[], sortBy: string[] = []) {
+export function pickupDuplicateASTNode(paths: NodePath<types.Node>[]) {
   const seen = new Map<string, NodePath<types.Expression>>()
   for (const path of paths) {
     const define = path.getData(MARK.referenceSymbol)
@@ -93,6 +95,11 @@ function cleanupDuplicateASTNode(paths: NodePath<types.Node>[], sortBy: string[]
       seen.set(define, path as NodePath<types.Expression>)
     }
   }
+  return seen
+}
+
+export function cleanupDuplicateASTNode(paths: NodePath<types.Node>[], sortBy: string[] = []) {
+  const seen = pickupDuplicateASTNode(paths)
   return [...seen.values()].sort((a, b) => {
     const sceneA = sortBy.indexOf(a.getData(MARK.referenceSymbol))
     const sceneB = sortBy.indexOf(b.getData(MARK.referenceSymbol))
@@ -305,7 +312,7 @@ class CSSParser {
     if (!this.rules.length) return
     let step = 0
     let section = 0
-    const mergedCSSRules: Array<Pick<CSSRule, 'rule' | 'vairableNames' | 'isSpread'> & { referencePaths: NodePath<types.Node>[] }> = []
+    const mergedCSSRules: CSSRuleWithReference[] = []
 
     while (step < this.counter) {
       const { rule, isReference, isSpread, vairableNames } = this.rules[step]
