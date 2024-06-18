@@ -22,3 +22,7 @@ export const when = {
   // a + b
   sibling: createWhenAPI("'when.sibling' calls should be compiled away.")
 }
+
+export function fly(_: string): string {
+  throw new Error("'fly' calls should be compiled away.")
+}
