@@ -4,6 +4,7 @@ import { expression } from './expression.stylex'
 export const styles = injectGlobalStyle({
   html: {
     fontSize: expression.font,
-    padding: 0
+    padding: 0,
+    border: `1px solid ${expression.red}`
   }
 })
