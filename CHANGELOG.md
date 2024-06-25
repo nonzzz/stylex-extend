@@ -1,3 +1,10 @@
+## v0.3.3 (2024-06-25)
+
+### Patches
+
+- Fix `injectGlobalStyle` can't handle template literal.
+- Fix `@stylex-extend/babel-plugin` can't work with esm.
+
 ## v0.3.2 (2024-05-30)
 
 ### Patches
