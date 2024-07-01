@@ -1,5 +1,9 @@
 <p align="center">
-<img src="https://socialify.git.ci/nonzzz/stylex-extend/image?description=1&descriptionEditable=Helps%20you%20using%20some%20amazing%20features.&font=Bitter&language=1&logo=https%3A%2F%2Fcdn.jsdelivr.net%2Fgh%2Ffacebook%2Fstylex%2Fapps%2Fdocs%2Fstatic%2Fimg%2Fstylex-logo-small.svg&name=1&pattern=Solid&theme=Auto" width="640" height="320" />
+<picture>
+<source media="(prefers-color-scheme: dark)" srcset="https://socialify.git.ci/nonzzz/stylex-extend/image?description=1&descriptionEditable=Helps%20you%20using%20some%20amazing%20features.&font=Bitter&language=1&logo=https%3A%2F%2Fcdn.jsdelivr.net%2Fgh%2Ffacebook%2Fstylex%2Fapps%2Fdocs%2Fstatic%2Fimg%2Fstylex-logo-small-dark.svg&name=1&pattern=Solid&theme=Dark">
+<source media="(prefers-color-scheme: dark)" srcset="https://socialify.git.ci/nonzzz/stylex-extend/image?description=1&descriptionEditable=Helps%20you%20using%20some%20amazing%20features.&font=Bitter&language=1&logo=https%3A%2F%2Fcdn.jsdelivr.net%2Fgh%2Ffacebook%2Fstylex%2Fapps%2Fdocs%2Fstatic%2Fimg%2Fstylex-logo-small.svg&name=1&pattern=Solid&theme=Light">
+<img src="https://socialify.git.ci/nonzzz/stylex-extend/image?description=1&descriptionEditable=Helps%20you%20using%20some%20amazing%20features.&font=Bitter&language=1&logo=https%3A%2F%2Fcdn.jsdelivr.net%2Fgh%2Ffacebook%2Fstylex%2Fapps%2Fdocs%2Fstatic%2Fimg%2Fstylex-logo-small.svg&name=1&pattern=Solid&theme=Light">
+</picture>
 </p>
 
 ### Document
