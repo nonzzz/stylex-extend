@@ -12,6 +12,8 @@ export const EXTEND_INJECT_GLOBAL_STYLE = 'injectGlobalStyle'
 
 export const EXTEND_INLINE = 'inline'
 
+export const EXTEND_WHEN = 'when'
+
 const _require = createRequire(__filename)
 
 // the order is same as stylexjs

@@ -14,6 +14,7 @@ function createWhenAPI(errorMessage: string) {
   }
 }
 
+// https://github.com/facebook/stylex/issues/536
 export const when = {
   // a b
   ancestor: createWhenAPI("'when.ancestor' calls should be compiled away."),
