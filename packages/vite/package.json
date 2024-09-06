@@ -1,0 +1,12 @@
+{
+  "name": "@stylex-extend/vite",
+  "version": "0.0.0",
+  "files": [
+    "dist"
+  ],
+  "dependencies": {
+    "@stylexjs/stylex": "^0.5.1",
+    "@stylex-extend/babel-plugin": "workspace:*",
+    "@rollup/pluginutils": "^5.1.0"
+  }
+}
