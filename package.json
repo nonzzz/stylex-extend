@@ -12,6 +12,7 @@
     "@stylex-extend/core": "file:./packages/core",
     "@stylex-extend/shared": "workspace:*",
     "@stylexjs/babel-plugin": "^0.5.1",
+    "@stylex-extend/vite": "workspace:*",
     "@stylexjs/stylex": "^0.5.1",
     "@swc/core": "^1.5.7",
     "@types/node": "^20.11.30",

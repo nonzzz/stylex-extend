@@ -5,7 +5,7 @@ install:
 	@corepack enable
 	pnpm install
 
-build-all: build-shared build-core build-babel-plugin
+build-all: build-shared build-core build-babel-plugin build-vite
 
 build-babel-plugin:
 	@echo "Building babel-plugin package..."
@@ -19,13 +19,20 @@ build-core: build-shared
 	-rm -rf $(currentDir)/dist
 	pnpm -C $(currentDir) run build
 
+
+build-vite:
+	@echo "Building vite package..."
+	$(eval currentDir = $(CURDIR)/packages/vite)
+	-rm -rf $(currentDir)/dist
+	pnpm -C $(currentDir) run build
+
 build-shared:
 	@echo "Building shared package..."
 	$(eval currentDir = $(CURDIR)/packages/shared)
 	-rm -rf $(currentDir)/dist
 	pnpm -C $(currentDir) run build
 
-publish-all: build-shared build-core build-babel-plugin
+publish-all: build-all
 	@echo "Publishing packages..."
 	pnpm -r publish --access public
 
