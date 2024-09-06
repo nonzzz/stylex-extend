@@ -4,9 +4,25 @@ import type { StylexExtendBabelPluginOptions } from '@stylex-extend/babel-plugin
 import type { FilterPattern } from '@rollup/pluginutils'
 import { createFilter } from '@rollup/pluginutils'
 
+type UnionToIntersection<U> =
+  (U extends any ? (k: U) => void : never) extends ((k: infer I) => void) ? I : never
+type LastOf<T> =
+  UnionToIntersection<T extends any ? () => T : never> extends () => (infer R) ? R : never
+
+type Push<T extends any[], V> = [...T, V]
+
+type TuplifyUnion<T, L = LastOf<T>, N = [T] extends [never] ? true : false> =
+  true extends N ? [] : Push<TuplifyUnion<Exclude<T, L>>, L>
 type DeepMutable<T> = {
-  -readonly [P in keyof T]: T[P] extends object ? DeepMutable<T[P]> : T[P]
+  -readonly [P in keyof T]: T[P] extends object ? DeepMutable<T[P]> : TuplifyUnion<T[P]>['length'] extends 1 ? T[P] : UnionDeepMutable<TuplifyUnion<T[P]>>[number]
 }
+
+type UnionDeepMutable<T extends any[]> = 
+  T extends [infer L, ...infer R] 
+    ? L extends object 
+      ? [DeepMutable<L>, ...UnionDeepMutable<R>]
+      : [L, ...UnionDeepMutable<R>]
+    : []
 
 type InternalOptions = DeepMutable<Omit<Options, 'dev' | 'runtimeInjection' | 'aliases'>>
 // type StylexExtendOptions = Omit<StylexExtendBabelPluginOptions, 'unstable_moduleResolution' | 'classNamePrefix'>
