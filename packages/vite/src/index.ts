@@ -1,13 +1,12 @@
 /* eslint-disable no-use-before-define */
 import path from 'path'
 import type { HookHandler, Plugin, ViteDevServer } from 'vite'
-import { transformAsync } from '@babel/core'
+import { parseSync, transformAsync } from '@babel/core'
 import type { Options } from '@stylexjs/babel-plugin'
 import { createFilter } from '@rollup/pluginutils'
 import type { FilterPattern } from '@rollup/pluginutils'
 import stylexBabelPlugin from '@stylexjs/babel-plugin'
 import extendBabelPlugin from '@stylex-extend/babel-plugin'
-import { init, parse } from 'es-module-lexer'
 import { normalizePath, searchForWorkspaceRoot } from 'vite'
 import type { PluginItem } from '@babel/core'
 
@@ -34,21 +33,28 @@ export interface StyleXOptions extends Partial<InternalOptions> {
   include?: FilterPattern
   exclude?: FilterPattern
   optimizedDeps?: Array<string>
+  /**
+   * @default ['stylex', '@stylexjs/stylex']
+   * @description https://stylexjs.com/docs/api/configuration/babel-plugin/#importsources
+   */
   useCSSLayer?: boolean
-  babelCOnfig?: {
+  /**
+   * @default false
+   * @description pipe the product of stylex to PostCSS or LightningCSS
+   */
+  useCSSProcess?: boolean
+  babelConfig?: {
     plugins?: Array<PluginItem>
     presets?: Array<PluginItem>
   }
+  /**
+   * @default true
+   * @description https://nonzzz.github.io/stylex-extend/
+   */
   macroOptions?: boolean | {
     helper?: 'props' | 'attrs' | (string & {})
   }
   [key: string]: any
-}
-
-export interface StyleXOptions extends Partial<InternalOptions> {
-  include?: FilterPattern
-  exclude?: FilterPattern
-  optimizedDeps?: Array<string>
 }
 
 type TransformWithStyleXType = 'extend' | 'standard'
@@ -59,6 +65,12 @@ interface TransformWithStyleXRestOptions<T = TransformWithStyleXType> {
   options: T extends 'extend' ? Parameters<typeof extendBabelPlugin.withOptions>[0]
     : Parameters<typeof stylexBabelPlugin.withOptions>[0]
   parserOpts?: any
+}
+
+interface ImportSpecifier {
+  n: string | undefined
+  s: number
+  e: number
 }
 
 function noop() {}
@@ -97,7 +109,6 @@ function isPotentialCSSFile(id: string) {
 }
 
 export function stylex(options: StyleXOptions = {}): Plugin[] {
-  init.then()
   const cssPlugins: Plugin[] = []
   options = { ...defaultOptions, ...options }
   let isSSR = false
@@ -119,24 +130,40 @@ export function stylex(options: StyleXOptions = {}): Plugin[] {
     }
   }
 
-  const scanFiles = (code: string, id: string) => {
-    const [stmts] = parse(code, id)
-    for (const stmt of stmts) {
-      const { n } = stmt
-      if (n) {
-        if (isPotentialCSSFile(n)) continue
-        if (options.importSources?.some(i => !path.isAbsolute(n) && n?.includes(typeof i === 'string' ? i : i.from))) {
-          effectScenes.add(id)
-          break
+  const parseStmts = (code: string, id: string) => {
+    const ast = parseSync(code, { filename: id, babelrc: false, parserOpts: { plugins: ['jsx', 'typescript'] } })
+    const stmts: ImportSpecifier[] = []
+    for (const n of ast!.program.body) {
+      if (n.type === 'ImportDeclaration') {
+        const v = n.source.value
+        if (!v) continue
+        const { start: s, end: e } = n.source
+        if (typeof s === 'number' && typeof e === 'number') {
+          stmts.push({ n: v, s: s + 1, e: e - 1 })
         }
       }
     }
+    return stmts
+  }
+
+  const scanFiles = (code: string, id: string) => {
+    // const [stmts] = parse(code, id)
+    // for (const stmt of stmts) {
+    //   const { n } = stmt
+    //   if (n) {
+    //     if (isPotentialCSSFile(n)) continue
+    //     if (options.importSources?.some(i => !path.isAbsolute(n) && n?.includes(typeof i === 'string' ? i : i.from))) {
+    //       effectScenes.add(id)
+    //       break
+    //     }
+    //   }
+    // }
     // invalidate vite's server
     invalidateRoots(isSSR)
   }
 
   const rewriteImportStmts = async (code: string, id: string, ctx: RollupPluginContext) => {
-    const [stmts] = parse(code, id)
+    const stmts = parseStmts(code, id)
     let i = 0
     for (const stmt of stmts) {
       const { n } = stmt
@@ -175,13 +202,12 @@ export function stylex(options: StyleXOptions = {}): Plugin[] {
     } catch (_) {
       plugin = await import(pluginName === 'extend' ? '@stylex-extend/babel-plugin' : '@stylexjs/babel-plugin').then(m => interopDefault(m))
     }
-
     return transformAsync(opts.code, {
       babelrc: false,
       filename: opts.filename,
       // @ts-expect-error
       plugins: [plugin.withOptions(opts.options)],
-      ...opts.parserOpts
+      parserOpts: opts.parserOpts ?? {}
     })
   }
 
@@ -254,7 +280,9 @@ export function stylex(options: StyleXOptions = {}): Plugin[] {
             filename: id,
             options: {
               //  @ts-expect-error
-              stylex: typeof options.macroOptions === 'object' ? options.macroOptions.helper : options.macroOptions
+              stylex: typeof options.macroOptions === 'object' ? options.macroOptions : options.macroOptions,
+              //  @ts-expect-error
+              unstable_moduleResolution: options.unstable_moduleResolution
             },
             parserOpts: { plugins: parseOtions }
           })

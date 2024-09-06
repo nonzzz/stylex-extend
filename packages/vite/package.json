@@ -16,7 +16,6 @@
     "./*": "./*"
   },
   "scripts": {
-    "test": "vitest",
     "dev": "rollup --config rollup.config.ts --configPlugin swc3 --watch",
     "build": "rollup --config rollup.config.ts --configPlugin swc3"
   },
