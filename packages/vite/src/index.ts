@@ -1,6 +1,6 @@
 /* eslint-disable no-use-before-define */
 import path from 'path'
-import type { HookHandler, Plugin, ViteDevServer } from 'vite'
+import type { HookHandler, Plugin, Update, ViteDevServer } from 'vite'
 import { parseSync, transformAsync } from '@babel/core'
 import type { Options, Rule } from '@stylexjs/babel-plugin'
 import { createFilter } from '@rollup/pluginutils'
@@ -135,8 +135,6 @@ export function stylex(options: StyleXOptions = {}): Plugin[] {
   // but it might not match the generated kv pairs.
   // such as `import { defineVars } from 'stylex'` and other who execute peval function.
 
-  const effectScenes = new Set<string>()
-
   const roots = new Map<string, EffectModule>()
 
   const filter = createFilter(options.include, options.exclude)
@@ -147,13 +145,6 @@ export function stylex(options: StyleXOptions = {}): Plugin[] {
         .map(r => r.meta).flat().filter(Boolean),
       useCSSLayer!
     )
-  }
-
-  const invalidateRoots = (isSSR: boolean) => {
-    //
-    for (const server of servers) {
-      //
-    }
   }
 
   // rollup private parse and es-module lexer can't parse JSX. So we have had to use babel to parse the import statements.
@@ -171,10 +162,6 @@ export function stylex(options: StyleXOptions = {}): Plugin[] {
       }
     }
     return stmts
-  }
-
-  const scanFiles = (code: string, id: string) => {
-    invalidateRoots(isSSR)
   }
 
   const rewriteImportStmts = async (code: string, id: string, ctx: RollupPluginContext) => {
@@ -333,11 +320,49 @@ export function stylex(options: StyleXOptions = {}): Plugin[] {
       name: '@stylex-extend:flush-css',
       apply: 'serve',
       enforce: 'post',
-      transform(code, id) {
-        //
+      resolveId(id) {
+        if (id === CONSTANTS.VIRTUAL_STYLEX_MARK) {
+          return id
+        }
+      },
+      load(id) {
+        if (id === CONSTANTS.VIRTUAL_STYLEX_MARK) {
+          return { code: produceCSS(), map: { mappings: '' } }
+        }
+      },
+      async transform(_, id) {
+        if (roots.has(id)) {
+          if (!isSSR) {
+            await Promise.all(servers.map((server) => server.waitForRequestsIdle(id)))
+          }
+
+          for (const server of servers) {
+            const updates: Update[] = []
+            for (const id of roots.keys()) {
+              const module = server.moduleGraph.getModuleById(id)
+              if (!module) {
+                if (!isSSR) {
+                  roots.delete(id)
+                }
+                continue
+              }
+              server.moduleGraph.invalidateModule(module)
+              updates.push({ type: `${module.type}-update`, path: module.url, acceptedPath: module.url, timestamp: Date.now() })
+            }
+            if (updates.length > 0) {
+              const module = server.moduleGraph.getModuleById(CONSTANTS.VIRTUAL_STYLEX_MARK)
+              if (module) {
+                server.moduleGraph.invalidateModule(module)
+                updates.push({ type: `${module.type}-update`, path: module.url, acceptedPath: module.url, timestamp: Date.now() })
+              }
+              server.hot.send({ type: 'update', updates })
+            }
+          }
+        }
       }
     },
     {
+      // we separate the server and build loigc. Although there will be some duplicated code, but it's worth.
       name: '@stylex-extend/vite:build-css',
       apply: 'build',
       enforce: 'pre',
