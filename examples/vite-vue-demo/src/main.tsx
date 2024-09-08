@@ -2,7 +2,10 @@ import { injectGlobalStyle } from '@stylex-extend/core'
 import { keyframes } from '@stylexjs/stylex'
 import { createApp, defineComponent } from 'vue'
 import { colors } from './colors.stylex'
-import 'stylex.css'
+
+import 'virtual:stylex.css'
+
+// import 'stylex.css'
 
 const pulse = keyframes({
   '0%': { transform: 'scale(1)' },

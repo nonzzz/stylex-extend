@@ -2,7 +2,7 @@
 import path from 'path'
 import type { HookHandler, Plugin, ViteDevServer } from 'vite'
 import { parseSync, transformAsync } from '@babel/core'
-import type { Options } from '@stylexjs/babel-plugin'
+import type { Options, Rule } from '@stylexjs/babel-plugin'
 import { createFilter } from '@rollup/pluginutils'
 import type { FilterPattern } from '@rollup/pluginutils'
 import stylexBabelPlugin from '@stylexjs/babel-plugin'
@@ -83,7 +83,10 @@ const transform: HookHandler<Plugin['transform']> = noop
 type RollupPluginContext = ThisParameterType<typeof transform>
 
 const CONSTANTS = {
-  REFERENCE_KEY: '@stylex;'
+  REFERENCE_KEY: '@stylex;',
+  STYLEX_META_KEY: 'stylex',
+  STYLEX_EXTEND_META_KEY: 'stylex-extend',
+  VIRTUAL_STYLEX_MARK: 'virtual:stylex.css'
 }
 
 const defaultOptions = {
@@ -108,10 +111,23 @@ function isPotentialCSSFile(id: string) {
   return extension === 'css' || (extension === 'vue' && id.includes('&lang.css')) || (extension === 'astro' && id.includes('&lang.css'))
 }
 
+class EffectModule {
+  id: string
+  meta: Rule[]
+  constructor(id: string, meta: any) {
+    this.id = id
+    this.meta = meta
+  }
+}
+
+// Vite's plugin can't handle all senarios, so we have to implement a cli to handle the rest.
+
 export function stylex(options: StyleXOptions = {}): Plugin[] {
   const cssPlugins: Plugin[] = []
   options = { ...defaultOptions, ...options }
+  const { macroOptions, useCSSLayer, useCSSProcess, optimizedDeps, include, exclude, babelConfig, ...rest } = options
   let isSSR = false
+  let isBuild = false
   const servers: ViteDevServer[] = []
 
   // effect scenes only scan stylex import statements.
@@ -121,7 +137,17 @@ export function stylex(options: StyleXOptions = {}): Plugin[] {
 
   const effectScenes = new Set<string>()
 
+  const roots = new Map<string, EffectModule>()
+
   const filter = createFilter(options.include, options.exclude)
+
+  const produceCSS = () => {
+    return stylexBabelPlugin.processStylexRules(
+      [...roots.values()]
+        .map(r => r.meta).flat().filter(Boolean),
+      useCSSLayer!
+    )
+  }
 
   const invalidateRoots = (isSSR: boolean) => {
     //
@@ -130,6 +156,7 @@ export function stylex(options: StyleXOptions = {}): Plugin[] {
     }
   }
 
+  // rollup private parse and es-module lexer can't parse JSX. So we have had to use babel to parse the import statements.
   const parseStmts = (code: string, id: string) => {
     const ast = parseSync(code, { filename: id, babelrc: false, parserOpts: { plugins: ['jsx', 'typescript'] } })
     const stmts: ImportSpecifier[] = []
@@ -147,18 +174,6 @@ export function stylex(options: StyleXOptions = {}): Plugin[] {
   }
 
   const scanFiles = (code: string, id: string) => {
-    // const [stmts] = parse(code, id)
-    // for (const stmt of stmts) {
-    //   const { n } = stmt
-    //   if (n) {
-    //     if (isPotentialCSSFile(n)) continue
-    //     if (options.importSources?.some(i => !path.isAbsolute(n) && n?.includes(typeof i === 'string' ? i : i.from))) {
-    //       effectScenes.add(id)
-    //       break
-    //     }
-    //   }
-    // }
-    // invalidate vite's server
     invalidateRoots(isSSR)
   }
 
@@ -206,7 +221,8 @@ export function stylex(options: StyleXOptions = {}): Plugin[] {
       babelrc: false,
       filename: opts.filename,
       // @ts-expect-error
-      plugins: [plugin.withOptions(opts.options)],
+      plugins: [...(babelConfig?.plugins ?? []), plugin.withOptions(opts.options)],
+      presets: babelConfig?.presets,
       parserOpts: opts.parserOpts ?? {}
     })
   }
@@ -218,15 +234,16 @@ export function stylex(options: StyleXOptions = {}): Plugin[] {
 
   return [
     {
-      name: '@stylex-extend/vite:scan',
+      name: '@stylex-extend:config',
       enforce: 'pre',
       configureServer(server) {
         servers.push(server)
       },
       configResolved(config) {
         isSSR = config.build.ssr !== false && config.build.ssr !== undefined
+        isBuild = config.command === 'build'
         for (const plugin of config.plugins) {
-          if (plugin.name === 'vite:css' || (config.command === 'build' && plugin.name === 'vite:css-post')) {
+          if (plugin.name === 'vite:css' || (isBuild && plugin.name === 'vite:css-post')) {
             cssPlugins.push(plugin)
           }
         }
@@ -250,16 +267,10 @@ export function stylex(options: StyleXOptions = {}): Plugin[] {
             ? [...config.ssr.noExternal, ...optimizedDeps]
             : config.ssr.noExternal
         }
-        //
-      },
-      transform(code, id) {
-        if (!filter(id)) return
-        if (isPotentialCSSFile(id)) return
-        scanFiles(code, id)
       }
     },
     {
-      name: '@stylex-extend/vite:convert',
+      name: '@stylex-extend:pre-convert',
       enforce: 'pre',
       transform: {
         order: 'pre',
@@ -280,7 +291,7 @@ export function stylex(options: StyleXOptions = {}): Plugin[] {
             filename: id,
             options: {
               //  @ts-expect-error
-              stylex: typeof options.macroOptions === 'object' ? options.macroOptions : options.macroOptions,
+              stylex: macroOptions,
               //  @ts-expect-error
               unstable_moduleResolution: options.unstable_moduleResolution
             },
@@ -293,7 +304,33 @@ export function stylex(options: StyleXOptions = {}): Plugin[] {
       }
     },
     {
-      name: '@stylex-extend/vite:serve',
+      name: '@stylex-extend/post-convert',
+      enforce: 'post',
+      async transform(code, id) {
+        if (!filter(id) || isPotentialCSSFile(id)) return
+        code = await rewriteImportStmts(code, id, this)
+        const res = await transformWithStyleX('standard', {
+          code,
+          filename: id,
+          options: {
+            ...rest,
+            unstable_moduleResolution: options.unstable_moduleResolution,
+            runtimeInjection: false,
+            dev: isBuild,
+            importSources: options.importSources
+          }
+        })
+        if (!res) return
+        if (res.metadata && CONSTANTS.STYLEX_META_KEY in res.metadata) {
+          // @ts-expect-error
+          const meta = res.metadata[CONSTANTS.STYLEX_META_KEY] satisfies Rule[]
+          roots.set(id, new EffectModule(id, meta))
+        }
+        if (res.code) return { code: res.code, map: res.map }
+      }
+    },
+    {
+      name: '@stylex-extend:flush-css',
       apply: 'serve',
       enforce: 'post',
       transform(code, id) {
@@ -301,9 +338,33 @@ export function stylex(options: StyleXOptions = {}): Plugin[] {
       }
     },
     {
-      name: '@stylex-extend/vite:build',
+      name: '@stylex-extend/vite:build-css',
       apply: 'build',
-      enforce: 'post'
+      enforce: 'pre',
+      resolveId(id) {
+        if (id === CONSTANTS.VIRTUAL_STYLEX_MARK) {
+          return id
+        }
+      },
+      load(id) {
+        if (id === CONSTANTS.VIRTUAL_STYLEX_MARK) {
+          return { code: produceCSS(), map: { mappings: '' } }
+        }
+      },
+      async renderStart() {
+        const css = produceCSS()
+        for (const plugin of cssPlugins) {
+          if (!plugin.transform) continue
+          const transformHook = typeof plugin.transform === 'function' ? plugin.transform : plugin.transform.handler
+          const ctx = {
+            ...this,
+            getCombinedSourcemap: () => {
+              throw new Error('getCombinedSourcemap not implemented')
+            }
+          } satisfies RollupPluginContext
+          await transformHook.call(ctx, css, CONSTANTS.VIRTUAL_STYLEX_MARK)
+        }
+      }
     }
   ]
 }
