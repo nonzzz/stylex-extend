@@ -1,6 +1,6 @@
 /* eslint-disable no-use-before-define */
 import path from 'path'
-import type { HookHandler, Plugin, Update, ViteDevServer } from 'vite'
+import type { HMRChannel, HookHandler, Plugin, Update, ViteDevServer } from 'vite'
 import { parseSync, transformAsync } from '@babel/core'
 import type { Options, Rule } from '@stylexjs/babel-plugin'
 import { createFilter } from '@rollup/pluginutils'
@@ -8,7 +8,7 @@ import type { FilterPattern } from '@rollup/pluginutils'
 import stylexBabelPlugin from '@stylexjs/babel-plugin'
 import extendBabelPlugin from '@stylex-extend/babel-plugin'
 import { normalizePath, searchForWorkspaceRoot } from 'vite'
-import type { PluginItem } from '@babel/core'
+import type { ParserOptions, PluginItem } from '@babel/core'
 
 type UnionToIntersection<U> = (U extends any ? (k: U) => void : never) extends ((k: infer I) => void) ? I : never
 type LastOf<T> = UnionToIntersection<T extends any ? () => T : never> extends () => infer R ? R : never
@@ -28,6 +28,18 @@ type DeepMutable<T> = {
 }
 
 type InternalOptions = DeepMutable<Omit<Options, 'dev' | 'runtimeInjection' | 'aliases'>>
+
+interface HMRBroadcaster extends Omit<HMRChannel, 'close' | 'name'> {
+  /**
+   * All registered channels. Always has websocket channel.
+   */
+  readonly channels: HMRChannel[]
+  /**
+   * Add a new third-party channel.
+   */
+  addChannel(connection: HMRChannel): HMRBroadcaster
+  close(): Promise<unknown[]>
+}
 
 export interface StyleXOptions extends Partial<InternalOptions> {
   include?: FilterPattern
@@ -72,6 +84,8 @@ interface ImportSpecifier {
   s: number
   e: number
 }
+
+type BabelParserPlugins = ParserOptions['plugins']
 
 function noop() {}
 
@@ -148,8 +162,8 @@ export function stylex(options: StyleXOptions = {}): Plugin[] {
   }
 
   // rollup private parse and es-module lexer can't parse JSX. So we have had to use babel to parse the import statements.
-  const parseStmts = (code: string, id: string) => {
-    const ast = parseSync(code, { filename: id, babelrc: false, parserOpts: { plugins: ['jsx', 'typescript'] } })
+  const parseStmts = (code: string, id: string, plugins: BabelParserPlugins = []) => {
+    const ast = parseSync(code, { filename: id, babelrc: false, parserOpts: { plugins } })
     const stmts: ImportSpecifier[] = []
     for (const n of ast!.program.body) {
       if (n.type === 'ImportDeclaration') {
@@ -164,8 +178,8 @@ export function stylex(options: StyleXOptions = {}): Plugin[] {
     return stmts
   }
 
-  const rewriteImportStmts = async (code: string, id: string, ctx: RollupPluginContext) => {
-    const stmts = parseStmts(code, id)
+  const rewriteImportStmts = async (code: string, id: string, ctx: RollupPluginContext, plugins: BabelParserPlugins = []) => {
+    const stmts = parseStmts(code, id, plugins)
     let i = 0
     for (const stmt of stmts) {
       const { n } = stmt
@@ -197,6 +211,18 @@ export function stylex(options: StyleXOptions = {}): Plugin[] {
     return code
   }
 
+  const ensureParserOpts = (id: string) => {
+    const plugins: BabelParserPlugins = []
+    const extension = getExt(id)
+    if (extension === 'jsx' || extension === 'tsx') {
+      plugins.push('jsx')
+    }
+    if (extension === 'ts' || extension === 'tsx') {
+      plugins.push('typescript')
+    }
+    return plugins
+  }
+
   async function transformWithStyleX<T extends TransformWithStyleXType>(pluginName: T, opts: TransformWithStyleXRestOptions<T>) {
     let plugin: typeof stylexBabelPlugin | typeof extendBabelPlugin
     try {
@@ -214,6 +240,32 @@ export function stylex(options: StyleXOptions = {}): Plugin[] {
     })
   }
 
+  const invalidAllRoots = (id: string) => {
+    if (!roots.has(id)) return
+
+    const makeEffectModule = (type: 'js' | 'css', path: string, accept: string) => {
+      return { type: `${type}-update`, path, acceptedPath: accept, timestamp: Date.now() } satisfies Update
+    }
+
+    for (const server of servers) {
+      const updates: Update[] = []
+      for (const id of roots.keys()) {
+        const module = server.moduleGraph.getModuleById(id)
+        if (!module) {
+          !isSSR && roots.delete(id)
+          continue
+        }
+        updates.push(makeEffectModule(module.type, module.url, module.url))
+      }
+      const module = server.moduleGraph.getModuleById(CONSTANTS.VIRTUAL_STYLEX_MARK)
+      if (module) {
+        server.moduleGraph.invalidateModule(module)
+        updates.push(makeEffectModule(module.type, module.url, module.url))
+      }
+      server.hot.send({ type: 'update', updates })
+    }
+  }
+
   // Steps:
   // First, pre scan all files and collect all stylex imports as possible
   // Second, in serve mode generate the css from stylex and inject it to the css plugin
@@ -224,6 +276,10 @@ export function stylex(options: StyleXOptions = {}): Plugin[] {
       name: '@stylex-extend:config',
       enforce: 'pre',
       configureServer(server) {
+        // impl polyfill for lower version of vite
+        if (!server.hot) {
+          server.hot = server.ws as unknown as HMRBroadcaster
+        }
         servers.push(server)
       },
       configResolved(config) {
@@ -261,18 +317,12 @@ export function stylex(options: StyleXOptions = {}): Plugin[] {
       enforce: 'pre',
       transform: {
         order: 'pre',
-        async handler(code, id, opt) {
+        async handler(code, id) {
+          if (id.includes('/node_modules/')) return
           // convert all stylex-extend macro to stylex macro
-          if (!/\.[jt]sx?$/.test(id)) return
-          const extension = getExt(id)
-          const parseOtions: string[] = []
-          if (!extension.endsWith('ts')) {
-            parseOtions.push('jsx')
-          }
-          if (extension === 'tsx' || extension === 'ts') {
-            parseOtions.push('typescript')
-          }
-          code = await rewriteImportStmts(code, id, this)
+          if (!/\.[jt]sx?$/.test(id) || id.startsWith('\0')) return
+          const plugins = ensureParserOpts(id)
+          code = await rewriteImportStmts(code, id, this, plugins)
           const res = await transformWithStyleX('extend', {
             code,
             filename: id,
@@ -282,7 +332,7 @@ export function stylex(options: StyleXOptions = {}): Plugin[] {
               //  @ts-expect-error
               unstable_moduleResolution: options.unstable_moduleResolution
             },
-            parserOpts: { plugins: parseOtions }
+            parserOpts: { plugins }
           })
           if (res && res.code) {
             return { code: res.code, map: res.map }
@@ -294,7 +344,8 @@ export function stylex(options: StyleXOptions = {}): Plugin[] {
       name: '@stylex-extend/post-convert',
       enforce: 'post',
       async transform(code, id) {
-        if (!filter(id) || isPotentialCSSFile(id)) return
+        if (id.includes('/node_modules/')) return
+        if (!filter(id) || isPotentialCSSFile(id) || id.startsWith('\0')) return
         code = await rewriteImportStmts(code, id, this)
         const res = await transformWithStyleX('standard', {
           code,
@@ -313,6 +364,7 @@ export function stylex(options: StyleXOptions = {}): Plugin[] {
           const meta = res.metadata[CONSTANTS.STYLEX_META_KEY] satisfies Rule[]
           roots.set(id, new EffectModule(id, meta))
         }
+
         if (res.code) return { code: res.code, map: res.map }
       }
     },
@@ -331,34 +383,7 @@ export function stylex(options: StyleXOptions = {}): Plugin[] {
         }
       },
       async transform(_, id) {
-        if (roots.has(id)) {
-          if (!isSSR) {
-            await Promise.all(servers.map((server) => server.waitForRequestsIdle(id)))
-          }
-
-          for (const server of servers) {
-            const updates: Update[] = []
-            for (const id of roots.keys()) {
-              const module = server.moduleGraph.getModuleById(id)
-              if (!module) {
-                if (!isSSR) {
-                  roots.delete(id)
-                }
-                continue
-              }
-              server.moduleGraph.invalidateModule(module)
-              updates.push({ type: `${module.type}-update`, path: module.url, acceptedPath: module.url, timestamp: Date.now() })
-            }
-            if (updates.length > 0) {
-              const module = server.moduleGraph.getModuleById(CONSTANTS.VIRTUAL_STYLEX_MARK)
-              if (module) {
-                server.moduleGraph.invalidateModule(module)
-                updates.push({ type: `${module.type}-update`, path: module.url, acceptedPath: module.url, timestamp: Date.now() })
-              }
-              server.hot.send({ type: 'update', updates })
-            }
-          }
-        }
+        invalidAllRoots(id)
       }
     },
     {
