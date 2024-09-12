@@ -44,11 +44,10 @@ interface HMRBroadcaster extends Omit<HMRChannel, 'close' | 'name'> {
 export interface StyleXOptions extends Partial<InternalOptions> {
   include?: FilterPattern
   exclude?: FilterPattern
-  optimizedDeps?: Array<string>
   /**
-   * @default ['stylex', '@stylexjs/stylex']
-   * @description https://stylexjs.com/docs/api/configuration/babel-plugin/#importsources
+   * @description For some reasons, vite can't handle cjs module resolution correctly. so pass this option to fix it.
    */
+  optimizedDeps?: Array<string>
   useCSSLayer?: boolean
   /**
    * @default false
@@ -106,7 +105,8 @@ const CONSTANTS = {
 const defaultOptions = {
   include: /\.(mjs|js|ts|vue|jsx|tsx)(\?.*|)$/,
   importSources: ['stylex', '@stylexjs/stylex'],
-  macroOptions: true
+  macroOptions: true,
+  useCSSLayer: false
 } satisfies StyleXOptions
 
 const WELL_KNOW_LIBS = ['@stylexjs/open-props']
@@ -140,7 +140,6 @@ export function stylex(options: StyleXOptions = {}): Plugin[] {
   const cssPlugins: Plugin[] = []
   options = { ...defaultOptions, ...options }
   const { macroOptions, useCSSLayer, useCSSProcess, optimizedDeps, include, exclude, babelConfig, ...rest } = options
-  let isSSR = false
   let isBuild = false
   const servers: ViteDevServer[] = []
 
@@ -223,7 +222,7 @@ export function stylex(options: StyleXOptions = {}): Plugin[] {
     return plugins
   }
 
-  async function transformWithStyleX<T extends TransformWithStyleXType>(pluginName: T, opts: TransformWithStyleXRestOptions<T>) {
+  const transformWithStyleX = async <T extends TransformWithStyleXType>(pluginName: T, opts: TransformWithStyleXRestOptions<T>) => {
     let plugin: typeof stylexBabelPlugin | typeof extendBabelPlugin
     try {
       plugin = interopDefault(pluginName === 'extend' ? extendBabelPlugin : stylexBabelPlugin)
@@ -240,29 +239,20 @@ export function stylex(options: StyleXOptions = {}): Plugin[] {
     })
   }
 
-  const invalidAllRoots = (id: string) => {
-    if (!roots.has(id)) return
-
-    const makeEffectModule = (type: 'js' | 'css', path: string, accept: string) => {
-      return { type: `${type}-update`, path, acceptedPath: accept, timestamp: Date.now() } satisfies Update
-    }
-
+  const invalidate = () => {
     for (const server of servers) {
       const updates: Update[] = []
-      for (const id of roots.keys()) {
-        const module = server.moduleGraph.getModuleById(id)
-        if (!module) {
-          !isSSR && roots.delete(id)
-          continue
-        }
-        updates.push(makeEffectModule(module.type, module.url, module.url))
-      }
-      const module = server.moduleGraph.getModuleById(CONSTANTS.VIRTUAL_STYLEX_MARK)
-      if (module) {
-        server.moduleGraph.invalidateModule(module)
-        updates.push(makeEffectModule(module.type, module.url, module.url))
-      }
-      server.hot.send({ type: 'update', updates })
+      const mod = server.moduleGraph.getModuleById(CONSTANTS.VIRTUAL_STYLEX_MARK)
+      if (!mod) continue
+      server.moduleGraph.invalidateModule(mod)
+      const update = {
+        type: 'js-update',
+        path: '/@id/' + mod.url,
+        acceptedPath: '/@id/' + mod.url,
+        timestamp: Date.now()
+      } satisfies Update
+      updates.push(update)
+      server.ws.send({ type: 'update', updates })
     }
   }
 
@@ -276,14 +266,9 @@ export function stylex(options: StyleXOptions = {}): Plugin[] {
       name: '@stylex-extend:config',
       enforce: 'pre',
       configureServer(server) {
-        // impl polyfill for lower version of vite
-        if (!server.hot) {
-          server.hot = server.ws as unknown as HMRBroadcaster
-        }
         servers.push(server)
       },
       configResolved(config) {
-        isSSR = config.build.ssr !== false && config.build.ssr !== undefined
         isBuild = config.command === 'build'
         for (const plugin of config.plugins) {
           if (plugin.name === 'vite:css' || (isBuild && plugin.name === 'vite:css-post')) {
@@ -362,7 +347,9 @@ export function stylex(options: StyleXOptions = {}): Plugin[] {
         if (res.metadata && CONSTANTS.STYLEX_META_KEY in res.metadata) {
           // @ts-expect-error
           const meta = res.metadata[CONSTANTS.STYLEX_META_KEY] satisfies Rule[]
-          roots.set(id, new EffectModule(id, meta))
+          if (meta.length) {
+            roots.set(id, new EffectModule(id, meta))
+          }
         }
 
         if (res.code) return { code: res.code, map: res.map }
@@ -383,7 +370,9 @@ export function stylex(options: StyleXOptions = {}): Plugin[] {
         }
       },
       async transform(_, id) {
-        invalidAllRoots(id)
+        if (roots.has(id)) {
+          invalidate()
+        }
       }
     },
     {
