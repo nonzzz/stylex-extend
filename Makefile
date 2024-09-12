@@ -20,7 +20,7 @@ build-core: build-shared
 	pnpm -C $(currentDir) run build
 
 
-build-vite:
+build-vite: build-babel-plugin
 	@echo "Building vite package..."
 	$(eval currentDir = $(CURDIR)/packages/vite)
 	-rm -rf $(currentDir)/dist

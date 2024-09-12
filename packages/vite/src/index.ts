@@ -98,7 +98,7 @@ type RollupPluginContext = ThisParameterType<typeof transform>
 const CONSTANTS = {
   REFERENCE_KEY: '@stylex;',
   STYLEX_META_KEY: 'stylex',
-  STYLEX_EXTEND_META_KEY: 'stylex-extend',
+  STYLEX_EXTEND_META_KEY: 'globalStyle',
   VIRTUAL_STYLEX_MARK: 'virtual:stylex.css'
 }
 
@@ -149,6 +149,7 @@ export function stylex(options: StyleXOptions = {}): Plugin[] {
   // such as `import { defineVars } from 'stylex'` and other who execute peval function.
 
   const roots = new Map<string, EffectModule>()
+  const globalCSS = {}
 
   const filter = createFilter(options.include, options.exclude)
 
@@ -157,7 +158,7 @@ export function stylex(options: StyleXOptions = {}): Plugin[] {
       [...roots.values()]
         .map(r => r.meta).flat().filter(Boolean),
       useCSSLayer!
-    )
+    ) + '\n' + Object.values(globalCSS).join('\n')
   }
 
   // rollup private parse and es-module lexer can't parse JSX. So we have had to use babel to parse the import statements.
@@ -308,18 +309,30 @@ export function stylex(options: StyleXOptions = {}): Plugin[] {
           if (!/\.[jt]sx?$/.test(id) || id.startsWith('\0')) return
           const plugins = ensureParserOpts(id)
           code = await rewriteImportStmts(code, id, this, plugins)
+
+          if (id in globalCSS) {
+            // @ts-expect-error
+            delete globalCSS[id]
+          }
+
           const res = await transformWithStyleX('extend', {
             code,
             filename: id,
             options: {
               //  @ts-expect-error
               stylex: macroOptions,
+              enableInjectGlobalStyles: true,
               //  @ts-expect-error
               unstable_moduleResolution: options.unstable_moduleResolution
             },
             parserOpts: { plugins }
           })
           if (res && res.code) {
+            if (res.metadata && CONSTANTS.STYLEX_EXTEND_META_KEY in res.metadata) {
+              // @ts-expect-error
+              globalCSS[id] = res.metadata[CONSTANTS.STYLEX_EXTEND_META_KEY]
+            }
+
             return { code: res.code, map: res.map }
           }
         }
