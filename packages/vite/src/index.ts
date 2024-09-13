@@ -1,6 +1,6 @@
 /* eslint-disable no-use-before-define */
 import path from 'path'
-import type { HMRChannel, HookHandler, Plugin, Update, ViteDevServer } from 'vite'
+import type { HookHandler, Plugin, Update, ViteDevServer } from 'vite'
 import { parseSync, transformAsync } from '@babel/core'
 import type { Options, Rule } from '@stylexjs/babel-plugin'
 import { createFilter } from '@rollup/pluginutils'
@@ -29,18 +29,6 @@ type DeepMutable<T> = {
 
 type InternalOptions = DeepMutable<Omit<Options, 'dev' | 'runtimeInjection' | 'aliases'>>
 
-interface HMRBroadcaster extends Omit<HMRChannel, 'close' | 'name'> {
-  /**
-   * All registered channels. Always has websocket channel.
-   */
-  readonly channels: HMRChannel[]
-  /**
-   * Add a new third-party channel.
-   */
-  addChannel(connection: HMRChannel): HMRBroadcaster
-  close(): Promise<unknown[]>
-}
-
 export interface StyleXOptions extends Partial<InternalOptions> {
   include?: FilterPattern
   exclude?: FilterPattern
@@ -49,11 +37,6 @@ export interface StyleXOptions extends Partial<InternalOptions> {
    */
   optimizedDeps?: Array<string>
   useCSSLayer?: boolean
-  /**
-   * @default false
-   * @description pipe the product of stylex to PostCSS or LightningCSS
-   */
-  useCSSProcess?: boolean
   babelConfig?: {
     plugins?: Array<PluginItem>
     presets?: Array<PluginItem>
@@ -143,13 +126,9 @@ export function stylex(options: StyleXOptions = {}): Plugin[] {
   let isBuild = false
   const servers: ViteDevServer[] = []
 
-  // effect scenes only scan stylex import statements.
-  // when other's file pipe to stylex compiler.
-  // but it might not match the generated kv pairs.
-  // such as `import { defineVars } from 'stylex'` and other who execute peval function.
-
   const roots = new Map<string, EffectModule>()
-  const globalCSS = {}
+  let globalCSS = {}
+  let lastHash = ''
 
   const filter = createFilter(options.include, options.exclude)
 
@@ -159,6 +138,18 @@ export function stylex(options: StyleXOptions = {}): Plugin[] {
         .map(r => r.meta).flat().filter(Boolean),
       useCSSLayer!
     ) + '\n' + Object.values(globalCSS).join('\n')
+  }
+
+  const xxhash = (str: string) => {
+    let i
+    let l
+    let hval = 0x811C9DC5
+
+    for (i = 0, l = str.length; i < l; i++) {
+      hval ^= str.charCodeAt(i)
+      hval += (hval << 1) + (hval << 4) + (hval << 7) + (hval << 8) + (hval << 24)
+    }
+    return (`00000${(hval >>> 0).toString(36)}`).slice(-6)
   }
 
   // rollup private parse and es-module lexer can't parse JSX. So we have had to use babel to parse the import statements.
@@ -240,11 +231,16 @@ export function stylex(options: StyleXOptions = {}): Plugin[] {
     })
   }
 
+  // TODO: for more performance, we might need to maintain a dependency graph to invalidate the cache.
   const invalidate = () => {
     for (const server of servers) {
       const updates: Update[] = []
       const mod = server.moduleGraph.getModuleById(CONSTANTS.VIRTUAL_STYLEX_MARK)
       if (!mod) continue
+      const nextHash = xxhash(produceCSS())
+      if (lastHash === nextHash) continue
+      lastHash = nextHash
+      // check if need to update the css
       server.moduleGraph.invalidateModule(mod)
       const update = {
         type: 'js-update',
@@ -266,6 +262,22 @@ export function stylex(options: StyleXOptions = {}): Plugin[] {
     {
       name: '@stylex-extend:config',
       enforce: 'pre',
+      buildStart() {
+        if (!this.meta.watchMode) {
+          roots.clear()
+          globalCSS = {}
+        }
+      },
+      resolveId(id) {
+        if (id === CONSTANTS.VIRTUAL_STYLEX_MARK) {
+          return id
+        }
+      },
+      load(id) {
+        if (id === CONSTANTS.VIRTUAL_STYLEX_MARK) {
+          return { code: produceCSS(), map: { mappings: '' } }
+        }
+      },
       configureServer(server) {
         servers.push(server)
       },
@@ -362,6 +374,8 @@ export function stylex(options: StyleXOptions = {}): Plugin[] {
           const meta = res.metadata[CONSTANTS.STYLEX_META_KEY] satisfies Rule[]
           if (meta.length) {
             roots.set(id, new EffectModule(id, meta))
+          } else {
+            roots.delete(id)
           }
         }
 
@@ -372,16 +386,7 @@ export function stylex(options: StyleXOptions = {}): Plugin[] {
       name: '@stylex-extend:flush-css',
       apply: 'serve',
       enforce: 'post',
-      resolveId(id) {
-        if (id === CONSTANTS.VIRTUAL_STYLEX_MARK) {
-          return id
-        }
-      },
-      load(id) {
-        if (id === CONSTANTS.VIRTUAL_STYLEX_MARK) {
-          return { code: produceCSS(), map: { mappings: '' } }
-        }
-      },
+
       async transform(_, id) {
         if (roots.has(id)) {
           invalidate()
@@ -393,16 +398,6 @@ export function stylex(options: StyleXOptions = {}): Plugin[] {
       name: '@stylex-extend/vite:build-css',
       apply: 'build',
       enforce: 'pre',
-      resolveId(id) {
-        if (id === CONSTANTS.VIRTUAL_STYLEX_MARK) {
-          return id
-        }
-      },
-      load(id) {
-        if (id === CONSTANTS.VIRTUAL_STYLEX_MARK) {
-          return { code: produceCSS(), map: { mappings: '' } }
-        }
-      },
       async renderStart() {
         const css = produceCSS()
         for (const plugin of cssPlugins) {
