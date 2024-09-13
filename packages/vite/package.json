@@ -4,7 +4,9 @@
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
   "files": [
-    "dist"
+    "dist",
+    "client.d.ts",
+    "README.md"
   ],
   "exports": {
     ".": {
@@ -28,5 +30,11 @@
   },
   "devDependencies": {
     "@types/babel__core": "^7.20.5"
-  }
+  },
+  "keywords": [
+    "stylex",
+    "experimental",
+    "css-in-js",
+    "vite-plugin"
+  ]
 }

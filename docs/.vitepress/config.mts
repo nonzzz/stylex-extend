@@ -1,4 +1,5 @@
 import { defineConfig } from 'vitepress'
+import { groupIconMdPlugin, groupIconVitePlugin } from 'vitepress-plugin-group-icons'
 
 // https://vitepress.dev/reference/site-config
 export default defineConfig({
@@ -9,7 +10,8 @@ export default defineConfig({
   themeConfig: {
     // https://vitepress.dev/reference/default-theme-config
     nav: [
-      { text: 'Guide', link: '/guide/reference', activeMatch: '/guide/' }
+      { text: 'Guide', link: '/guide/reference', activeMatch: '/guide/' },
+      { text: 'Integrations', link: '/integrations/overflow', activeMatch: '/integrations/' }
     ],
     sidebar: [
       {
@@ -18,6 +20,13 @@ export default defineConfig({
           { text: 'Reference', link: '/guide/reference' },
           { text: 'Configuration', link: '/guide/configuration' },
           { text: 'APIs', link: '/guide/api' }
+        ]
+      },
+      {
+        text: 'Integrations',
+        items: [
+          { text: 'Overflow', link: '/integrations/overflow' },
+          { text: 'Vite', link: '/integrations/vite' }
         ]
       }
     ],
@@ -31,9 +40,19 @@ export default defineConfig({
     lastUpdated: {
       text: 'Last Modified',
       formatOptions: {
-        dateStyle: 'full',
+        dateStyle: 'short',
         timeStyle: 'medium'
       }
     }
+  },
+  markdown: {
+    config(md) {
+      md.use(groupIconMdPlugin)
+    }
+  },
+  vite: {
+    plugins: [
+      groupIconVitePlugin()
+    ]
   }
 })
