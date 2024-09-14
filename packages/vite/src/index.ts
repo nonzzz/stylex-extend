@@ -69,6 +69,10 @@ interface ImportSpecifier {
 
 type BabelParserPlugins = ParserOptions['plugins']
 
+interface HMRPayload {
+  hash: string
+}
+
 function noop() {}
 
 function interopDefault(m: any) {
@@ -84,6 +88,8 @@ const CONSTANTS = {
   STYLEX_EXTEND_META_KEY: 'globalStyle',
   VIRTUAL_STYLEX_MARK: 'virtual:stylex.css'
 }
+
+const WS_EVENT_TYPE = 'stylex:hmr'
 
 const defaultOptions = {
   include: /\.(mjs|js|ts|vue|jsx|tsx)(\?.*|)$/,
@@ -232,12 +238,15 @@ export function stylex(options: StyleXOptions = {}): Plugin[] {
   }
 
   // TODO: for more performance, we might need to maintain a dependency graph to invalidate the cache.
-  const invalidate = () => {
+  const invalidate = (hmrHash?: string) => {
     for (const server of servers) {
       const updates: Update[] = []
       const mod = server.moduleGraph.getModuleById(CONSTANTS.VIRTUAL_STYLEX_MARK)
       if (!mod) continue
       const nextHash = xxhash(produceCSS())
+      if (hmrHash) {
+        lastHash = hmrHash
+      }
       if (lastHash === nextHash) continue
       lastHash = nextHash
       // check if need to update the css
@@ -280,6 +289,11 @@ export function stylex(options: StyleXOptions = {}): Plugin[] {
       },
       configureServer(server) {
         servers.push(server)
+        // vite's update for HMR are constantly changing. For better compatibility, we need to initate an update
+        // notification from the client.
+        server.ws.on(WS_EVENT_TYPE, (payload: HMRPayload) => {
+          invalidate(payload.hash)
+        })
       },
       configResolved(config) {
         isBuild = config.command === 'build'
@@ -387,9 +401,25 @@ export function stylex(options: StyleXOptions = {}): Plugin[] {
       apply: 'serve',
       enforce: 'post',
 
-      async transform(_, id) {
+      async transform(code, id) {
         if (roots.has(id)) {
           invalidate()
+        }
+        const [filename] = id.split('?', 2)
+        if (filename === CONSTANTS.VIRTUAL_STYLEX_MARK && code.includes('import.meta.hot')) {
+          // inject client hmr notification
+          const payload = { hash: xxhash(produceCSS()) } satisfies HMRPayload
+          let hmr = `
+          try {
+           await import.meta.hot.send('${WS_EVENT_TYPE}', ${JSON.stringify(payload)})
+          } catch (e) {
+           console.warn('[stylex-hmr]', e)
+          }
+          if (!import.meta.url.includes('?')) await new Promise(resolve => setTimeout(resolve, 100))
+          `
+          hmr = `;(async function() {${hmr}\n})()`
+          hmr = `\nif (import.meta.hot) {${hmr}}`
+          return { code: code + hmr, map: { mappings: '' } }
         }
       }
     },
@@ -399,7 +429,7 @@ export function stylex(options: StyleXOptions = {}): Plugin[] {
       apply: 'build',
       enforce: 'pre',
       async renderStart() {
-        const css = produceCSS()
+        let css = produceCSS()
         for (const plugin of cssPlugins) {
           if (!plugin.transform) continue
           const transformHook = typeof plugin.transform === 'function' ? plugin.transform : plugin.transform.handler
@@ -409,7 +439,14 @@ export function stylex(options: StyleXOptions = {}): Plugin[] {
               throw new Error('getCombinedSourcemap not implemented')
             }
           } satisfies RollupPluginContext
-          await transformHook.call(ctx, css, CONSTANTS.VIRTUAL_STYLEX_MARK)
+          const res = await transformHook.call(ctx, css, CONSTANTS.VIRTUAL_STYLEX_MARK)
+          if (!res) continue
+          if (typeof res === 'string') {
+            css = res
+          }
+          if (typeof res === 'object' && res.code) {
+            css = res.code
+          }
         }
       }
     }
