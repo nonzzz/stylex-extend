@@ -1,6 +1,6 @@
 {
   "name": "@stylex-extend/vite",
-  "version": "0.1.0-alpha.0",
+  "version": "0.1.0-alpha.2",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
   "files": [
@@ -22,15 +22,15 @@
     "build": "rollup --config rollup.config.ts --configPlugin swc3"
   },
   "dependencies": {
-    "@stylexjs/stylex": "^0.5.1",
+    "@stylexjs/babel-plugin": "^0.7.5",
     "@stylex-extend/babel-plugin": "workspace:*",
     "@rollup/pluginutils": "^5.1.0",
-    "es-module-lexer": "^1.5.4",
     "@babel/core": "^7.25.2"
   },
   "devDependencies": {
     "@types/babel__core": "^7.20.5"
   },
+  "repository": "https://github.com/nonzzz/stylex-extend.git",
   "keywords": [
     "stylex",
     "experimental",
