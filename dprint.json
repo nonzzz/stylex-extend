@@ -6,7 +6,8 @@
     "useTabs": false,
     "trailingCommas": "never",
     "module.sortImportDeclarations": "maintain",
-    "operatorPosition": "maintain"
+    "operatorPosition": "maintain",
+    "spaceBeforeParentheses": true
   },
   "json": {
   },

@@ -1,6 +1,8 @@
 export const MESSAGES = {
   NOT_IMPLEMENTED: 'Not implemented.',
   INVALID_CSS_AST_KIND: 'Only accept a style object.',
+  INVALID_JSX_ELEMENT: 'Invalid JSX element.',
+  DUPLICATE_STYLEX_ATTR: 'Duplicate stylex attribute.',
   NO_STATIC_ATTRIBUTE: 'Only static attribute is allowed in style object.',
   NO_NESTED_SPREAD: 'Nested spread syntax is not allowed in style object.',
   ONLY_LOGICAL_AND: 'Only logical and operator is allowed in spread element.',

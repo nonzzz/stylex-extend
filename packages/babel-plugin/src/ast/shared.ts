@@ -1,5 +1,6 @@
 import { types } from '@babel/core'
 import { NodePath } from '@babel/core'
+import { identifier } from 'stylis'
 
 export type StringLikeKindPath = NodePath<types.StringLiteral | types.Identifier>
 
@@ -11,8 +12,28 @@ export function isStringLikeKind(path: NodePath<types.Node>): path is StringLike
   return path.isStringLiteral() || path.isIdentifier()
 }
 
+export function isStringLiteral(path: NodePath<types.Node>): path is NodePath<types.StringLiteral> {
+  return path.isStringLiteral()
+}
+
+export function isNumericLiteral(path: NodePath<types.Node>): path is NodePath<types.NumericLiteral> {
+  return path.isNumericLiteral()
+}
+
+export function isBooleanLiteral(path: NodePath<types.Node>): path is NodePath<types.BooleanLiteral> {
+  return path.isBooleanLiteral()
+}
+
+export function isNullLiteral(path: NodePath<types.Node>): path is NodePath<types.NullLiteral> {
+  return path.isNullLiteral()
+}
+
 export function isIdentifier(path: NodePath<types.Node>): path is NodePath<types.Identifier> {
   return path.isIdentifier()
+}
+
+export function isConditionalExpression(path: NodePath<types.Node>): path is NodePath<types.ConditionalExpression> {
+  return path.isConditionalExpression()
 }
 
 export function getStringLikeKindValue(path: StringLikeKindPath | StringLikeKind) {
@@ -64,6 +85,10 @@ export function isSpreadElement(path: NodePath<types.Node>): path is NodePath<ty
   return path.isSpreadElement()
 }
 
+export function isObjectMethod(path: NodePath<types.Node>): path is NodePath<types.ObjectMethod> {
+  return path.isObjectMethod()
+}
+
 export function isMemberExpression(path: NodePath<types.Node>): path is NodePath<types.MemberExpression> {
   return path.isMemberExpression()
 }
@@ -88,10 +113,31 @@ export function is(condit: boolean, message: string = 'Invalid Error') {
   if (!condit) throw new Error(message)
 }
 
-export function findNearestStatementAncestor(path: NodePath<types.Node>): NodePath<types.Statement> {
-  if (isStmt(path)) return path
+export function isLogicalExpression(path: NodePath<types.Node>): path is NodePath<types.LogicalExpression> {
+  return path.isLogicalExpression()
+}
+
+export function findNearestParentWithCondition<T extends types.Node>(
+  path: NodePath<types.Node>,
+  condition: (p: NodePath<types.Node>) => p is NodePath<T>
+): NodePath<T> {
+  if (condition(path)) return path
   if (path.parentPath == null) {
     throw new Error('Unexpected Path found that is not part of the AST.')
   }
-  return findNearestStatementAncestor(path.parentPath)
+  return findNearestParentWithCondition(path.parentPath, condition)
+}
+
+export function findNearestStatementAncestor(path: NodePath<types.Node>) {
+  return findNearestParentWithCondition(path, isStmt)
+}
+
+export const make = {
+  objectProperty: (key: string, value: types.Expression) => objectProperty(stringLiteral(key), value),
+  identifier: (name: string) => types.identifier(name),
+  stringLiteral: (value: string) => stringLiteral(value),
+  nullLiteral: () => types.nullLiteral(),
+  numericLiteral: (value: number) => types.numericLiteral(value),
+  callExpression: (callee: CalleeExpression, args: types.Expression[]) => callExpression(callee, args),
+  memberExpression
 }
