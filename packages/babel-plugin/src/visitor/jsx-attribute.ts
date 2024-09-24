@@ -28,8 +28,7 @@ export function transformStylexAttrs(path: NodePath<types.JSXAttribute>, mod: Mo
     const { properties, expressions, into } = printJsAST({ css, references }, expr, mod)
     const [create, applied] = insertRelativePackage(mod.program, mod)
     const declaration = make.variableDeclaration(into, callExpression(create.node, [make.objectExpression(properties)]))
-    const program = findNearestParentWithCondition(path, (p) => p.isProgram())
-    program.unshiftContainer('body', declaration)
+    mod.program.unshiftContainer('body', declaration)
     path.replaceWith(types.jsxSpreadAttribute(callExpression(applied.node, expressions)))
   }
 }
