@@ -8,7 +8,7 @@ import { MESSAGES } from '../ast/message'
 import type { CSSObjectValue } from '../interface'
 import { Module } from '../module'
 import { Context } from '../state-context'
-import { isIdentifier, isMemberExpression, isObjectExpression, isTemplateLiteral, isTopLevelCalled } from '../ast/shared'
+import { findNearestStatementAncestor, isIdentifier, isMemberExpression, isObjectExpression, isTemplateLiteral, isTopLevelCalled } from '../ast/shared'
 import { evaluateCSS, printCssAST } from '../ast/evaluate-path'
 import { getExtendMacro } from './inline'
 
@@ -137,9 +137,10 @@ function validateInjectGlobalStyleMacro(path: NodePath<types.Expression | types.
 export function transformInjectGlobalStyle(path: NodePath<types.CallExpression>, mod: Module) {
   const callee = getExtendMacro(path, mod, 'injectGlobalStyle')
   if (callee) {
-    const expr = validateInjectGlobalStyleMacro(callee.get('arguments'), path)
-    const { references, css } = evaluateCSS(expr, mod)
-    printCssAST({ references, css }, mod)
+    const expr = validateInjectGlobalStyleMacro(callee.get('arguments'), findNearestStatementAncestor(path))
+    const evaluated = evaluateCSS(expr, mod)
+    const { css } = printCssAST(evaluated, mod)
+    console.log(css)
   }
   // if (args.length > 1) throw new Error(MESSAGES.GLOBAL_STYLE_ONLY_ONE_ARGUMENT)
   // if (!args[0].isObjectExpression()) throw new Error(MESSAGES.INVALID_CSS_AST_KIND)

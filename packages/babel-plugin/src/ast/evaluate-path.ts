@@ -305,8 +305,65 @@ export function printJsAST(data: ReturnType<typeof sortAndMergeEvaluatedResult>,
 }
 
 export function printCssAST(data: ReturnType<typeof sortAndMergeEvaluatedResult>, mod: Module) {
-  //
-  console.log(data)
+  let str = ''
+  const { references, css } = data
+
+  const print = (s: string | number) => { str += s }
+
+  const evaluateCSSVariableFormModule = () => {
+    
+  }
+
+  const evaluateLivingVariable = (value: string) => {
+    const unwrapped = MARK.unref(value)
+    const { path, define } = references.get(unwrapped)!
+    if (isMemberExpression(path)) {
+      // 
+    }
+    if (isTemplateLiteral(path)) {
+      // 
+    }
+    throw new Error(MESSAGES.NOT_IMPLEMENTED)
+  }
+
+  const prettySelector = (selector: string) => {
+    if (selector.charCodeAt(1) === 45) {
+      return selector
+    }
+    return selector.replace(/[A-Z]|^ms/g, '-$&').toLowerCase()
+  }
+
+  const run = (rule: CSSObjectValue[] | CSSObjectValue) => {
+    if (Array.isArray(rule)) {
+      for (const r of rule) {
+        run(r)
+      }
+      return
+    }
+    for (const { key: selector, value } of new Iter(rule)) {
+      if (typeof value === 'boolean') continue
+      if (typeof value === 'undefined' || typeof value === 'object' && !value) continue
+      if (typeof value === 'object') {
+        print(selector)
+        print('{')
+        run(value)
+        print('}')
+        continue
+      }
+      print(prettySelector(selector))
+      print(':')
+      if (typeof value === 'string' && MARK.isRef(value)) {
+        evaluateLivingVariable(value)
+      } else {
+        print(value)
+      }
+      print(';')
+    }
+  }
+
+  run(css)
+
+  return { css: str }
 }
 
 function sortAndMergeEvaluatedResult(data: Result) {
