@@ -1,17 +1,22 @@
-import { create as _create, props as _props } from "@stylexjs/stylex";
+import { create, props } from "@stylexjs/stylex";
 
-const _styles = _create({
-  "#0": (propsHoverColor) => ({
-    font: "16px",
-    display: "inline-flex",
-    color: {
-      defualt: "red",
-      ":hover": propsHoverColor,
-      ":active": propsActiveColor,
-    },
-    backgroundColor: propsHoverColor,
-  }),
+const _styles2 = create({
+  "#0": {
+    color: "pink",
+    display: "flex",
+  },
 });
-export function Component(props) {
-  return <div {..._props(_styles["#0"](props.hoverColor))}></div>;
+const _styles = create({
+  "#0": {
+    font: "16px",
+  },
+});
+
+const styles = create({
+  base: {
+    color: "red",
+  },
+});
+export function Component(_props) {
+  return <div {...props(styles.base, _styles["#0"], _styles2["#0"])}></div>;
 }

@@ -1,18 +1,22 @@
-import extend from '@stylex-extend/core'
+import { inline } from '@stylex-extend/core'
+import { create, props } from '@stylexjs/stylex'
 
-export function Component(props) {
+const styles = create({
+  base: {
+    color: 'red'
+  }
+})
+
+export function Component(_props) {
   return (
     <div
-      {...extend.inline({
-        font: '16px',
-        display: 'inline-flex',
-        color: {
-          defualt: 'red',
-          ':hover': props.hoverColor,
-          ':active': props.activeColor
-        },
-        backgroundColor: props.hoverColor
-      })}
+      {...props(
+        styles.base,
+        inline({
+          font: '16px'
+        }),
+        inline({ color: 'pink', display: 'flex' })
+      )}
     >
     </div>
   )

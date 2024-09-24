@@ -237,8 +237,9 @@ function printCSSRule(rule: CSSObjectValue) {
       continue
     }
     if (typeof value === 'object' && value !== null) {
-      const [child] = printCSSRule(value)
+      const [child, vars] = printCSSRule(value)
       properties.push(make.objectProperty(key, child))
+      vars.forEach(v => variables.add(v))
       continue
     }
     switch (typeof value) {
