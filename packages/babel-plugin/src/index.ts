@@ -4,23 +4,11 @@ import { ENABLED_PKGS, handleImportStmt } from './ast/handle-import'
 import { MESSAGES } from './ast/message'
 import { findNearestStatementAncestor, getStringLikeKindValue, isIdentifier, isTopLevelCalled } from './ast/shared'
 import type { StylexExtendBabelPluginOptions } from './interface'
-import { Context } from './state-context'
 import type { ImportIdentifiers, InternalPluginOptions } from './state-context'
 import { scanImportStmt, transformInjectGlobalStyle, transformInline, transformStylexAttrs } from './visitor'
 import { EXTEND_INJECT_GLOBAL_STYLE, EXTEND_INLINE } from './visitor/import-stmt'
 import { Module } from './module'
-
-function ensureWithExtendPkg(stmts: NodePath<types.Statement>[]) {
-  let enable = false
-  handleImportStmt(stmts, (path) => {
-    if (path.node.source.value === ENABLED_PKGS.extend) {
-      enable = true
-      return true
-    }
-  })
-
-  return enable
-}
+import { readImportStmt } from './visitor/imports'
 
 function declare(): PluginObj {
   return {
@@ -42,11 +30,14 @@ function declare(): PluginObj {
     visitor: {
       Program: {
         enter(path, state) {
-          const mod = new Module(state.opts)
-
+          const mod = new Module(path, state)
+          readImportStmt(path.get('body'), mod)
           path.traverse({
             JSXAttribute(path) {
               transformStylexAttrs(path, mod)
+            },
+            CallExpression(path) {
+              transformInline(path, mod)
             }
           })
           // const pluginOptions = { ...defaultOptions, ...state.opts }
@@ -61,7 +52,6 @@ function declare(): PluginObj {
           //     (acc, cur) => ({ ...acc, [cur]: path.scope.generateUidIdentifier(cur) }),
           //     {}
           //   )
-
           //   ctx.setupOptions(pluginOptions, identifiers, modules)
           // }
           // if (ensureWithExtendPkg(body)) {
@@ -100,6 +90,9 @@ function declare(): PluginObj {
           //     }
           //   })
           // }
+        },
+        exit(path) {
+          // 
         }
         //   exit(path) {
         //     const body = path.get('body')

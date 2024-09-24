@@ -207,7 +207,7 @@ function evaluatePath(path: NodePath<types.Node>, mod: Module): Result {
   }
 }
 
-class Iter<T extends Record<string, unknown>> {
+export class Iter<T extends Record<string, unknown>> {
   private keys: string[]
   private data: T
   constructor(data: T) {

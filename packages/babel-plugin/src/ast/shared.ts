@@ -116,6 +116,14 @@ export function isLogicalExpression(path: NodePath<types.Node>): path is NodePat
   return path.isLogicalExpression()
 }
 
+export function isImportDeclaration(path: NodePath<types.Node>): path is NodePath<types.ImportDeclaration> {
+  return path.isImportDeclaration()
+}
+
+export function isImportSpecifier(path: NodePath<types.Node>): path is NodePath<types.ImportSpecifier> {
+  return path.isImportSpecifier()
+}
+
 export function findNearestParentWithCondition<T extends types.Node>(
   path: NodePath<types.Node>,
   condition: (p: NodePath<types.Node>) => p is NodePath<T>
@@ -142,5 +150,7 @@ export const make = {
   logicalExpression: types.logicalExpression,
   arrowFunctionExpression,
   variableDeclaration,
-  objectExpression
+  objectExpression,
+  importDeclaration: types.importDeclaration,
+  importSpecifier: types.importSpecifier
 }

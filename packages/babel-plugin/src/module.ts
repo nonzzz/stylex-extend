@@ -1,6 +1,7 @@
 import * as v from 'valibot'
-import type { PluginPass } from '@babel/core'
+import type { NodePath, PluginPass, types } from '@babel/core'
 import type { StylexExtendBabelPluginOptions } from './interface'
+import { ImportState } from './visitor/imports'
 
 const unstable_moduleResolution = {
   CommonJs: 'commonJS',
@@ -29,9 +30,15 @@ const schema = v.object({
 export class Module {
   options: StylexExtendBabelPluginOptions
   filename: string
-  constructor(opts: PluginPass) {
+  extendImports: Set<string>
+  program: NodePath<types.Program>
+  importState: ImportState
+  constructor(program: NodePath<types.Program>, opts: PluginPass) {
     this.filename = opts.filename || (opts.file.opts?.sourceFileName ?? '')
     this.options = this.setOptions(opts.opts)
+    this.extendImports = new Set()
+    this.program = program
+    this.importState = { insert: false }
   }
 
   private setOptions(opts = {} satisfies StylexExtendBabelPluginOptions) {
@@ -39,6 +46,6 @@ export class Module {
   }
 
   get importIdentifiers() {
-    return ['create', this.options.transport]
+    return ['create', this.options.transport] as ['create', 'props' | 'attrs']
   }
 }
