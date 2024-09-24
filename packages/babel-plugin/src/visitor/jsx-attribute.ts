@@ -1,7 +1,7 @@
 import { NodePath, types } from '@babel/core'
 import { MESSAGES } from '../ast/message'
 import { evaluateCSS, printJsAST } from '../ast/evaluate-path'
-import { callExpression, findNearestParentWithCondition, isObjectExpression, variableDeclaration } from '../ast/shared'
+import { callExpression, findNearestParentWithCondition, isObjectExpression, make } from '../ast/shared'
 import { Module } from '../module'
 
 const X = 'stylex'
@@ -24,19 +24,10 @@ export function transformStylexAttrs(path: NodePath<types.JSXAttribute>, mod: Mo
   if (node.name.name === X && value.isJSXExpressionContainer()) {
     const expr = validateJSXAtrributes(path, value.get('expression'))
     const { references, css } = evaluateCSS(expr, mod)
-    printJsAST({ css, references }, expr, mod)
+    const { properties, expressions, into } = printJsAST({ css, references }, expr, mod)
+    const declaration = make.variableDeclaration(into, callExpression(make.identifier('create'), [make.objectExpression(properties)]))
+    const program = findNearestParentWithCondition(path, (p) => p.isProgram())
+    program.unshiftContainer('body', declaration)
+    path.replaceWith(types.jsxSpreadAttribute(callExpression(make.identifier('props'), expressions)))
   }
-
-  // if (!value.isJSXExpressionContainer()) return
-  // const { importIdentifiers, attach } = ctx
-  // const expression = value.get('expression')
-  // if (!expression.isObjectExpression()) throw new Error(MESSAGES.INVALID_ATTRS_KIND)
-  // // const result = scanObjectExpression(expression)
-  // evaluatePath(expression, ctx)
-  // if (result) {
-  //   const [CSSAST, variable, expr] = result
-  //   const stylexDeclaration = variableDeclaration(variable, callExpression(importIdentifiers.create, [CSSAST]))
-  //   ctx.stmts.push(stylexDeclaration)
-  //   path.replaceWith(types.jsxSpreadAttribute(callExpression(attach, expr)))
-  // }
 }

@@ -1,4 +1,5 @@
 import * as v from 'valibot'
+import type { PluginPass } from '@babel/core'
 import type { StylexExtendBabelPluginOptions } from './interface'
 
 const unstable_moduleResolution = {
@@ -27,11 +28,17 @@ const schema = v.object({
 
 export class Module {
   options: StylexExtendBabelPluginOptions
-  constructor(opts = {}) {
-    this.options = this.setOptions(opts)
+  filename: string
+  constructor(opts: PluginPass) {
+    this.filename = opts.filename || (opts.file.opts?.sourceFileName ?? '')
+    this.options = this.setOptions(opts.opts)
   }
 
   private setOptions(opts = {} satisfies StylexExtendBabelPluginOptions) {
     return v.parse(schema, opts)
+  }
+
+  get importIdentifiers() {
+    return ['create', this.options.transport]
   }
 }

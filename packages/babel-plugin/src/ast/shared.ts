@@ -1,6 +1,5 @@
 import { types } from '@babel/core'
 import { NodePath } from '@babel/core'
-import { identifier } from 'stylis'
 
 export type StringLikeKindPath = NodePath<types.StringLiteral | types.Identifier>
 
@@ -139,5 +138,9 @@ export const make = {
   nullLiteral: () => types.nullLiteral(),
   numericLiteral: (value: number) => types.numericLiteral(value),
   callExpression: (callee: CalleeExpression, args: types.Expression[]) => callExpression(callee, args),
-  memberExpression
+  memberExpression,
+  logicalExpression: types.logicalExpression,
+  arrowFunctionExpression,
+  variableDeclaration,
+  objectExpression
 }

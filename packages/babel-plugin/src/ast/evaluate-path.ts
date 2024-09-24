@@ -3,7 +3,6 @@ import type { NodePath } from '@babel/core'
 import { utils } from '@stylexjs/shared'
 import { Module } from '../module'
 import {
-  callExpression,
   findNearestParentWithCondition,
   getStringLikeKindValue,
   isBooleanLiteral,
@@ -148,7 +147,6 @@ function evaluate(path: NodePath<types.Node>, state: State) {
           throw new Error(MESSAGES.NO_NESTED_SPREAD)
         }
         state.confident = false
-        // don't support nested spread expression.
         const spreadExpression = evaluateForState(prop.get('argument'), state)
         Object.assign(obj, { [MARK.ref(state.layer)]: spreadExpression })
         state.confident = true
@@ -251,7 +249,8 @@ function printCSSRule(rule: CSSObjectValue) {
         if (value === 'undefined') {
           properties.push(make.objectProperty(key, make.identifier('undefined')))
         } else if (MARK.isRef(value)) {
-          variables.add(value)
+          const unwrapped = MARK.unref(value)
+          variables.add(unwrapped)
           properties.push(make.objectProperty(key, make.identifier(MARK.unref(value))))
         } else {
           properties.push(make.objectProperty(key, make.stringLiteral(value)))
@@ -273,20 +272,35 @@ export function printJsAST(data: ReturnType<typeof sortAndMergeEvaluatedResult>,
 
   const properties: types.ObjectProperty[] = []
   const expressions: types.Expression[] = []
- 
-  // TODO
+  const into = path.scope.generateUidIdentifier('styles')
+
   for (let i = 0; i < css.length; i++) {
     const rule = css[i]
     const [ast, vars, logical] = printCSSRule(rule)
-    // const expr = make.memberExpression()
-    // properties.push(make.objectProperty('#' + i, ast))
-    // console.log(vars, rule)
+    const expr = make.memberExpression(into, make.stringLiteral('#' + i), true)
     if (vars.size) {
-    //   const callee = make.callExpression()
-    //   callExpression(mod.importIdentifiers.create, [ast])
+      const calleeArguments = [...vars].map(variable => {
+        const { path } = references.get(variable)!
+        return path.node
+      }) as types.Expression[]
+      const callee = make.callExpression(expr, calleeArguments)
+      if (logical) {
+        expressions.push(make.logicalExpression('&&', references.get(MARK.ref(i - 1))!.path.node! as types.Expression, callee))
+      } else {
+        expressions.push(callee)
+      }
+      const func = make.arrowFunctionExpression([...vars].map(variable => make.identifier(variable)), ast)
+      properties.push(make.objectProperty('#' + i, func))
+      continue
     }
+    if (logical) {
+      expressions.push(make.logicalExpression('&&', references.get(MARK.ref(i - 1))!.path.node! as types.Expression, expr))
+    } else {
+      expressions.push(expr)
+    }
+    properties.push(make.objectProperty('#' + i, ast))
   }
-//   console.log(properties)
+  return { properties, expressions, into }
 }
 
 export function printCssAST() {
