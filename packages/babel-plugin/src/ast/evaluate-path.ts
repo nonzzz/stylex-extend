@@ -304,8 +304,9 @@ export function printJsAST(data: ReturnType<typeof sortAndMergeEvaluatedResult>,
   return { properties, expressions, into }
 }
 
-export function printCssAST() {
+export function printCssAST(data: ReturnType<typeof sortAndMergeEvaluatedResult>, mod: Module) {
   //
+  console.log(data)
 }
 
 function sortAndMergeEvaluatedResult(data: Result) {

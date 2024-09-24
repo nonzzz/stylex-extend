@@ -17,16 +17,16 @@ function validateInlineMacro(path: NodePath<types.Expression | types.ArgumentPla
   throw new Error(MESSAGES.INVALID_INLINE_ARGUMENT)
 }
 
-function getInlineMacro(path: NodePath<types.CallExpression>, mod: Module) {
+export function getExtendMacro(path: NodePath<types.CallExpression>, mod: Module, expected: 'inline' | 'injectGlobalStyle') {
   const callee = path.get('callee')
-  if (isIdentifier(callee) && mod.extendImports.has(callee.node.name)) {
+  if (isIdentifier(callee) && mod.extendImports.get(callee.node.name) === expected) {
     return path
   }
   if (isMemberExpression(callee)) {
     const obj = callee.get('object')
     const prop = callee.get('property')
     if (isIdentifier(obj) && isIdentifier(prop)) {
-      if (mod.extendImports.has(obj.node.name) && APIS.has(prop.node.name)) {
+      if (mod.extendImports.has(obj.node.name) && APIS.has(prop.node.name) && prop.node.name === expected) {
         return path
       }
     }
@@ -35,7 +35,7 @@ function getInlineMacro(path: NodePath<types.CallExpression>, mod: Module) {
 
 function insertAndReplace(path: NodePath<types.CallExpression>, mod: Module,
   handler: (p: NodePath<types.CallExpression>, applied: NodePath<types.Identifier>, expr: types.Expression[]) => void) {
-  const callee = getInlineMacro(path, mod)
+  const callee = getExtendMacro(path, mod, 'inline')
   if (callee) {
     const expr = validateInlineMacro(callee.get('arguments'))
     const { references, css } = evaluateCSS(expr, mod)

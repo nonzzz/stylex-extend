@@ -2,12 +2,15 @@ import { types } from '@babel/core'
 import type { NodePath } from '@babel/core'
 import { utils } from '@stylexjs/shared'
 import { compile, serialize, stringify } from 'stylis'
-import { MARK, handleMemeberExpression, pickupDuplicateASTNode, scanObjectExpression } from '../ast/evaluate-css'
+import { MARK, handleMemeberExpression, pickupDuplicateASTNode } from '../ast/evaluate-css'
 import type { CSSRuleWithReference } from '../ast/evaluate-css'
 import { MESSAGES } from '../ast/message'
 import type { CSSObjectValue } from '../interface'
+import { Module } from '../module'
 import { Context } from '../state-context'
-import { isTemplateLiteral } from '../ast/shared'
+import { isIdentifier, isMemberExpression, isObjectExpression, isTemplateLiteral, isTopLevelCalled } from '../ast/shared'
+import { evaluateCSS, printCssAST } from '../ast/evaluate-path'
+import { getExtendMacro } from './inline'
 
 const KEBACASE = /[A-Z]+(?![a-z])|[A-Z]/g
 function kebabCase(s: string) {
@@ -122,18 +125,32 @@ class Stringify {
   }
 }
 
-export function transformInjectGlobalStyle(path: NodePath<types.CallExpression>, ctx: Context) {
-  const args = path.get('arguments')
-  if (args.length > 1) throw new Error(MESSAGES.GLOBAL_STYLE_ONLY_ONE_ARGUMENT)
-  if (!args[0].isObjectExpression()) throw new Error(MESSAGES.INVALID_CSS_AST_KIND)
-  const expression = args[0]
-  const result = scanObjectExpression(expression)
-  if (result) {
-    // eslint-disable-next-line no-unused-vars
-    const [_, __1, ___2, cssRules] = result
-    const sb = new Stringify(cssRules, ctx)
-    const CSS = serialize(compile(sb.css), stringify)
-    path.replaceWith(types.stringLiteral(''))
-    return CSS
+function validateInjectGlobalStyleMacro(path: NodePath<types.Expression | types.ArgumentPlaceholder | types.SpreadElement>[], path2: NodePath<types.Node>) {
+  if (!isTopLevelCalled(path2)) throw new Error(MESSAGES.ONLY_TOP_LEVEL_INJECT_GLOBAL_STYLE)
+  if (path.length > 1) throw new Error(MESSAGES.GLOBAL_STYLE_ONLY_ONE_ARGUMENT)
+  if (isObjectExpression(path[0])) {
+    return path[0]
   }
+  throw new Error(MESSAGES.INVALID_CSS_AST_KIND)
+}
+
+export function transformInjectGlobalStyle(path: NodePath<types.CallExpression>, mod: Module) {
+  const callee = getExtendMacro(path, mod, 'injectGlobalStyle')
+  if (callee) {
+    const expr = validateInjectGlobalStyleMacro(callee.get('arguments'), path)
+    const { references, css } = evaluateCSS(expr, mod)
+    printCssAST({ references, css }, mod)
+  }
+  // if (args.length > 1) throw new Error(MESSAGES.GLOBAL_STYLE_ONLY_ONE_ARGUMENT)
+  // if (!args[0].isObjectExpression()) throw new Error(MESSAGES.INVALID_CSS_AST_KIND)
+  // const expression = args[0]
+  // const result = scanObjectExpression(expression)
+  // if (result) {
+  //   // eslint-disable-next-line no-unused-vars
+  //   const [_, __1, ___2, cssRules] = result
+  //   const sb = new Stringify(cssRules, ctx)
+  //   const CSS = serialize(compile(sb.css), stringify)
+  //   path.replaceWith(types.stringLiteral(''))
+  //   return CSS
+  // }
 }

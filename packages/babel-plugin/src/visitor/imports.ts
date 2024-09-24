@@ -18,11 +18,11 @@ export function readImportStmt(stmts: NodePath<types.Statement>[], mod: Module) 
           switch (specifier.type) {
             case 'ImportDefaultSpecifier':
             case 'ImportNamespaceSpecifier':
-              mod.extendImports.add(specifier.local.name)
+              mod.extendImports.set(specifier.local.name, specifier.local.name)
               break
             case 'ImportSpecifier':
               if (APIS.has(getStringLikeKindValue(specifier.imported))) {
-                mod.extendImports.add(specifier.local.name)
+                mod.extendImports.set(specifier.local.name, getStringLikeKindValue(specifier.imported))
               }
           }
         }

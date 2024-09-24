@@ -38,6 +38,7 @@ function declare(): PluginObj {
             },
             CallExpression(path) {
               transformInline(path, mod)
+              transformInjectGlobalStyle(path, mod)
             }
           })
           // const pluginOptions = { ...defaultOptions, ...state.opts }
@@ -94,27 +95,7 @@ function declare(): PluginObj {
         exit(path) {
           // 
         }
-        //   exit(path) {
-        //     const body = path.get('body')
-        //     handleImportStmt(body, (path) => {
-        //       if (getStringLikeKindValue(path.get('source')) === ENABLED_PKGS.extend) {
-        //         path.remove()
-        //       }
-        //     })
-        //     if (ctx.stmts.length) {
-        //       const { importIdentifiers: identifiers, modules } = ctx
-        //       const importSpecs = Object.values(identifiers).map((a, i) => types.importSpecifier(a, types.identifier(modules[i])))
-        //       const importStmt = types.importDeclaration(importSpecs, types.stringLiteral('@stylexjs/stylex'))
-        //       path.unshiftContainer('body', ctx.stmts)
-        //       path.unshiftContainer('body', importStmt)
-        //     }
-        //     ctx.stmts = []
-        //   }
-        // }
-        // JSXAttribute(path) {
-        //   if (path.node.name.name !== JSX_ATTRIBUTE_NAME || !ctx.enableStylex) return
-        //   transformStylexAttrs(path, ctx)
-        // }
+       
       }
     }
   }

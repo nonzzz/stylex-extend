@@ -30,13 +30,13 @@ const schema = v.object({
 export class Module {
   options: StylexExtendBabelPluginOptions
   filename: string
-  extendImports: Set<string>
+  extendImports: Map<string, string>
   program: NodePath<types.Program>
   importState: ImportState
   constructor(program: NodePath<types.Program>, opts: PluginPass) {
     this.filename = opts.filename || (opts.file.opts?.sourceFileName ?? '')
     this.options = this.setOptions(opts.opts)
-    this.extendImports = new Set()
+    this.extendImports = new Map()
     this.program = program
     this.importState = { insert: false }
   }
