@@ -26,11 +26,6 @@ export type ModuleResolution = ModuleResolutionCommonJS | MOduleResolutionHaste 
 export interface StylexExtendBabelPluginOptions {
   transport?: Transport
   /**
-   * @default '["@stylexjs/stylex"]'
-   * @see {@link https://stylexjs.com/docs/api/configuration/babel-plugin/#importsources}
-   */
-  importSources?: string[]
-  /**
    * @see {@link https://stylexjs.com/docs/api/configuration/babel-plugin/#aliases}
    */
   aliases?: Record<string, string | string[]>

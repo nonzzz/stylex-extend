@@ -336,8 +336,7 @@ export function printCssAST(data: ReturnType<typeof sortAndMergeEvaluatedResult>
         const importDeclaration = findNearestParentWithCondition(importSpecifierPath, isImportDeclaration)
         const abs = importPathResolver(importDeclaration.node.source.value, mod.filename, {
           unstable_moduleResolution: mod.options.unstable_moduleResolution,
-          aliases: mod.options.aliases,
-          importSources: mod.importSources
+          aliases: mod.options.aliases
         })
         if (!abs) {
           throw new Error(MESSAGES.NO_STATIC_ATTRIBUTE)

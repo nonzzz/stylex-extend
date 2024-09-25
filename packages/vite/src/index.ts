@@ -6,7 +6,7 @@ import type { Options, Rule } from '@stylexjs/babel-plugin'
 import { createFilter } from '@rollup/pluginutils'
 import type { FilterPattern } from '@rollup/pluginutils'
 import stylexBabelPlugin from '@stylexjs/babel-plugin'
-import extendBabelPlugin from '@stylex-extend/babel-plugin'
+import extendBabelPlugin, { StylexExtendBabelPluginOptions } from '@stylex-extend/babel-plugin'
 import { normalizePath, searchForWorkspaceRoot } from 'vite'
 import type { ParserOptions, PluginItem } from '@babel/core'
 
@@ -45,9 +45,7 @@ export interface StyleXOptions extends Partial<InternalOptions> {
    * @default true
    * @description https://nonzzz.github.io/stylex-extend/
    */
-  macroOptions?: boolean | {
-    helper?: 'props' | 'attrs' | (string & {})
-  }
+  macroTransport?: StylexExtendBabelPluginOptions['transport'] | false
   [key: string]: any
 }
 
@@ -94,7 +92,7 @@ const WS_EVENT_TYPE = 'stylex:hmr'
 const defaultOptions = {
   include: /\.(mjs|js|ts|vue|jsx|tsx)(\?.*|)$/,
   importSources: ['stylex', '@stylexjs/stylex'],
-  macroOptions: true,
+  macroTransport: 'props',
   useCSSLayer: false
 } satisfies StyleXOptions
 
@@ -128,7 +126,7 @@ class EffectModule {
 export function stylex(options: StyleXOptions = {}): Plugin[] {
   const cssPlugins: Plugin[] = []
   options = { ...defaultOptions, ...options }
-  const { macroOptions, useCSSLayer, useCSSProcess, optimizedDeps, include, exclude, babelConfig, ...rest } = options
+  const { macroTransport, useCSSLayer, optimizedDeps: _, include, exclude, babelConfig, ...rest } = options
   let isBuild = false
   const servers: ViteDevServer[] = []
 
@@ -136,7 +134,7 @@ export function stylex(options: StyleXOptions = {}): Plugin[] {
   let globalCSS = {}
   let lastHash = ''
 
-  const filter = createFilter(options.include, options.exclude)
+  const filter = createFilter(include, exclude)
 
   const produceCSS = () => {
     return stylexBabelPlugin.processStylexRules(
@@ -330,7 +328,7 @@ export function stylex(options: StyleXOptions = {}): Plugin[] {
       transform: {
         order: 'pre',
         async handler(code, id) {
-          if (id.includes('/node_modules/')) return
+          if (macroTransport === false || id.includes('/node_modules/')) return
           // convert all stylex-extend macro to stylex macro
           if (!/\.[jt]sx?$/.test(id) || id.startsWith('\0')) return
           const plugins = ensureParserOpts(id)
@@ -345,9 +343,8 @@ export function stylex(options: StyleXOptions = {}): Plugin[] {
             code,
             filename: id,
             options: {
-              //  @ts-expect-error
-              stylex: macroOptions,
-              enableInjectGlobalStyles: true,
+              transport: macroTransport,
+              classNamePrefix: options.classNamePrefix,
               //  @ts-expect-error
               unstable_moduleResolution: options.unstable_moduleResolution
             },
@@ -356,7 +353,7 @@ export function stylex(options: StyleXOptions = {}): Plugin[] {
           if (res && res.code) {
             if (res.metadata && CONSTANTS.STYLEX_EXTEND_META_KEY in res.metadata) {
               // @ts-expect-error
-              globalCSS[id] = res.metadata[CONSTANTS.STYLEX_EXTEND_META_KEY]
+              globalCSS[id] = res.metadata[CONSTANTS.STYLEX_EXTEND_META_KEY] as string[]
             }
 
             return { code: res.code, map: res.map }

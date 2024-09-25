@@ -13,7 +13,6 @@ const unstable_moduleResolution = {
 const schema = v.object({
   transport: v.optional(v.string(), 'props'),
   aliases: v.optional(v.record(v.string(), v.union([v.string(), v.array(v.string())])), {}),
-  importSources: v.optional(v.array(v.string()), ['@stylexjs/stylex']),
   classNamePrefix: v.optional(v.string(), 'x'),
   unstable_moduleResolution: v.optional(
     v.object({
@@ -58,11 +57,6 @@ export class Module {
 
   get importIdentifiers() {
     return ['create', this.options.transport] as ['create', 'props' | 'attrs']
-  }
-
-  // Respect the official importSources
-  get importSources() {
-    return ['@stylexjs/stylex', 'stylex', ...this.options.importSources!]
   }
 }
 
@@ -136,7 +130,7 @@ function matchFileSuffix(allowedSuffix: string) {
   }
 }
 
-export type PathResolverOptions = Pick<StylexExtendBabelPluginOptions, 'unstable_moduleResolution' | 'importSources' | 'aliases'>
+export type PathResolverOptions = Pick<StylexExtendBabelPluginOptions, 'unstable_moduleResolution' | 'aliases'>
 
 export function importPathResolver(importPath: string, filename: string, options: PathResolverOptions) {
   if (!filename) return null
