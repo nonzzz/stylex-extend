@@ -1,3 +1,9 @@
+## v0.4.0 (2024-09-25)
+
+### Features
+
+- Add vite integration
+
 ## v0.3.3 (2024-06-25)
 
 ### Patches
