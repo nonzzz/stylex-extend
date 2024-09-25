@@ -31,6 +31,10 @@ export function isIdentifier(path: NodePath<types.Node>): path is NodePath<types
   return path.isIdentifier()
 }
 
+export function isReferencedIdentifier(path: NodePath<types.Node>): path is NodePath<types.Identifier> {
+  return path.isReferencedIdentifier()
+}
+
 export function isConditionalExpression(path: NodePath<types.Node>): path is NodePath<types.ConditionalExpression> {
   return path.isConditionalExpression()
 }
@@ -122,6 +126,14 @@ export function isImportDeclaration(path: NodePath<types.Node>): path is NodePat
 
 export function isImportSpecifier(path: NodePath<types.Node>): path is NodePath<types.ImportSpecifier> {
   return path.isImportSpecifier()
+}
+
+export function isImportNamespaceSpecifier(path: NodePath<types.Node>): path is NodePath<types.ImportNamespaceSpecifier> {
+  return path.isImportNamespaceSpecifier()
+}
+
+export function isImportDefaultSpecifier(path: NodePath<types.Node>): path is NodePath<types.ImportDefaultSpecifier> {
+  return path.isImportDefaultSpecifier()
 }
 
 export function findNearestParentWithCondition<T extends types.Node>(

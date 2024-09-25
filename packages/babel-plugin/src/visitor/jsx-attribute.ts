@@ -25,7 +25,7 @@ export function transformStylexAttrs(path: NodePath<types.JSXAttribute>, mod: Mo
   if (node.name.name === X && value.isJSXExpressionContainer()) {
     const expr = validateJSXAtrributes(path, value.get('expression'))
     const { references, css } = evaluateCSS(expr, mod)
-    const { properties, expressions, into } = printJsAST({ css, references }, expr, mod)
+    const { properties, expressions, into } = printJsAST({ css, references }, expr)
     const [create, applied] = insertRelativePackage(mod.program, mod)
     const declaration = make.variableDeclaration(into, callExpression(create.node, [make.objectExpression(properties)]))
     mod.program.unshiftContainer('body', declaration)

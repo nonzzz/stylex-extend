@@ -33,13 +33,16 @@ export function getExtendMacro(path: NodePath<types.CallExpression>, mod: Module
   }
 }
 
-function insertAndReplace(path: NodePath<types.CallExpression>, mod: Module,
-  handler: (p: NodePath<types.CallExpression>, applied: NodePath<types.Identifier>, expr: types.Expression[]) => void) {
+function insertAndReplace(
+  path: NodePath<types.CallExpression>,
+  mod: Module,
+  handler: (p: NodePath<types.CallExpression>, applied: NodePath<types.Identifier>, expr: types.Expression[]) => void
+) {
   const callee = getExtendMacro(path, mod, 'inline')
   if (callee) {
     const expr = validateInlineMacro(callee.get('arguments'))
     const { references, css } = evaluateCSS(expr, mod)
-    const { expressions, properties, into } = printJsAST({ css, references }, expr, mod)
+    const { expressions, properties, into } = printJsAST({ css, references }, expr)
     const [create, applied] = insertRelativePackage(mod.program, mod)
     const declaration = make.variableDeclaration(into, callExpression(create.node, [make.objectExpression(properties)]))
     mod.program.unshiftContainer('body', declaration)
@@ -69,7 +72,7 @@ export function transformInline(path: NodePath<types.CallExpression>, mod: Modul
     }
     insertAndReplace(path, mod, (p, _, expressions) => p.replaceWithMultiple(expressions))
     return
-  } 
+  }
 
   // single call
 

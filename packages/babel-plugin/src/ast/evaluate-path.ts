@@ -1,7 +1,9 @@
 import { types } from '@babel/core'
 import type { NodePath } from '@babel/core'
 import { utils } from '@stylexjs/shared'
-import { Module } from '../module'
+
+// eslint-disable-next-line sort-imports
+import { importPathResolver, Module } from '../module'
 import {
   findNearestParentWithCondition,
   getStringLikeKindValue,
@@ -9,6 +11,10 @@ import {
   isCallExpression,
   isConditionalExpression,
   isIdentifier,
+  isImportDeclaration,
+  isImportDefaultSpecifier,
+  isImportNamespaceSpecifier,
+  isImportSpecifier,
   isLogicalExpression,
   isMemberExpression,
   isNullLiteral,
@@ -16,6 +22,7 @@ import {
   isObjectExpression,
   isObjectMethod,
   isObjectProperty,
+  isReferencedIdentifier,
   isSpreadElement,
   isStringLikeKind,
   isStringLiteral,
@@ -176,7 +183,7 @@ function evaluate(path: NodePath<types.Node>, state: State) {
     // stylex will evaluate all logical expr so we no need to worry about it.
     const right = evaluateForState(path.get('right'), state) as CSSObjectValue
     state.environment.references.set(MARK.ref(state.layer), { path: path.get('left'), define: MARK.ref(state.layer) })
-    return right 
+    return right
   }
 }
 
@@ -215,6 +222,7 @@ export class Iter<T extends Record<string, unknown>> {
     this.keys = Object.keys(data)
   }
 
+  // dprint-ignore
   * [Symbol.iterator]() {
     for (let i = 0; i < this.keys.length; i++) {
       yield {
@@ -268,7 +276,7 @@ function printCSSRule(rule: CSSObjectValue) {
   return [types.objectExpression(properties), variables, logical] satisfies [types.ObjectExpression, Set<string>, boolean]
 }
 
-export function printJsAST(data: ReturnType<typeof sortAndMergeEvaluatedResult>, path: NodePath<types.ObjectExpression>, mod: Module) {
+export function printJsAST(data: ReturnType<typeof sortAndMergeEvaluatedResult>, path: NodePath<types.ObjectExpression>) {
   const { references, css } = data
 
   const properties: types.ObjectProperty[] = []
@@ -308,20 +316,63 @@ export function printCssAST(data: ReturnType<typeof sortAndMergeEvaluatedResult>
   let str = ''
   const { references, css } = data
 
-  const print = (s: string | number) => { str += s }
+  const print = (s: string | number) => {
+    str += s
+  }
 
-  const evaluateCSSVariableFormModule = () => {
-    
+  const evaluateCSSVariableFormModule = (path: NodePath<types.MemberExpression>) => {
+    const obj = path.get('object')
+    const prop = path.get('property')
+    if (isReferencedIdentifier(obj) && isIdentifier(prop)) {
+      const binding = path.scope.getBinding(obj.node.name)
+      const bindingPath = binding?.path
+      if (
+        binding && bindingPath && isImportSpecifier(bindingPath) && !isImportDefaultSpecifier(bindingPath) &&
+        !isImportNamespaceSpecifier(bindingPath)
+      ) {
+        const importSpecifierPath = bindingPath
+        const imported = importSpecifierPath.node.imported
+        const importDeclaration = findNearestParentWithCondition(importSpecifierPath, isImportDeclaration)
+        const abs = importPathResolver(importDeclaration.node.source.value, mod.filename, {
+          unstable_moduleResolution: mod.options.unstable_moduleResolution,
+          aliases: mod.options.aliases,
+          importSources: mod.importSources
+        })
+        if (!abs) {
+          throw new Error(MESSAGES.NO_STATIC_ATTRIBUTE)
+        }
+        // eslint-disable-next-line no-unused-vars
+        const [_, value] = abs
+        const strToHash = utils.genFileBasedIdentifier({
+          fileName: value,
+          exportName: getStringLikeKindValue(imported),
+          key: prop.node.name
+        })
+        return `var(--${mod.options.classNamePrefix + utils.hash(strToHash)})`
+      }
+    }
+    throw new Error(MESSAGES.NOT_IMPLEMENTED)
   }
 
   const evaluateLivingVariable = (value: string) => {
     const unwrapped = MARK.unref(value)
-    const { path, define } = references.get(unwrapped)!
+    const { path } = references.get(unwrapped)!
     if (isMemberExpression(path)) {
-      // 
+      return evaluateCSSVariableFormModule(path)
     }
     if (isTemplateLiteral(path)) {
-      // 
+      const { quasis } = path.node
+      const expressions = path.get('expressions')
+      let cap = expressions.length
+      let str = quasis[0].value.raw
+      while (cap) {
+        const first = expressions.shift()!
+        if (first && isMemberExpression(first)) {
+          str += evaluateCSSVariableFormModule(first)
+        }
+        cap--
+      }
+      return str
     }
     throw new Error(MESSAGES.NOT_IMPLEMENTED)
   }
@@ -353,7 +404,7 @@ export function printCssAST(data: ReturnType<typeof sortAndMergeEvaluatedResult>
       print(prettySelector(selector))
       print(':')
       if (typeof value === 'string' && MARK.isRef(value)) {
-        evaluateLivingVariable(value)
+        print(evaluateLivingVariable(value))
       } else {
         print(value)
       }
@@ -373,7 +424,7 @@ function sortAndMergeEvaluatedResult(data: Result) {
   let layer = 0
   let layer2 = 0
   let confident = false
-  const nodes: Array<{ node: types.LogicalExpression, layer: number }> = []
+  const nodes: Array<{ node: types.LogicalExpression; layer: number }> = []
   for (const item of iter) {
     const { key, value } = item
     layer = layer2
@@ -382,7 +433,7 @@ function sortAndMergeEvaluatedResult(data: Result) {
     } else {
       if (!references.has(key)) {
         result[layer] = { ...result[layer], ...value as CSSObjectValue }
-        continue  
+        continue
       }
 
       const path = references.get(key)?.path as NodePath<types.LogicalExpression>

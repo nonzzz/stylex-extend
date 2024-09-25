@@ -1,12 +1,6 @@
-import type { NodePath, PluginObj } from '@babel/core'
-import { types } from '@babel/core'
-import { ENABLED_PKGS, handleImportStmt } from './ast/handle-import'
-import { MESSAGES } from './ast/message'
-import { findNearestStatementAncestor, getStringLikeKindValue, isIdentifier, isTopLevelCalled } from './ast/shared'
+import type { PluginObj } from '@babel/core'
 import type { StylexExtendBabelPluginOptions } from './interface'
-import type { ImportIdentifiers, InternalPluginOptions } from './state-context'
-import { scanImportStmt, transformInjectGlobalStyle, transformInline, transformStylexAttrs } from './visitor'
-import { EXTEND_INJECT_GLOBAL_STYLE, EXTEND_INLINE } from './visitor/import-stmt'
+import { transformInjectGlobalStyle, transformInline, transformStylexAttrs } from './visitor'
 import { Module } from './module'
 import { readImportStmt } from './visitor/imports'
 
@@ -93,9 +87,8 @@ function declare(): PluginObj {
           // }
         },
         exit(path) {
-          // 
+          //
         }
-       
       }
     }
   }
