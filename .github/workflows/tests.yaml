@@ -1,0 +1,19 @@
+name: test
+
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install pnpm
+        run: corepack enable
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 20.5.1
+      - name: Install Dependices
+        run: pnpm install
+      
+      - name: Run Test
+        run: pnpm test
