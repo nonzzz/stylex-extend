@@ -5,7 +5,7 @@ import { defineConfig } from 'vite'
 import { stylex } from '@stylex-extend/vite'
 
 export default defineConfig({
-  plugins: [vue(), jsx(), stylex({ macroOptions: { helper: 'attrs' }, useCSSProcess: true, useCSSLayer: true })],
+  plugins: [vue(), jsx(), stylex({ macroTransport: 'attrs', useCSSProcess: true, useCSSLayer: true })],
   optimizeDeps: {
     exclude: ['@stylex-extend/core']
   }

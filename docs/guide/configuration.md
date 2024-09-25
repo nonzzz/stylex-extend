@@ -1,6 +1,6 @@
 # Configuration
 
-Currently it only provides [`Vite`](https://github.com/nonzzz/vite-plugin-stylex) integration. If you use other tools, you can also integrate them manually.
+Currently it only provide [vite integration](../integrations/vite.md). If you use other tools, you can also integrate them manually.
 
 The following are the useful packages included in the project
 
@@ -10,26 +10,16 @@ The following are the useful packages included in the project
 
 <p />
 
-#### stylex
+#### transport
 
-- Type: `boolean | StylexBindingMeta`
+- Type: `Transport`
 - Default: `true`
 
 Specifying this in config will translate JSXAttribute `stylex`.
 
 ```ts
-export interface StylexBindingMeta {
-  helper: 'props' | 'attrs' | (string & {})
-}
+export type Transport = 'props' | 'attrs'
 ```
-
-#### enableInjectGlobalStyle
-
-- Type: `boolean`
-- Default: `true`
-
-Sometimes you might want to insert gobal css. You can use the `injectGlobalStyle` to do this.
-It's support css variables defined in `stylex.defineVars`.
 
 #### aliases
 

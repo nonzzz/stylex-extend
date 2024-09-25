@@ -19,7 +19,7 @@ const styles = create({
 export function Component() {
   return (
     <div {...props(styles.summary, inline({ fontSize: '18px' }))}>
-      // ...
+      <span {...inline({ color: 'blue' })}></span>
     </div>
   )
 }
