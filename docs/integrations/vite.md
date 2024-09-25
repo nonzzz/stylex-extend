@@ -31,3 +31,10 @@ export default defineConfig({
   ]
 })
 ```
+
+## Usage
+
+```ts
+// in your application entry file.
+import 'virtual:stylex.css'
+```

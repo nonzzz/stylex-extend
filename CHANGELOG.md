@@ -1,3 +1,9 @@
+## v0.4.1 (2024-09-25)
+
+### Patches
+
+- Fix uncapture ast kind.
+
 ## v0.4.0 (2024-09-25)
 
 ### Features

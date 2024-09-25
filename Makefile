@@ -34,7 +34,7 @@ build-shared:
 
 publish-all: build-all
 	@echo "Publishing packages..."
-	pnpm -r publish --access public
+	pnpm -r publish --no-git-checks --access public 
 
 test:
 	pnpm -r run test
