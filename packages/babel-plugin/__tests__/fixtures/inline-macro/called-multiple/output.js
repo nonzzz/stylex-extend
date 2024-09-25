@@ -1,20 +1,19 @@
-import { create as _create, props as _props } from "@stylexjs/stylex";
-const _styles = _create({
-  "#0": {
-    font: "16px",
-  },
-});
-const _styles2 = _create({
-  "#0": {
-    color: "pink",
-    display: "flex",
-  },
-});
 import { create } from "@stylexjs/stylex";
 import stylex from "@stylexjs/stylex";
 const styles = create({
   base: {
     color: "red",
+  },
+});
+const _styles = create({
+  "#0": {
+    font: "16px",
+  },
+});
+const _styles2 = create({
+  "#0": {
+    color: "pink",
+    display: "flex",
   },
 });
 export function Component(props) {

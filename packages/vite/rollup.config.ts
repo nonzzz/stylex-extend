@@ -3,7 +3,6 @@ import { defineConfig } from 'rollup'
 import { dts } from 'rollup-plugin-dts'
 import { swc } from 'rollup-plugin-swc3'
 import shim from '@rollup/plugin-esm-shim'
-import { nodeResolve } from '@rollup/plugin-node-resolve'
 
 // https://www.typescriptlang.org/tsconfig/#preserveSymlinks
 
@@ -22,7 +21,7 @@ export default defineConfig(
         { file: 'dist/index.js', format: 'cjs' },
         { file: 'dist/index.mjs', format: 'es' }
       ],
-      plugins: [nodeResolve(), swc(), shim()],
+      plugins: [swc(), shim()],
       external
     },
     {

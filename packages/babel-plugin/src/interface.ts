@@ -1,3 +1,5 @@
+export type Transport = 'props' | 'attrs' | (string & {})
+
 export interface StylexBindingMeta {
   helper: 'props' | 'attrs' | (string & {})
 }
@@ -22,8 +24,10 @@ export interface ModuleResolutionExperimentalCrossFileParsing {
 export type ModuleResolution = ModuleResolutionCommonJS | MOduleResolutionHaste | ModuleResolutionExperimentalCrossFileParsing
 
 export interface StylexExtendBabelPluginOptions {
-  stylex?: boolean | StylexBindingMeta
-  enableInjectGlobalStyle?: boolean
+  transport?: Transport
+  /**
+   * @see {@link https://stylexjs.com/docs/api/configuration/babel-plugin/#aliases}
+   */
   aliases?: Record<string, string | string[]>
   /**
    * @default 'x'
@@ -37,5 +41,5 @@ export interface StylexExtendBabelPluginOptions {
 }
 
 export type CSSObjectValue = {
-  [key: string]: CSSObjectValue | number | string | undefined | null
+  [key: string]: CSSObjectValue | number | string | undefined | null | boolean
 }

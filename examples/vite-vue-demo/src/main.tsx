@@ -3,6 +3,10 @@ import { keyframes } from '@stylexjs/stylex'
 import { createApp, defineComponent } from 'vue'
 import { colors } from './colors.stylex'
 
+import 'virtual:stylex.css'
+
+// import 'stylex.css'
+
 const pulse = keyframes({
   '0%': { transform: 'scale(1)' },
   '50%': { transform: 'scale(0.5)' },

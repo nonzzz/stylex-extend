@@ -15,7 +15,8 @@
   "exports": {
     ".": {
       "import": "./dist/index.mjs",
-      "require": "./dist/index.js"
+      "require": "./dist/index.js",
+      "types": "./dist/index.d.ts"
     },
     "./package.json": "./package.json",
     "./*": "./*"
@@ -23,6 +24,7 @@
   "devDependencies": {
     "@types/babel__core": "^7.20.5",
     "@types/stylis": "^4.2.5",
+    "valibot": "^0.42.0",
     "babel-plugin-tester": "^11.0.4"
   },
   "dependencies": {

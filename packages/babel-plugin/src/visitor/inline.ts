@@ -1,58 +1,89 @@
+/* eslint-disable no-unused-vars */
 // inline is same as stylex macros
 
 import { types } from '@babel/core'
 import type { NodePath } from '@babel/core'
-import { scanObjectExpression } from '../ast/evaluate-css'
 import { MESSAGES } from '../ast/message'
-import { callExpression, variableDeclaration } from '../ast/shared'
-import { Context } from '../state-context'
-import { EXTEND_INLINE } from './import-stmt'
+import {
+  callExpression,
+  findNearestParentWithCondition,
+  isIdentifier,
+  isMemberExpression,
+  isObjectExpression,
+  isTopLevelCalled,
+  make
+} from '../ast/shared'
+import { Module } from '../module'
+import { evaluateCSS, printJsAST } from '../ast/evaluate-path'
+import { APIS, insertRelativePackage } from './imports'
 
-function pickupAllInlineMacro(args: NodePath<types.Expression>[], ctx: Context) {
-  const result: NodePath<types.CallExpression>[] = []
-  for (const arg of args) {
-    if (arg.isCallExpression()) {
-      const callee = arg.get('callee')
-      if (callee.isIdentifier() && ctx.imports.has(callee.node.name)) {
-        result.push(arg)
-      }
-    }
+function validateInlineMacro(path: NodePath<types.Expression | types.ArgumentPlaceholder | types.SpreadElement>[]) {
+  if (path.length > 1) throw new Error(MESSAGES.INLINE_ONLY_ONE_ARGUMENT)
+  if (isObjectExpression(path[0])) {
+    return path[0]
   }
-  return result
+  throw new Error(MESSAGES.INVALID_INLINE_ARGUMENT)
 }
 
-export function transformInline(path: NodePath<types.CallExpression>, ctx: Context) {
-  const args = path.get('arguments') as NodePath<types.Expression>[]
-  const inlineCalles = pickupAllInlineMacro(args, ctx)
-  const expressions: types.Expression[][] = []
-  for (const inlineCall of inlineCalles) {
-    const calleeArgs = inlineCall.get('arguments')
-    if (calleeArgs.length > 1) throw new Error(MESSAGES.INLINE_ONLY_ONE_ARGUMENT)
-    const expression = calleeArgs[0]
-    if (expression.isObjectExpression()) {
-      const result = scanObjectExpression(expression)
-      if (result) {
-        const [CSSAST, variable, expr] = result
-        const stylexDeclaration = variableDeclaration(variable, callExpression(ctx.importIdentifiers.create, [CSSAST]))
-        ctx.stmts.push(stylexDeclaration)
-        expressions.push(expr)
+export function getExtendMacro(path: NodePath<types.CallExpression>, mod: Module, expected: 'inline' | 'injectGlobalStyle') {
+  const callee = path.get('callee')
+  if (isIdentifier(callee) && mod.extendImports.get(callee.node.name) === expected) {
+    return path
+  }
+  if (isMemberExpression(callee)) {
+    const obj = callee.get('object')
+    const prop = callee.get('property')
+    if (isIdentifier(obj) && isIdentifier(prop)) {
+      if (mod.extendImports.has(obj.node.name) && APIS.has(prop.node.name) && prop.node.name === expected) {
+        return path
       }
     }
   }
-  const finallExpression: types.Expression[] = []
-  for (let i = 0; i < args.length; i++) {
-    const path = args[i]
-    if (!path.isCallExpression()) {
-      finallExpression.push(path.node)
-    } else {
-      const callee = path.get('callee')
-      if (callee.isIdentifier() && ctx.imports.get(callee.node.name) === EXTEND_INLINE) {
-        finallExpression.push(...(expressions.shift() ?? []))
-      } else {
-        finallExpression.push(path.node)
+}
+
+function insertAndReplace(
+  path: NodePath<types.CallExpression>,
+  mod: Module,
+  handler: (p: NodePath<types.CallExpression>, applied: NodePath<types.Identifier>, expr: types.Expression[]) => void
+) {
+  const callee = getExtendMacro(path, mod, 'inline')
+  if (callee) {
+    const expr = validateInlineMacro(callee.get('arguments'))
+    const { references, css } = evaluateCSS(expr, mod)
+    const { expressions, properties, into } = printJsAST({ css, references }, expr)
+    const [create, applied] = insertRelativePackage(mod.program, mod)
+    const declaration = make.variableDeclaration(into, callExpression(create.node, [make.objectExpression(properties)]))
+    const nearest = findNearestParentWithCondition(path, (p) => isTopLevelCalled(p))
+    nearest.insertBefore(declaration)
+    handler(path, applied, expressions)
+  }
+}
+
+// inline processing two scenes.
+// 1. as props/attrs function argument
+// 2. call it as single.
+
+export function transformInline(path: NodePath<types.CallExpression>, mod: Module) {
+  // check path
+  if (path.parent.type === 'CallExpression') {
+    // check again
+    const [_, applied] = mod.importIdentifiers
+    const { parent } = path
+    if (parent.callee.type === 'Identifier' && parent.callee.name !== applied) {
+      return
+    }
+
+    if (parent.callee.type === 'MemberExpression') {
+      const prop = parent.callee.property
+      if (prop.type === 'Identifier' && prop.name !== applied) {
+        return
       }
     }
+    insertAndReplace(path, mod, (p, _, expressions) => p.replaceWithMultiple(expressions))
+    return
   }
-  const nextCallExpression = callExpression(path.node.callee, finallExpression)
-  path.replaceWith(nextCallExpression)
+
+  // single call
+
+  insertAndReplace(path, mod, (p, applied, expressions) => p.replaceWith(make.callExpression(applied.node, expressions)))
 }

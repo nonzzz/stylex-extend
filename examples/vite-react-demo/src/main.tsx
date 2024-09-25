@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import ReactDOM from 'react-dom/client'
+import 'virtual:stylex.css'
 
 interface ButtonProps {
   color: string

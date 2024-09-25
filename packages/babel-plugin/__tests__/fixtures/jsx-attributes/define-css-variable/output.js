@@ -1,4 +1,10 @@
 import { create as _create, props as _props } from "@stylexjs/stylex";
+function t(s) {
+  return s;
+}
+const ctx = {
+  t,
+};
 const _styles = _create({
   "#0": (size, t, ctxT, a1c2mtth) => ({
     "--font-size-unit": size,
@@ -10,12 +16,6 @@ const _styles = _create({
     },
   }),
 });
-function t(s) {
-  return s;
-}
-const ctx = {
-  t,
-};
 export function Component(props) {
   const size = "16px";
   return (
