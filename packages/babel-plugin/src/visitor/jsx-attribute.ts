@@ -1,7 +1,7 @@
 import { NodePath, types } from '@babel/core'
 import { MESSAGES } from '../ast/message'
 import { evaluateCSS, printJsAST } from '../ast/evaluate-path'
-import { callExpression, findNearestParentWithCondition, isObjectExpression, make } from '../ast/shared'
+import { callExpression, findNearestParentWithCondition, isObjectExpression, isTopLevelCalled, make } from '../ast/shared'
 import { Module } from '../module'
 import { insertRelativePackage } from './imports'
 
@@ -28,7 +28,8 @@ export function transformStylexAttrs(path: NodePath<types.JSXAttribute>, mod: Mo
     const { properties, expressions, into } = printJsAST({ css, references }, expr)
     const [create, applied] = insertRelativePackage(mod.program, mod)
     const declaration = make.variableDeclaration(into, callExpression(create.node, [make.objectExpression(properties)]))
-    mod.program.unshiftContainer('body', declaration)
+    const nearest = findNearestParentWithCondition(path, (p) => isTopLevelCalled(p))
+    nearest.insertBefore(declaration)
     path.replaceWith(types.jsxSpreadAttribute(callExpression(applied.node, expressions)))
   }
 }

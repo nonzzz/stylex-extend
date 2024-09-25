@@ -294,7 +294,7 @@ export function printJsAST(data: ReturnType<typeof sortAndMergeEvaluatedResult>,
       }) as types.Expression[]
       const callee = make.callExpression(expr, calleeArguments)
       if (logical) {
-        expressions.push(make.logicalExpression('&&', references.get(MARK.ref(i - 1))!.path.node! as types.Expression, callee))
+        expressions.push(make.logicalExpression('&&', references.get(MARK.ref(i))!.path.node! as types.Expression, callee))
       } else {
         expressions.push(callee)
       }

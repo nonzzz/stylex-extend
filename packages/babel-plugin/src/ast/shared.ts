@@ -104,7 +104,9 @@ export function isCallExpression(path: NodePath<types.Node>): path is NodePath<t
   return path.isCallExpression()
 }
 
-export function isTopLevelCalled(path: NodePath<types.Node>) {
+export function isTopLevelCalled(
+  path: NodePath<types.Node>
+): path is NodePath<types.Program | types.ExportDefaultDeclaration | types.ExportNamedDeclaration> {
   return types.isProgram(path.parent) || types.isExportDefaultDeclaration(path.parent) || types.isExportNamedDeclaration(path.parent)
 }
 

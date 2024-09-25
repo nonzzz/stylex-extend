@@ -1,4 +1,6 @@
+var _create, _props;
 import { create as _create, props as _props } from "@stylexjs/stylex";
+const visible = true;
 const _styles = _create({
   "#0": (color) => ({
     color: color,
@@ -19,7 +21,6 @@ const _styles = _create({
     display: flex,
   }),
 });
-const visible = true;
 export function Component(props) {
   const { color, flex } = props;
   return (

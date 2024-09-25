@@ -2,7 +2,8 @@ import type { PluginObj } from '@babel/core'
 import type { StylexExtendBabelPluginOptions } from './interface'
 import { transformInjectGlobalStyle, transformInline, transformStylexAttrs } from './visitor'
 import { Module } from './module'
-import { readImportStmt } from './visitor/imports'
+import { FIELD, readImportStmt } from './visitor/imports'
+import { isImportDeclaration } from './ast/shared'
 
 function declare(): PluginObj {
   return {
@@ -35,59 +36,17 @@ function declare(): PluginObj {
               transformInjectGlobalStyle(path, mod)
             }
           })
-          // const pluginOptions = { ...defaultOptions, ...state.opts }
-          // if (typeof pluginOptions.stylex === 'boolean') {
-          //   pluginOptions.stylex = { helper: pluginOptions.stylex ? 'props' : '' }
-          // }
-          // ctx.filename = state.filename || (state.file.opts?.sourceFileName ?? undefined)
-          // const body = path.get('body')
-          // if (pluginOptions.stylex.helper) {
-          //   const modules = ['create', pluginOptions.stylex.helper]
-          //   const identifiers = modules.reduce<ImportIdentifiers>(
-          //     (acc, cur) => ({ ...acc, [cur]: path.scope.generateUidIdentifier(cur) }),
-          //     {}
-          //   )
-          //   ctx.setupOptions(pluginOptions, identifiers, modules)
-          // }
-          // if (ensureWithExtendPkg(body)) {
-          //   scanImportStmt(body, ctx)
-          //   if (ctx.options.enableInjectGlobalStyle) {
-          //     path.traverse({
-          //       CallExpression(path) {
-          //         const callee = path.get('callee')
-          //         if (isIdentifier(callee)) {
-          //           const identifier = getStringLikeKindValue(callee)
-          //           if (ctx.imports.get(identifier) === EXTEND_INJECT_GLOBAL_STYLE) {
-          //             const nearestStmt = findNearestStatementAncestor(path)
-          //             if (!isTopLevelCalled(nearestStmt)) {
-          //               throw new Error(MESSAGES.ONLY_TOP_LEVEL_INJECT_GLOBAL_STYLE)
-          //             }
-          //             const CSS = transformInjectGlobalStyle(path, ctx)
-          //             if (CSS) {
-          //               Reflect.set(state.file.metadata, 'globalStyle', CSS)
-          //             }
-          //           }
-          //         }
-          //       }
-          //     })
-          //   }
-          //   path.traverse({
-          //     CallExpression(path) {
-          //       const { arguments: args } = path.node
-          //       if (!args.length) return
-          //       const maybeHave = args.find(a =>
-          //         a.type === 'CallExpression' && a.callee.type === 'Identifier' &&
-          //         ctx.imports.get(getStringLikeKindValue(a.callee)) === EXTEND_INLINE
-          //       )
-          //       if (!maybeHave) return
-          //       transformInline(path, ctx)
-          //       path.skip()
-          //     }
-          //   })
-          // }
         },
         exit(path) {
-          //
+          const body = path.get('body')
+          for (const stmt of body) {
+            if (isImportDeclaration(stmt)) {
+              const s = stmt.get('source')
+              if (s.isStringLiteral() && s.node.value === FIELD) {
+                stmt.remove()
+              }
+            }
+          }
         }
       }
     }

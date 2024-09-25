@@ -6,7 +6,7 @@ import plugin from '../src'
 pluginTester({
   plugin,
   pluginName: 'stylex-extend',
-  fixtures: path.join(__dirname, 'fixtures2'),
+  fixtures: path.join(__dirname, 'fixtures'),
   babelOptions: {
     parserOpts: {
       plugins: ['jsx']

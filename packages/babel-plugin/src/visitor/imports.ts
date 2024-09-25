@@ -4,7 +4,7 @@ import { Module } from '../module'
 import { findNearestParentWithCondition, getStringLikeKindValue, isImportDeclaration, isImportSpecifier, make } from '../ast/shared'
 import { Iter } from '../ast/evaluate-path'
 
-const FIELD = '@stylex-extend/core'
+export const FIELD = '@stylex-extend/core'
 const STYLEX = '@stylexjs/stylex'
 
 export const APIS = new Set(['inline', 'injectGlobalStyle'])

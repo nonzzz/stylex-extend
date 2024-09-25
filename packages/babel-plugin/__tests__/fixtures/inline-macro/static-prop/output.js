@@ -1,5 +1,11 @@
-import { create as _create, props as _props } from "@stylexjs/stylex";
-const _styles = _create({
+import { create } from "@stylexjs/stylex";
+import stylex from "@stylexjs/stylex";
+const styles = create({
+  base: {
+    color: "red",
+  },
+});
+const _styles = create({
   "#0": (propsHoverColor, propsActiveColor) => ({
     font: "16px",
     display: "inline-flex",
@@ -10,13 +16,6 @@ const _styles = _create({
     },
     backgroundColor: propsHoverColor,
   }),
-});
-import { create } from "@stylexjs/stylex";
-import stylex from "@stylexjs/stylex";
-const styles = create({
-  base: {
-    color: "red",
-  },
 });
 export function Component(props) {
   return (

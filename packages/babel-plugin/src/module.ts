@@ -114,7 +114,7 @@ function filePathResolver(relativeFilePath: string, sourceFilePath: string, alia
     }
   }
   // Failed to resolve the file path
-  return null 
+  return null
 }
 
 function matchFileSuffix(allowedSuffix: string) {
@@ -149,7 +149,7 @@ export function importPathResolver(importPath: string, filename: string, options
         aliases
       )
       return resolvedFilePath ? ['hasteRef', resolvedFilePath] : false
-    }  
+    }
     case 'experimental_crossFileParsing':
       // TODO
       return false

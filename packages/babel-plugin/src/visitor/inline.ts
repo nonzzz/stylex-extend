@@ -4,7 +4,15 @@
 import { types } from '@babel/core'
 import type { NodePath } from '@babel/core'
 import { MESSAGES } from '../ast/message'
-import { callExpression, isIdentifier, isMemberExpression, isObjectExpression, make } from '../ast/shared'
+import {
+  callExpression,
+  findNearestParentWithCondition,
+  isIdentifier,
+  isMemberExpression,
+  isObjectExpression,
+  isTopLevelCalled,
+  make
+} from '../ast/shared'
 import { Module } from '../module'
 import { evaluateCSS, printJsAST } from '../ast/evaluate-path'
 import { APIS, insertRelativePackage } from './imports'
@@ -45,7 +53,8 @@ function insertAndReplace(
     const { expressions, properties, into } = printJsAST({ css, references }, expr)
     const [create, applied] = insertRelativePackage(mod.program, mod)
     const declaration = make.variableDeclaration(into, callExpression(create.node, [make.objectExpression(properties)]))
-    mod.program.unshiftContainer('body', declaration)
+    const nearest = findNearestParentWithCondition(path, (p) => isTopLevelCalled(p))
+    nearest.insertBefore(declaration)
     handler(path, applied, expressions)
   }
 }
