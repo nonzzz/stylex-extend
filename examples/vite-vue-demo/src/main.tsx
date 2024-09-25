@@ -31,7 +31,7 @@ const App = defineComponent({
   setup() {
     return () => (
       <>
-        <div stylex={{ color: 'red' }}>
+        <div stylex={{ color: 'red', zIndex: -11 }}>
           456
         </div>
         <p>text</p>

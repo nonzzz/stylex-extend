@@ -26,8 +26,10 @@ function validateInlineMacro(path: NodePath<types.Expression | types.ArgumentPla
 }
 
 export function getExtendMacro(path: NodePath<types.CallExpression>, mod: Module, expected: 'inline' | 'injectGlobalStyle') {
+  if (!path.node) return
   const callee = path.get('callee')
   if (isIdentifier(callee) && mod.extendImports.get(callee.node.name) === expected) {
+    path.skip()
     return path
   }
   if (isMemberExpression(callee)) {
@@ -35,6 +37,7 @@ export function getExtendMacro(path: NodePath<types.CallExpression>, mod: Module
     const prop = callee.get('property')
     if (isIdentifier(obj) && isIdentifier(prop)) {
       if (mod.extendImports.has(obj.node.name) && APIS.has(prop.node.name) && prop.node.name === expected) {
+        path.skip()
         return path
       }
     }
@@ -79,11 +82,14 @@ export function transformInline(path: NodePath<types.CallExpression>, mod: Modul
         return
       }
     }
-    insertAndReplace(path, mod, (p, _, expressions) => p.replaceWithMultiple(expressions))
+    insertAndReplace(path, mod, (p, _, expressions) => {
+      p.replaceInline(expressions)
+    })
     return
   }
-
   // single call
 
-  insertAndReplace(path, mod, (p, applied, expressions) => p.replaceWith(make.callExpression(applied.node, expressions)))
+  insertAndReplace(path, mod, (p, applied, expressions) => {
+    p.replaceWith(make.callExpression(applied.node, expressions))
+  })
 }

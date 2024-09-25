@@ -27,6 +27,7 @@ import {
   isStringLikeKind,
   isStringLiteral,
   isTemplateLiteral,
+  isUnaryExpression,
   make
 } from '../ast/shared'
 import type { CSSObjectValue } from '../interface'
@@ -102,15 +103,15 @@ function evaluateTemplateLiteral(path: NodePath<types.TemplateLiteral>, state: S
 // Like number, string, boolean, null, undefined, etc.
 // Unlike stylex. we must ensure the object expression if it's kind of object property the key must be static.
 
-function evaluate(path: NodePath<types.Identifier>, state: State): string | undefined 
+function evaluate(path: NodePath<types.Identifier>, state: State): string | undefined
 function evaluate(path: NodePath<types.NullLiteral>, state: State): null
-function evaluate(path: NodePath<types.StringLiteral>, state: State): string 
-function evaluate(path: NodePath<types.NumericLiteral>, state: State): number 
-function evaluate(path: NodePath<types.BooleanLiteral>, state: State): boolean 
-function evaluate(path: NodePath<types.MemberExpression>, state: State): string | undefined 
-function evaluate(path: NodePath<types.TemplateLiteral>, state: State): string 
-function evaluate(path: NodePath<types.ConditionalExpression>, state: State): string 
-function evaluate(path: NodePath<types.CallExpression>, state: State): string | undefined 
+function evaluate(path: NodePath<types.StringLiteral>, state: State): string
+function evaluate(path: NodePath<types.NumericLiteral>, state: State): number
+function evaluate(path: NodePath<types.BooleanLiteral>, state: State): boolean
+function evaluate(path: NodePath<types.MemberExpression>, state: State): string | undefined
+function evaluate(path: NodePath<types.TemplateLiteral>, state: State): string
+function evaluate(path: NodePath<types.ConditionalExpression>, state: State): string
+function evaluate(path: NodePath<types.CallExpression>, state: State): string | undefined
 function evaluate(path: NodePath<types.ObjectExpression>, state: State): CSSObjectValue
 function evaluate(path: NodePath<types.LogicalExpression>, state: State): CSSObjectValue
 function evaluate(path: NodePath<types.Node>, state: State): CSSObjectValue
@@ -130,6 +131,28 @@ function evaluate(path: NodePath<types.Node>, state: State) {
 
   if (isStringLiteral(path) || isNumericLiteral(path) || isBooleanLiteral(path)) {
     return path.node.value
+  }
+
+  if (isUnaryExpression(path, { prefix: true })) {
+    if (path.node.operator === 'void') {
+      // we don't need to evaluate the argument to know what this will return
+      return undefined
+    }
+    const args = path.get('argument')
+    const arg = evaluate(args, state)
+    switch (path.node.operator) {
+      case '!':
+        return !arg
+      case '+':
+        return +arg
+      case '-':
+        return -arg
+      case '~':
+        return ~arg
+      case 'typeof':
+        return typeof arg
+    }
+    return undefined
   }
 
   if (isMemberExpression(path)) {
@@ -184,7 +207,7 @@ function evaluate(path: NodePath<types.Node>, state: State) {
         }
         let key: string | undefined
         if (isStringLikeKind(prop.get('key'))) {
-          // @ts-expect-error 
+          // @ts-expect-error
           key = getStringLikeKindValue(prop.get('key'))
         }
         const valuePath = prop.get('value')
@@ -295,7 +318,6 @@ export function printJsAST(data: ReturnType<typeof sortAndMergeEvaluatedResult>,
   const properties: types.ObjectProperty[] = []
   const expressions: types.Expression[] = []
   const into = path.scope.generateUidIdentifier('styles')
-
   for (let i = 0; i < css.length; i++) {
     const rule = css[i]
     const [ast, vars, logical] = printCSSRule(rule)
@@ -440,7 +462,11 @@ function sortAndMergeEvaluatedResult(data: Result) {
   for (const item of iter) {
     const { key, value } = item
     layer = layer2
+
     if (!MARK.isRef(key)) {
+      if (result[layer] && WITH_LOGICAL in result[layer]) {
+        layer++
+      }
       result[layer] = { ...result[layer], [key]: value }
     } else {
       if (!references.has(key)) {
@@ -449,12 +475,11 @@ function sortAndMergeEvaluatedResult(data: Result) {
       }
 
       const path = references.get(key)?.path as NodePath<types.LogicalExpression>
-
       if (nodes.length && nodes.some(({ node }) => types.isNodesEquivalent(path.node, node))) {
         const layer = nodes.find(({ node }) => types.isNodesEquivalent(path.node, node))?.layer ?? 0
         result[layer] = { ...result[layer], ...value as CSSObjectValue }
       } else {
-        if (result.length > 0 && !confident) {
+        if (result.length > 0) {
           layer++
           confident = true
         }

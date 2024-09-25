@@ -39,6 +39,10 @@ export function isConditionalExpression(path: NodePath<types.Node>): path is Nod
   return path.isConditionalExpression()
 }
 
+export function isUnaryExpression(path: NodePath<types.Node>, opts?: any): path is NodePath<types.UnaryExpression> {
+  return path.isUnaryExpression(opts)
+}
+
 export function getStringLikeKindValue(path: StringLikeKindPath | StringLikeKind) {
   if (!('node' in path)) {
     if (path.type === 'StringLiteral') return path.value
