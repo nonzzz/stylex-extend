@@ -1,4 +1,3 @@
-var _create, _props;
 import { create as _create, props as _props } from "@stylexjs/stylex";
 function t(s) {
   return s;
@@ -22,7 +21,12 @@ export function Component(props) {
   return (
     <div
       {..._props(
-        _styles["#0"](size, t("flex"), ctx.t, size ? props.read : props.purple)
+        _styles["#0"](
+          size,
+          t("flex"),
+          ctx.t("center"),
+          size ? props.read : props.purple
+        )
       )}
     ></div>
   );

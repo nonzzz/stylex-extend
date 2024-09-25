@@ -35,16 +35,25 @@ export class Module {
   extendImports: Map<string, string>
   program: NodePath<types.Program>
   importState: ImportState
+  private state: PluginPass
   constructor(program: NodePath<types.Program>, opts: PluginPass) {
     this.filename = opts.filename || (opts.file.opts?.sourceFileName ?? '')
     this.options = this.setOptions(opts.opts)
     this.extendImports = new Map()
     this.program = program
+    this.state = opts
+    // @ts-expect-error
+    this.state.file.metadata.globalStyle = []
     this.importState = { insert: false }
   }
 
   private setOptions(opts = {} satisfies StylexExtendBabelPluginOptions) {
     return v.parse(schema, opts)
+  }
+
+  addStyle(style: string) {
+    // @ts-expect-error
+    this.state.file.metadata.globalStyle.push(style)
   }
 
   get importIdentifiers() {

@@ -62,8 +62,8 @@ export function insertRelativePackage(program: NodePath<types.Program>, mod: Mod
   }
   if (!state.has(importState)) {
     const importSpecifiers = [
-      make.importSpecifier(program.scope.generateDeclaredUidIdentifier(create), make.identifier(create)),
-      make.importSpecifier(program.scope.generateDeclaredUidIdentifier(applied), make.identifier(applied))
+      make.importSpecifier(program.scope.generateUidIdentifier(create), make.identifier(create)),
+      make.importSpecifier(program.scope.generateUidIdentifier(applied), make.identifier(applied))
     ]
     const declaration = make.importDeclaration(importSpecifiers, make.stringLiteral(STYLEX))
     const lastest = program.unshiftContainer('body', declaration)

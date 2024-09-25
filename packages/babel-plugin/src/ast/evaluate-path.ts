@@ -45,7 +45,6 @@ export interface State {
   confident: boolean
   deoptPath: NodePath<types.Node> | null
   seen: Map<types.Node, any>
-  addedImports: Set<string>
   environment: Environment
   layer: number
   mod: Module
@@ -134,7 +133,14 @@ function evaluate(path: NodePath<types.Node>, state: State) {
 
   if (isCallExpression(path)) {
     const callee = path.get('callee')
-    if (isMemberExpression(callee)) return evaluateMemberExpression(callee, state)
+    if (isMemberExpression(callee)) {
+      const result = evaluateMemberExpression(callee, state)
+      if (result) {
+        const unwrapped = MARK.unref(result)
+        state.environment.references.set(unwrapped, { path, define: unwrapped })
+      }
+      return result
+    }
     if (isIdentifier(callee)) {
       const value = getStringLikeKindValue(callee)
       state.environment.references.set(value, { path, define: value })
@@ -192,15 +198,10 @@ function evaluateForState(path: NodePath<types.Node>, state: State) {
   return value
 }
 
-const paths = new WeakMap<Module, Set<string>>()
-
 function evaluatePath(path: NodePath<types.Node>, mod: Module): Result {
-  const addedImports = paths.get(mod) ?? new Set()
-  paths.set(mod, addedImports)
   const state: State = {
     confident: true,
     deoptPath: null,
-    addedImports,
     layer: 0,
     environment: { references: new Map() },
     seen: new Map(),
@@ -320,7 +321,7 @@ export function printCssAST(data: ReturnType<typeof sortAndMergeEvaluatedResult>
     str += s
   }
 
-  const evaluateCSSVariableFormModule = (path: NodePath<types.MemberExpression>) => {
+  const evaluateCSSVariableFromModule = (path: NodePath<types.MemberExpression>) => {
     const obj = path.get('object')
     const prop = path.get('property')
     if (isReferencedIdentifier(obj) && isIdentifier(prop)) {
@@ -358,7 +359,7 @@ export function printCssAST(data: ReturnType<typeof sortAndMergeEvaluatedResult>
     const unwrapped = MARK.unref(value)
     const { path } = references.get(unwrapped)!
     if (isMemberExpression(path)) {
-      return evaluateCSSVariableFormModule(path)
+      return evaluateCSSVariableFromModule(path)
     }
     if (isTemplateLiteral(path)) {
       const { quasis } = path.node
@@ -368,7 +369,7 @@ export function printCssAST(data: ReturnType<typeof sortAndMergeEvaluatedResult>
       while (cap) {
         const first = expressions.shift()!
         if (first && isMemberExpression(first)) {
-          str += evaluateCSSVariableFormModule(first)
+          str += evaluateCSSVariableFromModule(first)
         }
         cap--
       }

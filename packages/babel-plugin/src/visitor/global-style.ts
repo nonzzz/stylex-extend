@@ -26,6 +26,8 @@ export function transformInjectGlobalStyle(path: NodePath<types.CallExpression>,
     const evaluated = evaluateCSS(expr, mod)
     const { css } = printCssAST(evaluated, mod)
     path.replaceWith(types.stringLiteral(''))
-    return serialize(compile(css), stringify)
+    const result = serialize(compile(css), stringify)
+    mod.addStyle(result)
+    return result
   }
 }
