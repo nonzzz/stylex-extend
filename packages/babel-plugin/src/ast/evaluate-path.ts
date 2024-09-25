@@ -101,6 +101,19 @@ function evaluateTemplateLiteral(path: NodePath<types.TemplateLiteral>, state: S
 // About difference. us evaluate will split two logic. one is evaluate object expression. another is evaluate baisc expression.
 // Like number, string, boolean, null, undefined, etc.
 // Unlike stylex. we must ensure the object expression if it's kind of object property the key must be static.
+
+function evaluate(path: NodePath<types.Identifier>, state: State): string | undefined 
+function evaluate(path: NodePath<types.NullLiteral>, state: State): null
+function evaluate(path: NodePath<types.StringLiteral>, state: State): string 
+function evaluate(path: NodePath<types.NumericLiteral>, state: State): number 
+function evaluate(path: NodePath<types.BooleanLiteral>, state: State): boolean 
+function evaluate(path: NodePath<types.MemberExpression>, state: State): string | undefined 
+function evaluate(path: NodePath<types.TemplateLiteral>, state: State): string 
+function evaluate(path: NodePath<types.ConditionalExpression>, state: State): string 
+function evaluate(path: NodePath<types.CallExpression>, state: State): string | undefined 
+function evaluate(path: NodePath<types.ObjectExpression>, state: State): CSSObjectValue
+function evaluate(path: NodePath<types.LogicalExpression>, state: State): CSSObjectValue
+function evaluate(path: NodePath<types.Node>, state: State): CSSObjectValue
 function evaluate(path: NodePath<types.Node>, state: State) {
   if (isNullLiteral(path)) {
     return null
@@ -171,7 +184,7 @@ function evaluate(path: NodePath<types.Node>, state: State) {
         }
         let key: string | undefined
         if (isStringLikeKind(prop.get('key'))) {
-          // @ts-expect-error
+          // @ts-expect-error 
           key = getStringLikeKindValue(prop.get('key'))
         }
         const valuePath = prop.get('value')
@@ -185,9 +198,8 @@ function evaluate(path: NodePath<types.Node>, state: State) {
   }
 
   if (isLogicalExpression(path)) {
-    // TODO better type
     // stylex will evaluate all logical expr so we no need to worry about it.
-    const right = evaluateForState(path.get('right'), state) as CSSObjectValue
+    const right = evaluateForState(path.get('right'), state)
     state.environment.references.set(MARK.ref(state.layer), { path: path.get('left'), define: MARK.ref(state.layer) })
     return right
   }
