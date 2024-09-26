@@ -1,3 +1,9 @@
+## v0.4.3 (2024-09-26)
+
+### Patches
+
+- Fix `babel-plugin` unexpected css merge.
+
 ## v0.4.2 (2024-09-26)
 
 ### Patches
