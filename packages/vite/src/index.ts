@@ -194,7 +194,7 @@ export function stylex(options: StyleXOptions = {}): Plugin[] {
             continue
           }
           if (!resolved.id.includes('node_modules')) {
-            const p = normalizePath('./' + path.relative(path.dirname(id), resolved.id).replace(/\.\w+$/, ''))
+            const p = './' + normalizePath(path.relative(path.dirname(id), resolved.id).replace(/\.\w+$/, ''))
             const start = stmt.s + i
             const end = stmt.e + i
             code = code.slice(0, start) + p + code.slice(end)

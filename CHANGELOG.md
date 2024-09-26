@@ -1,3 +1,10 @@
+## v0.4.2 (2024-09-26)
+
+### Patches
+
+- Fix `babel-plugin` import scan.
+- Fix `vite plugin` aliases error handling.
+
 ## v0.4.1 (2024-09-25)
 
 ### Patches

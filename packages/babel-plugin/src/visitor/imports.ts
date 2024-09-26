@@ -38,9 +38,9 @@ export interface ImportState {
 const state = new WeakMap<ImportState, NodePath<types.ImportDeclaration>>()
 // insert relative package import stmt
 
-function useCreatingNodePath(path: NodePath<types.ImportDeclaration>) {
+function useCreatingNodePath(path: NodePath<types.ImportDeclaration>, kind: 'local' | 'imported') {
   const specifiers = path.get('specifiers') as NodePath<types.ImportSpecifier>[]
-  return specifiers.map(specifier => specifier.get('local'))
+  return specifiers.map(specifier => specifier.get(kind))
 }
 
 export function insertRelativePackage(program: NodePath<types.Program>, mod: Module) {
@@ -48,18 +48,28 @@ export function insertRelativePackage(program: NodePath<types.Program>, mod: Mod
   const { bindings } = program.scope
   const [create, applied] = importIdentifiers
 
-  if (state.has(importState)) return useCreatingNodePath(state.get(importState)!)
+  if (state.has(importState)) return useCreatingNodePath(state.get(importState)!, 'local')
+  let importDeclaration: NodePath<types.ImportDeclaration> | null = null
   for (const { key, value } of new Iter(bindings)) {
     if (key === create || key === applied) {
       if (isImportSpecifier(value.path)) {
         const declaration = findNearestParentWithCondition(value.path, isImportDeclaration)
         if (declaration.node.source.value === STYLEX) {
-          state.set(importState, declaration)
+          importDeclaration = declaration
         }
         break
       }
     }
   }
+
+  if (importDeclaration) {
+    const specifiers = new Set(useCreatingNodePath(importDeclaration, 'imported').map(getStringLikeKindValue))
+    const diffs = importIdentifiers.filter((id) => !specifiers.has(id))
+    const importSpecifiers = diffs.map((id) => make.importSpecifier(program.scope.generateUidIdentifier(id), make.identifier(id)))
+    importDeclaration.pushContainer('specifiers', importSpecifiers)
+    state.set(importState, importDeclaration)
+  }
+
   if (!state.has(importState)) {
     const importSpecifiers = [
       make.importSpecifier(program.scope.generateUidIdentifier(create), make.identifier(create)),
@@ -70,5 +80,5 @@ export function insertRelativePackage(program: NodePath<types.Program>, mod: Mod
     state.set(importState, lastest[0])
   }
 
-  return useCreatingNodePath(state.get(importState)!)
+  return useCreatingNodePath(state.get(importState)!, 'local')
 }
