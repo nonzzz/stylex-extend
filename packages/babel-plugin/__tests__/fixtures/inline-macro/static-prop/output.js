@@ -1,4 +1,4 @@
-import { create, props as _props } from "@stylexjs/stylex";
+import { props as _props, create } from "@stylexjs/stylex";
 import stylex from "@stylexjs/stylex";
 const styles = create({
   base: {

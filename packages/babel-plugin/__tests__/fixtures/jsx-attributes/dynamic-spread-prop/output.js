@@ -3,9 +3,11 @@ const visible = true;
 const _styles = _create({
   "#0": (color) => ({
     color: color,
-    display: "flex",
   }),
-  "#1": (propsFontSize, propsFontSizeActive, propsColor, flex) => ({
+  "#1": {
+    display: "flex",
+  },
+  "#2": (propsFontSize, propsFontSizeActive, propsColor, flex) => ({
     fontSize: {
       default: "18px",
       "@media (max-width: 768px)": "20px",
@@ -26,8 +28,9 @@ export function Component(props) {
     <div
       {..._props(
         _styles["#0"](color),
+        _styles["#1"],
         visible &&
-          _styles["#1"](props.fontSize, props.fontSizeActive, props.color, flex)
+          _styles["#2"](props.fontSize, props.fontSizeActive, props.color, flex)
       )}
     />
   );

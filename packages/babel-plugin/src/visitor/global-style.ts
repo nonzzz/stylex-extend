@@ -23,8 +23,7 @@ export function transformInjectGlobalStyle(path: NodePath<types.CallExpression>,
   const callee = getExtendMacro(path, mod, 'injectGlobalStyle')
   if (callee) {
     const expr = validateInjectGlobalStyleMacro(callee.get('arguments'), findNearestStatementAncestor(path))
-    const evaluated = evaluateCSS(expr, mod)
-    const { css } = printCssAST(evaluated, mod)
+    const { css } = printCssAST(evaluateCSS(expr, mod), mod)
     path.replaceWith(types.stringLiteral(''))
     const result = serialize(compile(css), stringify)
     mod.addStyle(result)

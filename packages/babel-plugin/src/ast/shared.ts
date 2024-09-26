@@ -157,6 +157,14 @@ export function findNearestStatementAncestor(path: NodePath<types.Node>) {
   return findNearestParentWithCondition(path, isStmt)
 }
 
+export function findNearestTopLevelAncestor(
+  path: NodePath<types.Node>
+): NodePath<types.Program | types.ExportDefaultDeclaration | types.ExportNamedDeclaration> {
+  const ancestor = findNearestParentWithCondition(path, isTopLevelCalled) as NodePath<types.Node>
+  if (isCallExpression(ancestor)) return ancestor.parentPath as any
+  return ancestor as any
+}
+
 export const make = {
   objectProperty: (key: string, value: types.Expression) => objectProperty(stringLiteral(key), value),
   identifier: (name: string) => types.identifier(name),

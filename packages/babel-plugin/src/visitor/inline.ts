@@ -4,15 +4,7 @@
 import { types } from '@babel/core'
 import type { NodePath } from '@babel/core'
 import { MESSAGES } from '../ast/message'
-import {
-  callExpression,
-  findNearestParentWithCondition,
-  isIdentifier,
-  isMemberExpression,
-  isObjectExpression,
-  isTopLevelCalled,
-  make
-} from '../ast/shared'
+import { callExpression, findNearestTopLevelAncestor, isIdentifier, isMemberExpression, isObjectExpression, make } from '../ast/shared'
 import { Module } from '../module'
 import { evaluateCSS, printJsAST } from '../ast/evaluate-path'
 import { APIS, insertRelativePackage } from './imports'
@@ -52,11 +44,10 @@ function insertAndReplace(
   const callee = getExtendMacro(path, mod, 'inline')
   if (callee) {
     const expr = validateInlineMacro(callee.get('arguments'))
-    const { references, css } = evaluateCSS(expr, mod)
-    const { expressions, properties, into } = printJsAST({ css, references }, expr)
+    const { expressions, properties, into } = printJsAST(evaluateCSS(expr, mod), expr)
     const [create, applied] = insertRelativePackage(mod.program, mod)
     const declaration = make.variableDeclaration(into, callExpression(create.node, [make.objectExpression(properties)]))
-    const nearest = findNearestParentWithCondition(path, (p) => isTopLevelCalled(p))
+    const nearest = findNearestTopLevelAncestor(path)
     nearest.insertBefore(declaration)
     handler(path, applied, expressions)
   }

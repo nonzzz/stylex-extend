@@ -38,9 +38,25 @@ export interface ImportState {
 const state = new WeakMap<ImportState, NodePath<types.ImportDeclaration>>()
 // insert relative package import stmt
 
-function useCreatingNodePath(path: NodePath<types.ImportDeclaration>, kind: 'local' | 'imported') {
-  const specifiers = path.get('specifiers') as NodePath<types.ImportSpecifier>[]
-  return specifiers.map(specifier => specifier.get(kind))
+function useCreatingNodePath<K extends 'local' | 'imported'>(
+  path: NodePath<types.ImportDeclaration>,
+  kind: K,
+  importIdentifiers: string[]
+): K extends 'local' ? NodePath<types.Identifier>[] : NodePath<types.StringLiteral>[] {
+  const x = new Set(importIdentifiers)
+  const tpl: NodePath<types.Identifier | types.StringLiteral>[] = []
+  for (const specifier of path.get('specifiers') as NodePath<types.ImportSpecifier>[]) {
+    const s = specifier.get(kind)
+    if (x.has(getStringLikeKindValue(specifier.get('imported')))) {
+      // @ts-expect-error
+      tpl.push(s)
+    }
+  }
+  return tpl.sort((a) => {
+    const aName = getStringLikeKindValue(a)
+    if (aName === 'create') return -1
+    return 0
+  }) as any
 }
 
 export function insertRelativePackage(program: NodePath<types.Program>, mod: Module) {
@@ -48,7 +64,7 @@ export function insertRelativePackage(program: NodePath<types.Program>, mod: Mod
   const { bindings } = program.scope
   const [create, applied] = importIdentifiers
 
-  if (state.has(importState)) return useCreatingNodePath(state.get(importState)!, 'local')
+  if (state.has(importState)) return useCreatingNodePath(state.get(importState)!, 'local', importIdentifiers)
   let importDeclaration: NodePath<types.ImportDeclaration> | null = null
   for (const { key, value } of new Iter(bindings)) {
     if (key === create || key === applied) {
@@ -63,10 +79,10 @@ export function insertRelativePackage(program: NodePath<types.Program>, mod: Mod
   }
 
   if (importDeclaration) {
-    const specifiers = new Set(useCreatingNodePath(importDeclaration, 'imported').map(getStringLikeKindValue))
+    const specifiers = new Set(useCreatingNodePath(importDeclaration, 'imported', importIdentifiers).map(getStringLikeKindValue))
     const diffs = importIdentifiers.filter((id) => !specifiers.has(id))
     const importSpecifiers = diffs.map((id) => make.importSpecifier(program.scope.generateUidIdentifier(id), make.identifier(id)))
-    importDeclaration.pushContainer('specifiers', importSpecifiers)
+    importDeclaration.unshiftContainer('specifiers', importSpecifiers)
     state.set(importState, importDeclaration)
   }
 
@@ -80,5 +96,5 @@ export function insertRelativePackage(program: NodePath<types.Program>, mod: Mod
     state.set(importState, lastest[0])
   }
 
-  return useCreatingNodePath(state.get(importState)!, 'local')
+  return useCreatingNodePath(state.get(importState)!, 'local', importIdentifiers)
 }

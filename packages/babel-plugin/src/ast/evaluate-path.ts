@@ -221,10 +221,11 @@ function evaluate(path: NodePath<types.Node>, state: State) {
   }
 
   if (isLogicalExpression(path)) {
+    if (!state.confident) {
+      state.environment.references.set(MARK.ref(state.layer), { path: path.get('left'), define: MARK.ref(state.layer) })
+    }
     // stylex will evaluate all logical expr so we no need to worry about it.
-    const right = evaluateForState(path.get('right'), state)
-    state.environment.references.set(MARK.ref(state.layer), { path: path.get('left'), define: MARK.ref(state.layer) })
-    return right
+    return evaluateForState(path.get('right'), state)
   }
 }
 
@@ -264,7 +265,8 @@ export class Iter<T extends Record<string, unknown>> {
       yield {
         key: this.keys[i],
         value: this.data[this.keys[i]] as T[keyof T],
-        index: i
+        index: i,
+        peek: () => this.keys[i + 1]
       }
     }
   }
@@ -313,8 +315,10 @@ function printCSSRule(rule: CSSObjectValue) {
 }
 
 export function printJsAST(data: ReturnType<typeof sortAndMergeEvaluatedResult>, path: NodePath<types.ObjectExpression>) {
-  const { references, css } = data
-
+  const { references, css, seens } = data
+  // like spread kind
+  // us reference key is look like @__{idx}
+  // but we evaluate the right order at sortAndMergeEvaluatedResult
   const properties: types.ObjectProperty[] = []
   const expressions: types.Expression[] = []
   const into = path.scope.generateUidIdentifier('styles')
@@ -329,7 +333,7 @@ export function printJsAST(data: ReturnType<typeof sortAndMergeEvaluatedResult>,
       }) as types.Expression[]
       const callee = make.callExpression(expr, calleeArguments)
       if (logical) {
-        expressions.push(make.logicalExpression('&&', references.get(MARK.ref(i))!.path.node! as types.Expression, callee))
+        expressions.push(make.logicalExpression('&&', references.get(seens[i])!.path.node! as types.Expression, callee))
       } else {
         expressions.push(callee)
       }
@@ -338,7 +342,7 @@ export function printJsAST(data: ReturnType<typeof sortAndMergeEvaluatedResult>,
       continue
     }
     if (logical) {
-      expressions.push(make.logicalExpression('&&', references.get(MARK.ref(i - 1))!.path.node! as types.Expression, expr))
+      expressions.push(make.logicalExpression('&&', references.get(seens[i])!.path.node! as types.Expression, expr))
     } else {
       expressions.push(expr)
     }
@@ -452,48 +456,30 @@ export function printCssAST(data: ReturnType<typeof sortAndMergeEvaluatedResult>
 }
 
 function sortAndMergeEvaluatedResult(data: Result) {
-  const { value, references } = data
-  const iter = new Iter(value)
-  const result: CSSObjectValue[] = []
-  let layer = 0
-  let layer2 = 0
-  let confident = false
-  const nodes: Array<{ node: types.LogicalExpression; layer: number }> = []
-  for (const item of iter) {
-    const { key, value } = item
-    layer = layer2
+  const { references } = data
 
+  const result: CSSObjectValue[] = []
+  const seens: Record<number, string> = {}
+  let layer = 0
+  for (const { key, value, peek } of new Iter(data.value)) {
     if (!MARK.isRef(key)) {
-      if (result[layer] && WITH_LOGICAL in result[layer]) {
+      result[layer] = { ...result[layer], [key]: value }
+      if (peek() && MARK.isRef(peek())) {
         layer++
       }
-      result[layer] = { ...result[layer], [key]: value }
-    } else {
-      if (!references.has(key)) {
-        result[layer] = { ...result[layer], ...value as CSSObjectValue }
-        continue
-      }
-
-      const path = references.get(key)?.path as NodePath<types.LogicalExpression>
-      if (nodes.length && nodes.some(({ node }) => types.isNodesEquivalent(path.node, node))) {
-        const layer = nodes.find(({ node }) => types.isNodesEquivalent(path.node, node))?.layer ?? 0
-        result[layer] = { ...result[layer], ...value as CSSObjectValue }
-      } else {
-        if (result.length > 0) {
-          layer++
-          confident = true
-        }
-        result[layer] = { ...value as CSSObjectValue, [WITH_LOGICAL]: true }
-      }
-      if (confident) {
-        layer = layer2
-      }
-      layer++
-      layer2 = layer
-      nodes.push({ node: path.node, layer })
+      continue
     }
+
+    const next = { ...value as CSSObjectValue }
+    if (references.has(key)) {
+      next[WITH_LOGICAL] = true
+      seens[layer] = key
+    }
+    result[layer] = next
+
+    layer++
   }
-  return { references, css: result }
+  return { references, css: result, seens }
 }
 
 // steps:
