@@ -375,7 +375,7 @@ export function stylex(options: StyleXOptions = {}): Plugin[] {
             ...rest,
             unstable_moduleResolution: options.unstable_moduleResolution,
             runtimeInjection: false,
-            dev: isBuild,
+            dev: !isBuild,
             importSources: options.importSources
           }
         })

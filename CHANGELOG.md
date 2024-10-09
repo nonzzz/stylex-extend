@@ -1,3 +1,9 @@
+## v0.4.4 (2024-10-09)
+
+### Patches
+
+- Fix `vite-plugin` un respect dev mode.
+
 ## v0.4.3 (2024-09-26)
 
 ### Patches
