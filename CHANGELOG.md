@@ -1,3 +1,9 @@
+## v0.5.0 (2024-12-20)
+
+- Upgrade `@stylexjs` dependencies version.
+- Perf `@stylex-extend/core` types.
+- Vite plugin support translate `jsx` in SFC.
+
 ## v0.4.4 (2024-10-09)
 
 ### Patches
