@@ -16,7 +16,7 @@ function App() {
 
   return (
     <div>
-      <Button color={color} onClick={() => setColor(pre => pre === 'red' ? 'blue' : 'red')}>Action</Button>
+      <Button color={color} onClick={() => setColor((pre) => pre === 'red' ? 'blue' : 'red')}>Action</Button>
     </div>
   )
 }

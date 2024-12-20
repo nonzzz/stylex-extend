@@ -1,8 +1,10 @@
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
+import shim from '@rollup/plugin-esm-shim'
 import { builtinModules, createRequire } from 'module'
 import { defineConfig } from 'rollup'
 import { dts } from 'rollup-plugin-dts'
 import { swc } from 'rollup-plugin-swc3'
-import shim from '@rollup/plugin-esm-shim'
 
 // https://www.typescriptlang.org/tsconfig/#preserveSymlinks
 

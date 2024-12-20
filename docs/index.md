@@ -12,5 +12,4 @@ hero:
     - theme: alt
       text: View on Github
       link: https://github.com/nonzzz/stylex-extend
-
 ---

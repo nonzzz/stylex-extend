@@ -1,6 +1,6 @@
+import type { NodePath, PluginPass as BabelPluginPass, types } from '@babel/core'
 import path from 'path'
 import * as v from 'valibot'
-import type { NodePath, PluginPass, types } from '@babel/core'
 import type { StylexExtendBabelPluginOptions } from './interface'
 import { ImportState } from './visitor/imports'
 
@@ -28,6 +28,14 @@ const schema = v.object({
   )
 })
 
+export interface PluginPass extends BabelPluginPass {
+  file: Omit<BabelPluginPass['file'], 'metadata'> & {
+    metadata: {
+      globalStyle: string[]
+    }
+  }
+}
+
 export class Module {
   options: StylexExtendBabelPluginOptions
   filename: string
@@ -37,21 +45,15 @@ export class Module {
   private state: PluginPass
   constructor(program: NodePath<types.Program>, opts: PluginPass) {
     this.filename = opts.filename || (opts.file.opts?.sourceFileName ?? '')
-    this.options = this.setOptions(opts.opts)
+    this.options = v.parse(schema, opts.opts)
     this.extendImports = new Map()
     this.program = program
     this.state = opts
-    // @ts-expect-error
     this.state.file.metadata.globalStyle = []
     this.importState = { insert: false }
   }
 
-  private setOptions(opts = {} satisfies StylexExtendBabelPluginOptions) {
-    return v.parse(schema, opts)
-  }
-
   addStyle(style: string) {
-    // @ts-expect-error
     this.state.file.metadata.globalStyle.push(style)
   }
 
@@ -121,10 +123,10 @@ function filePathResolver(relativeFilePath: string, sourceFilePath: string, alia
 }
 
 function matchFileSuffix(allowedSuffix: string) {
-  const merged = [...FILE_EXTENSIONS].map(s => allowedSuffix + s)
+  const merged = [...FILE_EXTENSIONS].map((s) => allowedSuffix + s)
   return (filename: string) => {
     for (const ext of merged) {
-      if (filename.endsWith(ext)) return true
+      if (filename.endsWith(ext)) { return true }
     }
     return filename.endsWith(allowedSuffix)
   }
@@ -133,19 +135,19 @@ function matchFileSuffix(allowedSuffix: string) {
 export type PathResolverOptions = Pick<StylexExtendBabelPluginOptions, 'unstable_moduleResolution' | 'aliases'>
 
 export function importPathResolver(importPath: string, filename: string, options: PathResolverOptions) {
-  if (!filename) return null
+  if (!filename) { return null }
   switch (options.unstable_moduleResolution?.type) {
     case 'commonJS': {
       const { rootDir, themeFileExtension = '.stylex' } = options.unstable_moduleResolution
       const { aliases } = options
-      if (!matchFileSuffix(themeFileExtension!)(importPath)) return false
+      if (!matchFileSuffix(themeFileExtension!)(importPath)) { return false }
       const resolvedFilePath = filePathResolver(importPath, filename, aliases)
       return resolvedFilePath ? ['Ref', path.relative(rootDir, resolvedFilePath)] : false
     }
     case 'haste': {
       const { themeFileExtension = '.stylex' } = options.unstable_moduleResolution
       const { aliases } = options
-      if (!matchFileSuffix(themeFileExtension!)(importPath)) return false
+      if (!matchFileSuffix(themeFileExtension!)(importPath)) { return false }
       const resolvedFilePath = filePathResolver(
         importPath,
         filename,

@@ -8,7 +8,7 @@ const styles = create({
   }
 })
 
-export function Component(props) {
+export function Component() {
   return (
     <div
       {...stylex.props(

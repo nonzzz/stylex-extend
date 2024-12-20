@@ -1,8 +1,10 @@
+/* eslint-disable react-hooks/rules-of-hooks */
+/* eslint-disable @eslint-react/hooks-extra/no-useless-custom-hooks */
 import { types } from '@babel/core'
 import { NodePath } from '@babel/core'
-import { Module } from '../module'
-import { findNearestParentWithCondition, getStringLikeKindValue, isImportDeclaration, isImportSpecifier, make } from '../ast/shared'
 import { Iter } from '../ast/evaluate-path'
+import { findNearestParentWithCondition, getStringLikeKindValue, isImportDeclaration, isImportSpecifier, make } from '../ast/shared'
+import { Module } from '../module'
 
 export const FIELD = '@stylex-extend/core'
 const STYLEX = '@stylexjs/stylex'
@@ -48,15 +50,15 @@ function useCreatingNodePath<K extends 'local' | 'imported'>(
   for (const specifier of path.get('specifiers') as NodePath<types.ImportSpecifier>[]) {
     const s = specifier.get(kind)
     if (x.has(getStringLikeKindValue(specifier.get('imported')))) {
-      // @ts-expect-error
+      // @ts-expect-error safe
       tpl.push(s)
     }
   }
   return tpl.sort((a) => {
     const aName = getStringLikeKindValue(a)
-    if (aName === 'create') return -1
+    if (aName === 'create') { return -1 }
     return 0
-  }) as any
+  }) as K extends 'local' ? NodePath<types.Identifier>[] : NodePath<types.StringLiteral>[]
 }
 
 export function insertRelativePackage(program: NodePath<types.Program>, mod: Module) {
@@ -64,7 +66,7 @@ export function insertRelativePackage(program: NodePath<types.Program>, mod: Mod
   const { bindings } = program.scope
   const [create, applied] = importIdentifiers
 
-  if (state.has(importState)) return useCreatingNodePath(state.get(importState)!, 'local', importIdentifiers)
+  if (state.has(importState)) { return useCreatingNodePath(state.get(importState)!, 'local', importIdentifiers) }
   let importDeclaration: NodePath<types.ImportDeclaration> | null = null
   for (const { key, value } of new Iter(bindings)) {
     if (key === create || key === applied) {

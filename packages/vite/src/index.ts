@@ -1,14 +1,17 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+/* eslint-disable @typescript-eslint/no-unsafe-return */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable no-use-before-define */
-import path from 'path'
-import type { HookHandler, Plugin, Update, ViteDevServer } from 'vite'
 import { parseSync, transformAsync } from '@babel/core'
-import type { Options, Rule } from '@stylexjs/babel-plugin'
+import type { ParserOptions, PluginItem } from '@babel/core'
 import { createFilter } from '@rollup/pluginutils'
 import type { FilterPattern } from '@rollup/pluginutils'
-import stylexBabelPlugin from '@stylexjs/babel-plugin'
 import extendBabelPlugin, { StylexExtendBabelPluginOptions } from '@stylex-extend/babel-plugin'
+import type { Options, Rule } from '@stylexjs/babel-plugin'
+import stylexBabelPlugin from '@stylexjs/babel-plugin'
+import path from 'path'
+import type { HookHandler, Plugin, Update, ViteDevServer } from 'vite'
 import { normalizePath, searchForWorkspaceRoot } from 'vite'
-import type { ParserOptions, PluginItem } from '@babel/core'
 
 type UnionToIntersection<U> = (U extends any ? (k: U) => void : never) extends ((k: infer I) => void) ? I : never
 type LastOf<T> = UnionToIntersection<T extends any ? () => T : never> extends () => infer R ? R : never
@@ -23,7 +26,6 @@ type TuplifyUnion<T, L = LastOf<T>, N = [T] extends [never] ? true : false> = tr
 type DeepMutable<T> = {
   -readonly [P in keyof T]: T[P] extends object ? DeepMutable<T[P]>
     : TuplifyUnion<T[P]>['length'] extends 1 ? T[P]
-    // eslint-disable-next-line stylistic/indent
     : UnionDeepMutable<TuplifyUnion<T[P]>>[number]
 }
 
@@ -38,7 +40,7 @@ export interface StyleXOptions extends Partial<InternalOptions> {
   optimizedDeps?: Array<string>
   useCSSLayer?: boolean
   babelConfig?: {
-    plugins?: Array<PluginItem>
+    plugins?: Array<PluginItem>,
     presets?: Array<PluginItem>
   }
   /**
@@ -71,14 +73,12 @@ interface HMRPayload {
   hash: string
 }
 
-function noop() {}
-
 function interopDefault(m: any) {
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
   return m.default || m
 }
 
-const transform: HookHandler<Plugin['transform']> = noop
-type RollupPluginContext = ThisParameterType<typeof transform>
+type RollupPluginContext = ThisParameterType<HookHandler<NonNullable<Plugin['transform']>>>
 
 const CONSTANTS = {
   REFERENCE_KEY: '@stylex;',
@@ -126,6 +126,7 @@ class EffectModule {
 export function stylex(options: StyleXOptions = {}): Plugin[] {
   const cssPlugins: Plugin[] = []
   options = { ...defaultOptions, ...options }
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { macroTransport, useCSSLayer, optimizedDeps: _, include, exclude, babelConfig, ...rest } = options
   let isBuild = false
   const servers: ViteDevServer[] = []
@@ -139,7 +140,7 @@ export function stylex(options: StyleXOptions = {}): Plugin[] {
   const produceCSS = () => {
     return stylexBabelPlugin.processStylexRules(
       [...roots.values()]
-        .map(r => r.meta).flat().filter(Boolean),
+        .map((r) => r.meta).flat().filter(Boolean),
       useCSSLayer!
     ) + '\n' + Object.values(globalCSS).join('\n')
   }
@@ -163,7 +164,7 @@ export function stylex(options: StyleXOptions = {}): Plugin[] {
     for (const n of ast!.program.body) {
       if (n.type === 'ImportDeclaration') {
         const v = n.source.value
-        if (!v) continue
+        if (!v) { continue }
         const { start: s, end: e } = n.source
         if (typeof s === 'number' && typeof e === 'number') {
           stmts.push({ n: v, s: s + 1, e: e - 1 })
@@ -179,12 +180,12 @@ export function stylex(options: StyleXOptions = {}): Plugin[] {
     for (const stmt of stmts) {
       const { n } = stmt
       if (n) {
-        if (isPotentialCSSFile(n)) continue
+        if (isPotentialCSSFile(n)) { continue }
         if (path.isAbsolute(n) || n[0] === '.') {
           continue
         }
         // respect the import sources
-        if (!options.importSources?.some(i => n.includes(typeof i === 'string' ? i : i.from))) {
+        if (!options.importSources?.some((i) => n.includes(typeof i === 'string' ? i : i.from))) {
           continue
         }
 
@@ -222,13 +223,15 @@ export function stylex(options: StyleXOptions = {}): Plugin[] {
     let plugin: typeof stylexBabelPlugin | typeof extendBabelPlugin
     try {
       plugin = interopDefault(pluginName === 'extend' ? extendBabelPlugin : stylexBabelPlugin)
-    } catch (_) {
-      plugin = await import(pluginName === 'extend' ? '@stylex-extend/babel-plugin' : '@stylexjs/babel-plugin').then(m => interopDefault(m))
+    } catch {
+      plugin = await import(pluginName === 'extend' ? '@stylex-extend/babel-plugin' : '@stylexjs/babel-plugin').then((m) =>
+        interopDefault(m)
+      )
     }
     return transformAsync(opts.code, {
       babelrc: false,
       filename: opts.filename,
-      // @ts-expect-error
+      // @ts-expect-error safe
       plugins: [...(babelConfig?.plugins ?? []), plugin.withOptions(opts.options)],
       presets: babelConfig?.presets,
       parserOpts: opts.parserOpts ?? {}
@@ -240,12 +243,12 @@ export function stylex(options: StyleXOptions = {}): Plugin[] {
     for (const server of servers) {
       const updates: Update[] = []
       const mod = server.moduleGraph.getModuleById(CONSTANTS.VIRTUAL_STYLEX_MARK)
-      if (!mod) continue
+      if (!mod) { continue }
       const nextHash = xxhash(produceCSS())
       if (hmrHash) {
         lastHash = hmrHash
       }
-      if (lastHash === nextHash) continue
+      if (lastHash === nextHash) { continue }
       lastHash = nextHash
       // check if need to update the css
       server.moduleGraph.invalidateModule(mod)
@@ -308,7 +311,7 @@ export function stylex(options: StyleXOptions = {}): Plugin[] {
 
         const optimizedDeps = unique([
           ...Array.isArray(options.optimizedDeps) ? options.optimizedDeps : [],
-          ...Array.isArray(options.importSources) ? options.importSources.map(s => typeof s === 'string' ? s : s.from) : [],
+          ...Array.isArray(options.importSources) ? options.importSources.map((s) => typeof s === 'string' ? s : s.from) : [],
           ...WELL_KNOW_LIBS
         ])
 
@@ -328,14 +331,14 @@ export function stylex(options: StyleXOptions = {}): Plugin[] {
       transform: {
         order: 'pre',
         async handler(code, id) {
-          if (macroTransport === false || id.includes('/node_modules/')) return
+          if (macroTransport === false || id.includes('/node_modules/')) { return }
           // convert all stylex-extend macro to stylex macro
-          if (!/\.[jt]sx?$/.test(id) || id.startsWith('\0')) return
+          if (!/\.[jt]sx?$/.test(id) || id.startsWith('\0')) { return }
           const plugins = ensureParserOpts(id)
           code = await rewriteImportStmts(code, id, this, plugins)
 
           if (id in globalCSS) {
-            // @ts-expect-error
+            // @ts-expect-error safe
             delete globalCSS[id]
           }
 
@@ -345,14 +348,14 @@ export function stylex(options: StyleXOptions = {}): Plugin[] {
             options: {
               transport: macroTransport,
               classNamePrefix: options.classNamePrefix,
-              //  @ts-expect-error
+              //  @ts-expect-error safe
               unstable_moduleResolution: options.unstable_moduleResolution
             },
             parserOpts: { plugins }
           })
           if (res && res.code) {
             if (res.metadata && CONSTANTS.STYLEX_EXTEND_META_KEY in res.metadata) {
-              // @ts-expect-error
+              // @ts-expect-error safe
               globalCSS[id] = res.metadata[CONSTANTS.STYLEX_EXTEND_META_KEY] as string[]
             }
 
@@ -365,8 +368,8 @@ export function stylex(options: StyleXOptions = {}): Plugin[] {
       name: '@stylex-extend/post-convert',
       enforce: 'post',
       async transform(code, id) {
-        if (id.includes('/node_modules/')) return
-        if (!filter(id) || isPotentialCSSFile(id) || id.startsWith('\0')) return
+        if (id.includes('/node_modules/')) { return }
+        if (!filter(id) || isPotentialCSSFile(id) || id.startsWith('\0')) { return }
         code = await rewriteImportStmts(code, id, this)
         const res = await transformWithStyleX('standard', {
           code,
@@ -379,10 +382,10 @@ export function stylex(options: StyleXOptions = {}): Plugin[] {
             importSources: options.importSources
           }
         })
-        if (!res) return
+        if (!res) { return }
         if (res.metadata && CONSTANTS.STYLEX_META_KEY in res.metadata) {
-          // @ts-expect-error
-          const meta = res.metadata[CONSTANTS.STYLEX_META_KEY] satisfies Rule[]
+          // @ts-expect-error safe
+          const meta = res.metadata[CONSTANTS.STYLEX_META_KEY] as Rule[]
           if (meta.length) {
             roots.set(id, new EffectModule(id, meta))
           } else {
@@ -390,7 +393,7 @@ export function stylex(options: StyleXOptions = {}): Plugin[] {
           }
         }
 
-        if (res.code) return { code: res.code, map: res.map }
+        if (res.code) { return { code: res.code, map: res.map } }
       }
     },
     {
@@ -398,7 +401,7 @@ export function stylex(options: StyleXOptions = {}): Plugin[] {
       apply: 'serve',
       enforce: 'post',
 
-      async transform(code, id) {
+      transform(code, id) {
         if (roots.has(id)) {
           invalidate()
         }
@@ -428,7 +431,7 @@ export function stylex(options: StyleXOptions = {}): Plugin[] {
       async renderStart() {
         let css = produceCSS()
         for (const plugin of cssPlugins) {
-          if (!plugin.transform) continue
+          if (!plugin.transform) { continue }
           const transformHook = typeof plugin.transform === 'function' ? plugin.transform : plugin.transform.handler
           const ctx = {
             ...this,
@@ -437,7 +440,7 @@ export function stylex(options: StyleXOptions = {}): Plugin[] {
             }
           } satisfies RollupPluginContext
           const res = await transformHook.call(ctx, css, CONSTANTS.VIRTUAL_STYLEX_MARK)
-          if (!res) continue
+          if (!res) { continue }
           if (typeof res === 'string') {
             css = res
           }

@@ -14,35 +14,25 @@
     "@stylex-extend/shared": "workspace:*",
     "@rollup/plugin-node-resolve": "^15.3.0",
     "@stylex-extend/vite": "workspace:*",
-    "@stylexjs/babel-plugin": "^0.5.1",
-    "@stylexjs/stylex": "^0.5.1",
+    "@stylexjs/babel-plugin": "^0.9.3",
+    "@stylexjs/stylex": "^0.9.3",
     "@swc/core": "^1.5.7",
     "@types/node": "^20.11.30",
     "dprint": "^0.45.1",
-    "eslint": "^8.57.0",
-    "eslint-config-kagura": "^2.2.1",
+    "eslint": "^9.16.0",
+    "eslint-config-kagura": "^3.0.1",
     "rollup": "^4.18.0",
     "rollup-plugin-dts": "^6.1.1",
     "rollup-plugin-swc3": "^0.11.2",
     "typescript": "^5.4.3",
     "vite": "^5.2.6",
     "vitepress-plugin-group-icons": "^1.1.0",
-    "vitest": "^1.4.0"
-  },
-  "resolutions": {
-    "@typescript-eslint/parser": "7.5.0"
+    "vitest": "^1.4.0",
+    "@eslint-sukka/react": "^6.12.0"
   },
   "pnpm": {
     "overrides": {
-      "array-includes": "npm:@nolyfill/array-includes@^1",
-      "array.prototype.flat": "npm:@nolyfill/array.prototype.flat@^1",
-      "array.prototype.flatmap": "npm:@nolyfill/array.prototype.flatmap@^1",
-      "hasown": "npm:@nolyfill/hasown@^1",
-      "is-core-module": "npm:@nolyfill/is-core-module@^1",
-      "object.assign": "npm:@nolyfill/object.assign@^1",
-      "object.entries": "npm:@nolyfill/object.entries@^1",
-      "object.fromentries": "npm:@nolyfill/object.fromentries@^1",
-      "object.values": "npm:@nolyfill/object.values@^1"
+      "is-core-module": "npm:@nolyfill/is-core-module@^1"
     }
   }
 }

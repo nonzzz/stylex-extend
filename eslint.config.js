@@ -1,3 +1,16 @@
-module.exports = require('eslint-config-kagura').nonzzz({ ts: true, jsx: true }, {
-  ignores: ['packages/**/output.js', 'packages/**/dist/*', 'packages/**/*.d.ts']
-})
+const { nonzzz } = require('eslint-config-kagura')
+const { react } = require('@eslint-sukka/react')
+
+module.exports = nonzzz(
+  { typescript: true },
+  ...react(),
+  {
+    ignores: [
+      '**/node_modules',
+      '**/dist',
+      '**/*/output.js',
+      '**/*/*.d.ts',
+      '**/analysis'
+    ]
+  }
+)
