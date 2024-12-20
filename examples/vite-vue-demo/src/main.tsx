@@ -31,7 +31,7 @@ const App = defineComponent({
   setup() {
     return () => (
       <>
-        <div stylex={{ color: 'red', zIndex: -11 }}>
+        <div stylex={{ color: 'green', zIndex: -11 }}>
           456
         </div>
         <p>text</p>
@@ -42,8 +42,7 @@ const App = defineComponent({
             animationDuration: '1s',
             animationIterationCount: 'infinite'
           }}
-        >
-        </A>
+        />
       </>
     )
   }
