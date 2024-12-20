@@ -1,3 +1,7 @@
+## v0.5.1 (2024-12-21)
+
+- Fix `vite-plugin` error regexp.
+
 ## v0.5.0 (2024-12-20)
 
 - Upgrade `@stylexjs` dependencies version.

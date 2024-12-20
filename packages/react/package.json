@@ -3,7 +3,7 @@
   "main": "./src/index.js",
   "module": "./src/index.js",
   "types": "./src/index.d.ts",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "repository": "https://github.com/nonzzz/stylex-extend.git",
   "license": "MIT",
   "devDependencies": {

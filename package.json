@@ -1,6 +1,7 @@
 {
   "name": "stylex-extend",
   "description": "An unofficial stylexjs extension",
+  "version": "0.5.1",
   "scripts": {
     "test": "pnpm -r run test"
   },

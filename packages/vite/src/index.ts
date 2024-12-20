@@ -356,7 +356,9 @@ export function stylex(options: StyleXOptions = {}): Plugin[] {
         async handler(code, id) {
           if (macroTransport === false || id.includes('/node_modules/')) { return }
           // convert all stylex-extend macro to stylex macro
-          if (!/[jt]sx/.test(id) || id.startsWith('\0')) { return }
+          if (!/\.[jt]sx?$/.test(id) || id.startsWith('\0')) {
+            return
+          }
           const plugins = ensureParserOpts(id)
           code = await rewriteImportStmts(code, id, this, plugins)
 
