@@ -1,3 +1,4 @@
+/* eslint-disable no-labels */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable @typescript-eslint/no-unsafe-return */
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -207,14 +208,36 @@ export function stylex(options: StyleXOptions = {}): Plugin[] {
     return code
   }
 
+  // Handle non-standard
   const ensureParserOpts = (id: string) => {
     const plugins: BabelParserPlugins = []
-    const extension = getExt(id)
+    const [original, ...rest] = id.split('?')
+    const extension = path.extname(original).slice(1)
     if (extension === 'jsx' || extension === 'tsx') {
       plugins.push('jsx')
     }
     if (extension === 'ts' || extension === 'tsx') {
       plugins.push('typescript')
+    }
+    // vue&type=script&lang.tsx
+    // vue&type=script&setup=true&lang.tsx
+    // For vue and ...etc
+    if (extension === 'vue') {
+      loop: for (;;) {
+        const current = rest.shift()
+        if (!current) { break loop }
+        const matched = current.match(/lang\.(\w+)/)
+        if (matched) {
+          const lang = matched[1]
+          if (lang === 'jsx' || lang === 'tsx') {
+            plugins.push('jsx')
+          }
+          if (lang === 'ts' || lang === 'tsx') {
+            plugins.push('typescript')
+          }
+          break loop
+        }
+      }
     }
     return plugins
   }
@@ -333,7 +356,7 @@ export function stylex(options: StyleXOptions = {}): Plugin[] {
         async handler(code, id) {
           if (macroTransport === false || id.includes('/node_modules/')) { return }
           // convert all stylex-extend macro to stylex macro
-          if (!/\.[jt]sx?$/.test(id) || id.startsWith('\0')) { return }
+          if (!/[jt]sx/.test(id) || id.startsWith('\0')) { return }
           const plugins = ensureParserOpts(id)
           code = await rewriteImportStmts(code, id, this, plugins)
 

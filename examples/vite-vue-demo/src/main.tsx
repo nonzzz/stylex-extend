@@ -2,6 +2,7 @@ import { injectGlobalStyle } from '@stylex-extend/core'
 import { keyframes } from '@stylexjs/stylex'
 import { createApp, defineComponent } from 'vue'
 import { colors } from './colors.stylex'
+import Lang from './lang.vue'
 
 import 'virtual:stylex.css'
 
@@ -43,6 +44,7 @@ const App = defineComponent({
             animationIterationCount: 'infinite'
           }}
         />
+        <Lang />
       </>
     )
   }
