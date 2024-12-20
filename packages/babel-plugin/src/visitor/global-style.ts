@@ -1,18 +1,18 @@
 import { types } from '@babel/core'
 import type { NodePath } from '@babel/core'
 import { compile, serialize, stringify } from 'stylis'
-import { MESSAGES } from '../ast/message'
-import { Module } from '../module'
-import { findNearestStatementAncestor, isObjectExpression, isTopLevelCalled } from '../ast/shared'
 import { evaluateCSS, printCssAST } from '../ast/evaluate-path'
+import { MESSAGES } from '../ast/message'
+import { findNearestStatementAncestor, isObjectExpression, isTopLevelCalled } from '../ast/shared'
+import { Module } from '../module'
 import { getExtendMacro } from './inline'
 
 function validateInjectGlobalStyleMacro(
   path: NodePath<types.Expression | types.ArgumentPlaceholder | types.SpreadElement>[],
   path2: NodePath<types.Node>
 ) {
-  if (!isTopLevelCalled(path2)) throw new Error(MESSAGES.ONLY_TOP_LEVEL_INJECT_GLOBAL_STYLE)
-  if (path.length > 1) throw new Error(MESSAGES.GLOBAL_STYLE_ONLY_ONE_ARGUMENT)
+  if (!isTopLevelCalled(path2)) { throw new Error(MESSAGES.ONLY_TOP_LEVEL_INJECT_GLOBAL_STYLE) }
+  if (path.length > 1) { throw new Error(MESSAGES.GLOBAL_STYLE_ONLY_ONE_ARGUMENT) }
   if (isObjectExpression(path[0])) {
     return path[0]
   }

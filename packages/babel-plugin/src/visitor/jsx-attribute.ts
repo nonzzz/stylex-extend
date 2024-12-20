@@ -1,6 +1,6 @@
 import { NodePath, types } from '@babel/core'
-import { MESSAGES } from '../ast/message'
 import { evaluateCSS, printJsAST } from '../ast/evaluate-path'
+import { MESSAGES } from '../ast/message'
 import { callExpression, findNearestParentWithCondition, findNearestTopLevelAncestor, isObjectExpression, make } from '../ast/shared'
 import { Module } from '../module'
 import { insertRelativePackage } from './imports'
@@ -11,11 +11,11 @@ function validateJSXAtrributes(
   path: NodePath<types.JSXAttribute>,
   path2: NodePath<types.JSXEmptyExpression | types.Expression>
 ) {
-  if (!isObjectExpression(path2)) throw new Error(MESSAGES.INVALID_ATTRS_KIND)
+  if (!isObjectExpression(path2)) { throw new Error(MESSAGES.INVALID_ATTRS_KIND) }
   const nearestOpeningElement = findNearestParentWithCondition(path, (p) => p.isJSXOpeningElement())
-  if (!nearestOpeningElement) throw new Error(MESSAGES.INVALID_JSX_ELEMENT)
+  if (!nearestOpeningElement) { throw new Error(MESSAGES.INVALID_JSX_ELEMENT) }
   const attrs = nearestOpeningElement.get('attributes').filter((p) => p.isJSXAttribute() && p.node.name.name === X)
-  if (attrs.length > 1) throw new Error(MESSAGES.DUPLICATE_STYLEX_ATTR)
+  if (attrs.length > 1) { throw new Error(MESSAGES.DUPLICATE_STYLEX_ATTR) }
   return path2
 }
 

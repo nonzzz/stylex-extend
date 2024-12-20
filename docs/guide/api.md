@@ -7,8 +7,8 @@
 ### Usage
 
 ```tsx
-import { create, props } from '@stylexjs/js'
 import { inline } from '@stylex-extend/core'
+import { create, props } from '@stylexjs/js'
 
 const styles = create({
   summary: {

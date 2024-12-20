@@ -13,8 +13,8 @@ npm install --dev @stylex-extend/vite
 ### Usage
 
 ```ts
-import { defineConfig } from 'vite'
 import { stylex } from '@stylex-extend/vite'
+import { defineConfig } from 'vite'
 
 export default defineConfig({
   plugins: [

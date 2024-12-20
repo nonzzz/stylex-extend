@@ -2,8 +2,7 @@ import { types } from '@babel/core'
 import type { NodePath } from '@babel/core'
 import { utils } from '@stylexjs/shared'
 
-// eslint-disable-next-line sort-imports
-import { importPathResolver, Module } from '../module'
+import { MESSAGES } from '../ast/message'
 import {
   findNearestParentWithCondition,
   getStringLikeKindValue,
@@ -31,7 +30,7 @@ import {
   make
 } from '../ast/shared'
 import type { CSSObjectValue } from '../interface'
-import { MESSAGES } from '../ast/message'
+import { Module, importPathResolver } from '../module'
 
 interface EnvironmentMap {
   path: NodePath<types.Node>
@@ -45,7 +44,7 @@ export interface Environment {
 export interface State {
   confident: boolean
   deoptPath: NodePath<types.Node> | null
-  seen: Map<types.Node, any>
+  seen: Map<types.Node, unknown>
   environment: Environment
   layer: number
   mod: Module
@@ -85,7 +84,7 @@ function evaluateMemberExpression(path: NodePath<types.MemberExpression>, state:
 
 function evaluateNodeToHashLike(path: NodePath<types.Node>, state: State) {
   const identifier = findNearestParentWithCondition(path, isObjectProperty).get('key')
-  // @ts-expect-error
+  // @ts-expect-error safe
   const id = hash(getStringLikeKindValue(identifier))
   state.environment.references.set(id, { path, define: id })
   return MARK.ref(id)
@@ -146,6 +145,7 @@ function evaluate(path: NodePath<types.Node>, state: State) {
       case '+':
         return +arg
       case '-':
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-unary-minus
         return -arg
       case '~':
         return ~arg
@@ -207,7 +207,7 @@ function evaluate(path: NodePath<types.Node>, state: State) {
         }
         let key: string | undefined
         if (isStringLikeKind(prop.get('key'))) {
-          // @ts-expect-error
+          // @ts-expect-error safe
           key = getStringLikeKindValue(prop.get('key'))
         }
         const valuePath = prop.get('value')
@@ -246,7 +246,7 @@ function evaluatePath(path: NodePath<types.Node>, mod: Module): Result {
 
   return {
     confident: state.confident,
-    value: evaluateForState(path, state) as CSSObjectValue,
+    value: evaluateForState(path, state),
     references: state.environment.references
   }
 }
@@ -285,7 +285,7 @@ function printCSSRule(rule: CSSObjectValue) {
     if (typeof value === 'object' && value !== null) {
       const [child, vars] = printCSSRule(value)
       properties.push(make.objectProperty(key, child))
-      vars.forEach(v => variables.add(v))
+      vars.forEach((v) => variables.add(v))
       continue
     }
     switch (typeof value) {
@@ -327,22 +327,22 @@ export function printJsAST(data: ReturnType<typeof sortAndMergeEvaluatedResult>,
     const [ast, vars, logical] = printCSSRule(rule)
     const expr = make.memberExpression(into, make.stringLiteral('#' + i), true)
     if (vars.size) {
-      const calleeArguments = [...vars].map(variable => {
+      const calleeArguments = [...vars].map((variable) => {
         const { path } = references.get(variable)!
         return path.node
       }) as types.Expression[]
       const callee = make.callExpression(expr, calleeArguments)
       if (logical) {
-        expressions.push(make.logicalExpression('&&', references.get(seens[i])!.path.node! as types.Expression, callee))
+        expressions.push(make.logicalExpression('&&', references.get(seens[i])!.path.node as types.Expression, callee))
       } else {
         expressions.push(callee)
       }
-      const func = make.arrowFunctionExpression([...vars].map(variable => make.identifier(variable)), ast)
+      const func = make.arrowFunctionExpression([...vars].map((variable) => make.identifier(variable)), ast)
       properties.push(make.objectProperty('#' + i, func))
       continue
     }
     if (logical) {
-      expressions.push(make.logicalExpression('&&', references.get(seens[i])!.path.node! as types.Expression, expr))
+      expressions.push(make.logicalExpression('&&', references.get(seens[i])!.path.node as types.Expression, expr))
     } else {
       expressions.push(expr)
     }
@@ -379,7 +379,8 @@ export function printCssAST(data: ReturnType<typeof sortAndMergeEvaluatedResult>
         if (!abs) {
           throw new Error(MESSAGES.NO_STATIC_ATTRIBUTE)
         }
-        // eslint-disable-next-line no-unused-vars
+
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const [_, value] = abs
         const strToHash = utils.genFileBasedIdentifier({
           fileName: value,
@@ -430,8 +431,8 @@ export function printCssAST(data: ReturnType<typeof sortAndMergeEvaluatedResult>
       return
     }
     for (const { key: selector, value } of new Iter(rule)) {
-      if (typeof value === 'boolean') continue
-      if (typeof value === 'undefined' || typeof value === 'object' && !value) continue
+      if (typeof value === 'boolean') { continue }
+      if (typeof value === 'undefined' || typeof value === 'object' && !value) { continue }
       if (typeof value === 'object') {
         print(selector)
         print('{')

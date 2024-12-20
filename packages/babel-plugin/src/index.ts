@@ -1,19 +1,23 @@
-import type { PluginObj } from '@babel/core'
-import type { StylexExtendBabelPluginOptions } from './interface'
-import { transformInjectGlobalStyle, transformInline, transformStylexAttrs } from './visitor'
-import { Module } from './module'
-import { FIELD, readImportStmt } from './visitor/imports'
+import type { ParserOptions, PluginObj } from '@babel/core'
 import { isImportDeclaration } from './ast/shared'
+import type { StylexExtendBabelPluginOptions } from './interface'
+import { Module } from './module'
+import type { PluginPass } from './module'
+import { transformInjectGlobalStyle, transformInline, transformStylexAttrs } from './visitor'
+import { FIELD, readImportStmt } from './visitor/imports'
 
 function declare(): PluginObj {
   return {
     name: '@stylex-extend',
-    manipulateOptions(_, parserOpts) {
+    manipulateOptions(_, parserOpts: ParserOptions) {
       // https://babeljs.io/docs/babel-plugin-syntax-jsx
       // https://github.com/babel/babel/blob/main/packages/babel-plugin-syntax-typescript/src/index.ts
+      if (!parserOpts.plugins) {
+        parserOpts.plugins = []
+      }
       const { plugins } = parserOpts
       if (
-        plugins.some((p: unknown) => {
+        plugins.some((p) => {
           const plugin = Array.isArray(p) ? p[0] : p
           return plugin === 'typescript' || plugin === 'jsx'
         })
@@ -25,7 +29,7 @@ function declare(): PluginObj {
     visitor: {
       Program: {
         enter(path, state) {
-          const mod = new Module(path, state)
+          const mod = new Module(path, state as PluginPass)
           readImportStmt(path.get('body'), mod)
           path.traverse({
             JSXAttribute(path) {
@@ -60,7 +64,7 @@ function withOptions(options: Partial<StylexExtendBabelPluginOptions>) {
 declare.withOptions = withOptions
 
 export type StylexExtendTransformObject = {
-  (): PluginObj
+  (): PluginObj,
   withOptions: typeof withOptions
 }
 

@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
 import { builtinModules, createRequire } from 'module'
 import { defineConfig } from 'rollup'
 import { dts } from 'rollup-plugin-dts'

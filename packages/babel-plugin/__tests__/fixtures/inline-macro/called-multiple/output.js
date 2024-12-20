@@ -16,7 +16,7 @@ const _styles2 = create({
     display: "flex",
   },
 });
-export function Component(props) {
+export function Component() {
   return (
     <div {...stylex.props(styles.base, _styles["#0"], _styles2["#0"])}></div>
   );

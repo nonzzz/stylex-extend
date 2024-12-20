@@ -39,13 +39,13 @@ export function isConditionalExpression(path: NodePath<types.Node>): path is Nod
   return path.isConditionalExpression()
 }
 
-export function isUnaryExpression(path: NodePath<types.Node>, opts?: any): path is NodePath<types.UnaryExpression> {
+export function isUnaryExpression(path: NodePath<types.Node>, opts?: object): path is NodePath<types.UnaryExpression> {
   return path.isUnaryExpression(opts)
 }
 
 export function getStringLikeKindValue(path: StringLikeKindPath | StringLikeKind) {
   if (!('node' in path)) {
-    if (path.type === 'StringLiteral') return path.value
+    if (path.type === 'StringLiteral') { return path.value }
     return path.name
   }
   return getStringLikeKindValue(path.node)
@@ -119,7 +119,7 @@ export function isStmt(path: NodePath<types.Node>): path is NodePath<types.State
 }
 
 export function is(condit: boolean, message: string = 'Invalid Error') {
-  if (!condit) throw new Error(message)
+  if (!condit) { throw new Error(message) }
 }
 
 export function isLogicalExpression(path: NodePath<types.Node>): path is NodePath<types.LogicalExpression> {
@@ -146,7 +146,7 @@ export function findNearestParentWithCondition<T extends types.Node>(
   path: NodePath<types.Node>,
   condition: (p: NodePath<types.Node>) => p is NodePath<T>
 ): NodePath<T> {
-  if (condition(path)) return path
+  if (condition(path)) { return path }
   if (path.parentPath == null) {
     throw new Error('Unexpected Path found that is not part of the AST.')
   }
@@ -157,12 +157,14 @@ export function findNearestStatementAncestor(path: NodePath<types.Node>) {
   return findNearestParentWithCondition(path, isStmt)
 }
 
+export type ToplevelAncestorType = types.Program | types.ExportDefaultDeclaration | types.ExportNamedDeclaration
+
 export function findNearestTopLevelAncestor(
   path: NodePath<types.Node>
-): NodePath<types.Program | types.ExportDefaultDeclaration | types.ExportNamedDeclaration> {
+): NodePath<ToplevelAncestorType> {
   const ancestor = findNearestParentWithCondition(path, isTopLevelCalled) as NodePath<types.Node>
-  if (isCallExpression(ancestor)) return ancestor.parentPath as any
-  return ancestor as any
+  if (isCallExpression(ancestor)) { return ancestor.parentPath as NodePath<ToplevelAncestorType> }
+  return ancestor as NodePath<ToplevelAncestorType>
 }
 
 export const make = {

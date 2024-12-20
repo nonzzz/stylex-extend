@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import * as CSS from 'csstype'
 
 export type CSSProperties = CSS.PropertiesFallback<number | string>
@@ -15,7 +16,7 @@ export type CSSPropertiesWithMultiValues = {
     : CSSPropertiesWithMultiValues | (string & {}) | number
 }
 
-export interface CSSObject extends CSSPropertiesWithMultiValues {}
+export type CSSObject = CSSPropertiesWithMultiValues
 
 export type StylexProperty = CSSObject | ((...args: any[]) => CSSObject)
 

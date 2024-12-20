@@ -1,16 +1,15 @@
-/* eslint-disable no-unused-vars */
 // inline is same as stylex macros
 
 import { types } from '@babel/core'
 import type { NodePath } from '@babel/core'
+import { evaluateCSS, printJsAST } from '../ast/evaluate-path'
 import { MESSAGES } from '../ast/message'
 import { callExpression, findNearestTopLevelAncestor, isIdentifier, isMemberExpression, isObjectExpression, make } from '../ast/shared'
 import { Module } from '../module'
-import { evaluateCSS, printJsAST } from '../ast/evaluate-path'
 import { APIS, insertRelativePackage } from './imports'
 
 function validateInlineMacro(path: NodePath<types.Expression | types.ArgumentPlaceholder | types.SpreadElement>[]) {
-  if (path.length > 1) throw new Error(MESSAGES.INLINE_ONLY_ONE_ARGUMENT)
+  if (path.length > 1) { throw new Error(MESSAGES.INLINE_ONLY_ONE_ARGUMENT) }
   if (isObjectExpression(path[0])) {
     return path[0]
   }
@@ -18,7 +17,7 @@ function validateInlineMacro(path: NodePath<types.Expression | types.ArgumentPla
 }
 
 export function getExtendMacro(path: NodePath<types.CallExpression>, mod: Module, expected: 'inline' | 'injectGlobalStyle') {
-  if (!path.node) return
+  if (!path.node) { return }
   const callee = path.get('callee')
   if (isIdentifier(callee) && mod.extendImports.get(callee.node.name) === expected) {
     path.skip()
@@ -61,6 +60,7 @@ export function transformInline(path: NodePath<types.CallExpression>, mod: Modul
   // check path
   if (path.parent.type === 'CallExpression') {
     // check again
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [_, applied] = mod.importIdentifiers
     const { parent } = path
     if (parent.callee.type === 'Identifier' && parent.callee.name !== applied) {

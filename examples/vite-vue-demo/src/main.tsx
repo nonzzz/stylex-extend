@@ -2,6 +2,7 @@ import { injectGlobalStyle } from '@stylex-extend/core'
 import { keyframes } from '@stylexjs/stylex'
 import { createApp, defineComponent } from 'vue'
 import { colors } from './colors.stylex'
+import Lang from './lang.vue'
 
 import 'virtual:stylex.css'
 
@@ -31,7 +32,7 @@ const App = defineComponent({
   setup() {
     return () => (
       <>
-        <div stylex={{ color: 'red', zIndex: -11 }}>
+        <div stylex={{ color: 'green', zIndex: -11 }}>
           456
         </div>
         <p>text</p>
@@ -42,8 +43,8 @@ const App = defineComponent({
             animationDuration: '1s',
             animationIterationCount: 'infinite'
           }}
-        >
-        </A>
+        />
+        <Lang />
       </>
     )
   }
