@@ -66,7 +66,6 @@ export class Module {
 
   fileNameForHashing(relativePath: string) {
     const fileName = filePathResolver(relativePath, this.filename, this.options.aliases)
-    console.log('fileNameForHashing', fileName)
     const { themeFileExtension = '.stylex', type } = this.options.unstable_moduleResolution ?? {}
     if (!fileName || !matchFileSuffix(themeFileExtension!)(fileName) || this.options.unstable_moduleResolution == null) {
       return null
