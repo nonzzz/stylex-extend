@@ -6,7 +6,7 @@ export interface StylexBindingMeta {
 
 export interface ModuleResolutionCommonJS {
   type: 'commonJS' | 'haste'
-  rootDir: string
+  rootDir?: string
   themeFileExtension?: null | undefined | string
 }
 
@@ -17,7 +17,7 @@ export interface MOduleResolutionHaste {
 
 export interface ModuleResolutionExperimentalCrossFileParsing {
   type: 'experimental_crossFileParsing'
-  rootDir: string
+  rootDir?: string
   themeFileExtension?: null | undefined | string
 }
 

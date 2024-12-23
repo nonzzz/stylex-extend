@@ -8,6 +8,8 @@ import 'virtual:stylex.css'
 
 // import 'stylex.css'
 
+console.log(colors)
+
 const pulse = keyframes({
   '0%': { transform: 'scale(1)' },
   '50%': { transform: 'scale(0.5)' },

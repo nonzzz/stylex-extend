@@ -1,7 +1,6 @@
 import { types } from '@babel/core'
 import type { NodePath } from '@babel/core'
 import { utils } from '@stylexjs/shared'
-
 import { MESSAGES } from '../ast/message'
 import {
   findNearestParentWithCondition,
@@ -30,7 +29,7 @@ import {
   make
 } from '../ast/shared'
 import type { CSSObjectValue } from '../interface'
-import { Module, importPathResolver } from '../module'
+import { Module } from '../module'
 
 interface EnvironmentMap {
   path: NodePath<types.Node>
@@ -372,18 +371,12 @@ export function printCssAST(data: ReturnType<typeof sortAndMergeEvaluatedResult>
         const importSpecifierPath = bindingPath
         const imported = importSpecifierPath.node.imported
         const importDeclaration = findNearestParentWithCondition(importSpecifierPath, isImportDeclaration)
-        const abs = importPathResolver(importDeclaration.node.source.value, mod.filename, {
-          unstable_moduleResolution: mod.options.unstable_moduleResolution,
-          aliases: mod.options.aliases
-        })
-        if (!abs) {
+        const hashing = mod.fileNameForHashing(importDeclaration.node.source.value + '.ts')
+        if (!hashing) {
           throw new Error(MESSAGES.NO_STATIC_ATTRIBUTE)
         }
-
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const [_, value] = abs
         const strToHash = utils.genFileBasedIdentifier({
-          fileName: value,
+          fileName: hashing,
           exportName: getStringLikeKindValue(imported),
           key: prop.node.name
         })

@@ -128,9 +128,12 @@ importers:
       '@babel/core':
         specifier: ^7.23.9
         version: 7.25.2
+      '@dual-bundle/import-meta-resolve':
+        specifier: ^4.1.0
+        version: 4.1.0
       '@stylexjs/shared':
-        specifier: ^0.5.1
-        version: 0.5.1
+        specifier: ^0.9.3
+        version: 0.9.3
       stylis:
         specifier: ^4.3.1
         version: 4.3.4
@@ -1072,9 +1075,6 @@ packages:
 
   '@stylexjs/eslint-plugin@0.9.3':
     resolution: {integrity: sha512-m/Q4amGvwe7KViFfEhrWKU2RY+qW7LSM2gFlNOX3fNmbLPt556rPWegdYgvTtsdo7EE4E/UumEi3jAJ4syy7Dg==}
-
-  '@stylexjs/shared@0.5.1':
-    resolution: {integrity: sha512-3kuvLfPr1P5lbLjvtEjXmJxyBOygudhH93DA8OtNnb0H3bQjDZJQqaR/Pde67tlsdbqU5pFuaeueKkZhnuurzA==}
 
   '@stylexjs/shared@0.9.3':
     resolution: {integrity: sha512-0gtKFjZxAvDdUdoZTuvukovboD3K12BxkswKHHBRvzfcrM0rQXGMXoHS1gLRMQJ9kllJaa/I3sclbeWKyELm6Q==}
@@ -3702,10 +3702,6 @@ snapshots:
     dependencies:
       css-shorthand-expand: 1.2.0
       micromatch: 4.0.8
-
-  '@stylexjs/shared@0.5.1':
-    dependencies:
-      postcss-value-parser: 4.2.0
 
   '@stylexjs/shared@0.9.3':
     dependencies:

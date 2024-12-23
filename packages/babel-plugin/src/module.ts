@@ -1,5 +1,8 @@
 import type { NodePath, PluginPass as BabelPluginPass, types } from '@babel/core'
+import { resolve as esmResolve } from '@dual-bundle/import-meta-resolve'
+import fs from 'fs'
 import path from 'path'
+import url from 'url'
 import * as v from 'valibot'
 import type { StylexExtendBabelPluginOptions } from './interface'
 import { ImportState } from './visitor/imports'
@@ -60,6 +63,21 @@ export class Module {
   get importIdentifiers() {
     return ['create', this.options.transport] as ['create', 'props' | 'attrs']
   }
+
+  fileNameForHashing(relativePath: string) {
+    const fileName = filePathResolver(relativePath, this.filename, this.options.aliases)
+
+    const { themeFileExtension = '.stylex', type } = this.options.unstable_moduleResolution ?? {}
+    if (!fileName || !matchFileSuffix(themeFileExtension!)(fileName) || this.options.unstable_moduleResolution == null) {
+      return null
+    }
+    switch (type) {
+      case 'haste':
+        return path.basename(fileName)
+      default:
+        return getCanonicalFilePath(fileName)
+    }
+  }
 }
 
 const FILE_EXTENSIONS = ['.js', '.ts', '.tsx', '.jsx', '.mjs', '.cjs']
@@ -105,7 +123,15 @@ function filePathResolver(relativeFilePath: string, sourceFilePath: string, alia
         return require.resolve(importPathStr, {
           paths: [path.dirname(sourceFilePath)]
         })
-      } catch {}
+      } catch {
+        const resolved = url.fileURLToPath(esmResolve(importPathStr, import.meta.url))
+        if (resolved) {
+          if (resolved.startsWith('.')) {
+            return path.resolve(path.dirname(sourceFilePath), resolved)
+          }
+          return resolved
+        }
+      }
     }
 
     // Otherwise, try to resolve the path with aliases
@@ -115,7 +141,16 @@ function filePathResolver(relativeFilePath: string, sourceFilePath: string, alia
         return require.resolve(possiblePath, {
           paths: [path.dirname(sourceFilePath)]
         })
-      } catch {}
+      } catch {
+        const resolved = esmResolve(importPathStr, import.meta.url)
+
+        if (resolved) {
+          if (resolved.startsWith('.')) {
+            return path.resolve(path.dirname(sourceFilePath), resolved)
+          }
+          return resolved
+        }
+      }
     }
   }
   // Failed to resolve the file path
@@ -134,31 +169,87 @@ function matchFileSuffix(allowedSuffix: string) {
 
 export type PathResolverOptions = Pick<StylexExtendBabelPluginOptions, 'unstable_moduleResolution' | 'aliases'>
 
-export function importPathResolver(importPath: string, filename: string, options: PathResolverOptions) {
-  if (!filename) { return null }
+export function importPathResolver(importPath: string, fileName: string, options: PathResolverOptions) {
+  if (!fileName) { return false }
   switch (options.unstable_moduleResolution?.type) {
     case 'commonJS': {
-      const { rootDir, themeFileExtension = '.stylex' } = options.unstable_moduleResolution
       const { aliases } = options
-      if (!matchFileSuffix(themeFileExtension!)(importPath)) { return false }
-      const resolvedFilePath = filePathResolver(importPath, filename, aliases)
-      return resolvedFilePath ? ['Ref', path.relative(rootDir, resolvedFilePath)] : false
-    }
-    case 'haste': {
-      const { themeFileExtension = '.stylex' } = options.unstable_moduleResolution
-      const { aliases } = options
+      const { themeFileExtension = '.stylex', rootDir } = options.unstable_moduleResolution
       if (!matchFileSuffix(themeFileExtension!)(importPath)) { return false }
       const resolvedFilePath = filePathResolver(
         importPath,
-        filename,
+        fileName,
         aliases
       )
-      return resolvedFilePath ? ['hasteRef', resolvedFilePath] : false
+      return resolvedFilePath
+        ? ['themeNameRef', getCanonicalFilePath(resolvedFilePath, rootDir)]
+        : false
     }
-    case 'experimental_crossFileParsing':
-      // TODO
-      return false
+    case 'haste': {
+      const { themeFileExtension = '.stylex' } = options.unstable_moduleResolution
+      if (!matchFileSuffix(themeFileExtension!)(importPath)) {
+        return false
+      }
+      return ['themeNameRef', addFileExtension(importPath, fileName)]
+    }
+    case 'experimental_crossFileParsing': {
+      const { aliases } = options
+      const { themeFileExtension = '.stylex' } = options.unstable_moduleResolution
+      if (!matchFileSuffix(themeFileExtension!)(importPath)) { return false }
+      const resolvedFilePath = filePathResolver(
+        importPath,
+        fileName,
+        aliases
+      )
+      return resolvedFilePath ? ['filePath', resolvedFilePath] : false
+    }
     default:
       return false
   }
+}
+
+// Path: https://github.com/facebook/stylex/blob/main/packages/babel-plugin/src/utils/state-manager.js
+// After 0.9.0 this is live
+
+export function getCanonicalFilePath(filePath: string, rootDir?: string) {
+  const pkgNameAndPath = getPackageNameAndPath(filePath)
+  if (pkgNameAndPath === null) {
+    if (rootDir) {
+      return path.relative(rootDir, filePath)
+    }
+    const fileName = path.relative(path.dirname(filePath), filePath)
+    return `_unknown_path_:${fileName}`
+  }
+  const [packageName, packageDir] = pkgNameAndPath
+  return `${packageName}:${path.relative(packageDir, filePath)}`
+}
+
+export function getPackageNameAndPath(filePath: string) {
+  const folder = path.dirname(filePath)
+  const hasPackageJSON = fs.existsSync(path.join(folder, 'package.json'))
+  if (hasPackageJSON) {
+    try {
+      const json = JSON.parse(fs.readFileSync(path.join(folder, 'package.json'), 'utf8')) as { name: string }
+      return [json.name, folder]
+    } catch (error) {
+      console.error(error)
+      return null
+    }
+  }
+  if (folder === path.parse(folder).root || folder === '') {
+    return null
+  }
+  return getPackageNameAndPath(folder)
+}
+
+export function addFileExtension(importedFilePath: string, sourceFile: string) {
+  if (FILE_EXTENSIONS.some((ext) => importedFilePath.endsWith(ext))) {
+    return importedFilePath
+  }
+  const fileExtension = path.extname(sourceFile)
+  // NOTE: This is unsafe. We are assuming the all files in your project
+  // use the same file extension.
+  // However, in a haste module system we have no way to resolve the
+  // *actual* file to get the actual file extension used.
+  return importedFilePath + fileExtension
 }
