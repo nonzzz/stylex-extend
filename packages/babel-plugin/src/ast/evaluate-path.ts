@@ -370,8 +370,9 @@ export function printCssAST(data: ReturnType<typeof sortAndMergeEvaluatedResult>
       ) {
         const importSpecifierPath = bindingPath
         const imported = importSpecifierPath.node.imported
+        // Note: This implementation is consistent with the official.
         const importDeclaration = findNearestParentWithCondition(importSpecifierPath, isImportDeclaration)
-        const hashing = mod.fileNameForHashing(importDeclaration.node.source.value + '.ts')
+        const hashing = mod.fileNameForHashing(importDeclaration.node.source.value)
         if (!hashing) {
           throw new Error(MESSAGES.NO_STATIC_ATTRIBUTE)
         }

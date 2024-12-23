@@ -1,7 +1,7 @@
 {
   "name": "@stylex-extend/shared",
   "description": "Shared utilities for StyleX Extend",
-  "version": "0.5.1",
+  "version": "0.5.2",
   "license": "MIT",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",

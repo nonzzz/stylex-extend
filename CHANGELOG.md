@@ -1,3 +1,7 @@
+## v0.5.2 (2024-12-23)
+
+- Synchronize official changes to `rootdir`.
+
 ## v0.5.1 (2024-12-21)
 
 - Fix `vite-plugin` error regexp.
