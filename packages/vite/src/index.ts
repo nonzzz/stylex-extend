@@ -209,7 +209,7 @@ export function stylex(options: StyleXOptions = {}): Plugin[] {
   }
 
   // Handle non-standard
-  const ensureParserOpts = (id: string) => {
+  const ensureParserOpts = (id: string): BabelParserPlugins | false => {
     const plugins: BabelParserPlugins = []
     const [original, ...rest] = id.split('?')
     const extension = path.extname(original).slice(1)
@@ -223,6 +223,12 @@ export function stylex(options: StyleXOptions = {}): Plugin[] {
     // vue&type=script&setup=true&lang.tsx
     // For vue and ...etc
     if (extension === 'vue') {
+      // Check if is from unplugin-vue-router (Hard code here)
+      for (const spec of rest) {
+        if (spec.includes('definePage')) {
+          return false
+        }
+      }
       loop: for (;;) {
         const current = rest.shift()
         if (!current) { break loop }
@@ -355,11 +361,14 @@ export function stylex(options: StyleXOptions = {}): Plugin[] {
         order: 'pre',
         async handler(code, id) {
           if (macroTransport === false || id.includes('/node_modules/')) { return }
+
           // convert all stylex-extend macro to stylex macro
           if (!/\.[jt]sx?$/.test(id) || id.startsWith('\0')) {
             return
           }
+
           const plugins = ensureParserOpts(id)
+          if (!plugins) { return }
           code = await rewriteImportStmts(code, id, this, plugins)
 
           if (id in globalCSS) {

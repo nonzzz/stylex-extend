@@ -3,3 +3,4 @@ dist
 .DS_Store
 **/.vitepress/cache
 **/.vitepress/dist
+typed-router.d.ts

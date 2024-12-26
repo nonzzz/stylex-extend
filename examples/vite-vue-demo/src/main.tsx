@@ -1,9 +1,10 @@
 import { injectGlobalStyle } from '@stylex-extend/core'
 import { keyframes } from '@stylexjs/stylex'
 import { createApp, defineComponent } from 'vue'
+import { RouterView, createRouter, createWebHistory, useRouter } from 'vue-router'
+import { routes } from 'vue-router/auto-routes'
 import { colors } from './colors.stylex'
 import Lang from './lang.vue'
-
 import 'virtual:stylex.css'
 
 // import 'stylex.css'
@@ -32,6 +33,12 @@ injectGlobalStyle({
 
 const App = defineComponent({
   setup() {
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    const router = useRouter()
+    const handleClick = () => {
+      router.push({ name: '/xx' }).catch(console.error)
+    }
+
     return () => (
       <>
         <div stylex={{ color: 'green', zIndex: -11 }}>
@@ -47,9 +54,19 @@ const App = defineComponent({
           }}
         />
         <Lang />
+
+        <button type="button" onClick={handleClick}>
+          Switch to Xx
+        </button>
+        <RouterView />
       </>
     )
   }
 })
 
-createApp(App).mount('#app')
+const router = createRouter({
+  history: createWebHistory(),
+  routes
+})
+
+createApp(App).use(router).mount('#app')
