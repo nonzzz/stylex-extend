@@ -1,6 +1,6 @@
 {
   "name": "@stylex-extend/babel-plugin",
-  "version": "0.5.3",
+  "version": "0.5.4",
   "description": "A friendly stylex babel plugin extension.",
   "module": "./dist/index.mjs",
   "main": "./dist/index.js",
