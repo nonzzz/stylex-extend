@@ -1,3 +1,7 @@
+## 0.5.6 (2025-1-13)
+
+Fallback `unstable_moduleResolution`
+
 ## 0.5.5 (2025-1-13)
 
 - Fix `vite-plugin` sourcemap missing.
