@@ -1,6 +1,6 @@
 {
   "name": "@stylex-extend/vite",
-  "version": "0.5.4",
+  "version": "0.5.5",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
   "files": [
@@ -22,7 +22,7 @@
     "build": "rollup --config rollup.config.ts --configPlugin swc3"
   },
   "dependencies": {
-    "@stylexjs/babel-plugin": "^0.9.3",
+    "@stylexjs/babel-plugin": "0.9.3",
     "@stylex-extend/babel-plugin": "workspace:*",
     "@rollup/pluginutils": "^5.1.0",
     "@babel/core": "^7.25.2"

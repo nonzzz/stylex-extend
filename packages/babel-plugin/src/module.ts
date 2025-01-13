@@ -20,7 +20,7 @@ const schema = v.object({
   unstable_moduleResolution: v.optional(
     v.object({
       type: v.enum(unstable_moduleResolution),
-      rootDir: v.string(),
+      rootDir: v.optional(v.string(), ''),
       themeFileExtension: v.optional(v.string(), '.stylex')
     }),
     {
@@ -118,7 +118,7 @@ function filePathResolver(relativeFilePath: string, sourceFilePath: string, alia
 
     if (relativeFilePath[0] === '.') {
       try {
-        return moduleResolve(importPathStr, url.pathToFileURL(sourceFilePath)).pathname
+        return url.fileURLToPath(moduleResolve(importPathStr, url.pathToFileURL(sourceFilePath)))
       } catch {
         continue
       }
@@ -127,7 +127,7 @@ function filePathResolver(relativeFilePath: string, sourceFilePath: string, alia
       // Otherwise, try to resolve the path with aliases
       for (const possiblePath of allAliases) {
         try {
-          return moduleResolve(possiblePath, url.pathToFileURL(sourceFilePath)).pathname
+          return url.fileURLToPath(moduleResolve(possiblePath, url.pathToFileURL(sourceFilePath)))
         } catch {
           continue
         }

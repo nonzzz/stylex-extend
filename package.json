@@ -1,7 +1,7 @@
 {
   "name": "stylex-extend",
   "description": "An unofficial stylexjs extension",
-  "version": "0.5.4",
+  "version": "0.5.5",
   "scripts": {
     "test": "pnpm -r run test"
   },
@@ -15,8 +15,8 @@
     "@stylex-extend/shared": "workspace:*",
     "@rollup/plugin-node-resolve": "^15.3.0",
     "@stylex-extend/vite": "workspace:*",
-    "@stylexjs/babel-plugin": "^0.9.3",
-    "@stylexjs/stylex": "^0.9.3",
+    "@stylexjs/babel-plugin": "0.9.3",
+    "@stylexjs/stylex": "0.9.3",
     "@swc/core": "^1.5.7",
     "@types/node": "^20.11.30",
     "dprint": "^0.45.1",

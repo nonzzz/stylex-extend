@@ -1,3 +1,8 @@
+## 0.5.5 (2025-1-13)
+
+- Fix `vite-plugin` sourcemap missing.
+- Fix `babel-plugin` should respect windows.
+
 ## v0.5.2 (2024-12-23)
 
 - Synchronize official changes to `rootdir`.

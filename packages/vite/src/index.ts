@@ -12,7 +12,7 @@ import type { Options, Rule } from '@stylexjs/babel-plugin'
 import stylexBabelPlugin from '@stylexjs/babel-plugin'
 import path from 'path'
 import type { HookHandler, Plugin, Update, ViteDevServer } from 'vite'
-import { normalizePath, searchForWorkspaceRoot } from 'vite'
+import { normalizePath } from 'vite'
 
 type UnionToIntersection<U> = (U extends any ? (k: U) => void : never) extends ((k: infer I) => void) ? I : never
 type LastOf<T> = UnionToIntersection<T extends any ? () => T : never> extends () => infer R ? R : never
@@ -263,7 +263,10 @@ export function stylex(options: StyleXOptions = {}): Plugin[] {
       // @ts-expect-error safe
       plugins: [...(babelConfig?.plugins ?? []), plugin.withOptions(opts.options)],
       presets: babelConfig?.presets,
-      parserOpts: opts.parserOpts ?? {}
+      parserOpts: opts.parserOpts ?? {},
+      generatorOpts: {
+        sourceMaps: true
+      }
     })
   }
 
@@ -331,11 +334,6 @@ export function stylex(options: StyleXOptions = {}): Plugin[] {
           if (plugin.name === 'vite:css' || (isBuild && plugin.name === 'vite:css-post')) {
             cssPlugins.push(plugin)
           }
-        }
-
-        if (!options.unstable_moduleResolution) {
-          // For monorepo.
-          options.unstable_moduleResolution = { type: 'commonJS', rootDir: searchForWorkspaceRoot(config.root) }
         }
 
         const optimizedDeps = unique([
