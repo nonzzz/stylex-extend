@@ -3,7 +3,7 @@ import type { NodePath } from '@babel/core'
 import { xxhash } from '@stylex-extend/shared'
 import { MESSAGES } from '../ast/message'
 import { getStringLikeKindValue, isStringLiteral } from '../ast/shared'
-import { Module } from '../module'
+import { getCanonicalFilePath, Module } from '../module'
 import { getExtendMacro } from './inline'
 
 function validateIdMacro(path: NodePath<types.Expression | types.ArgumentPlaceholder | types.SpreadElement>[]) {
@@ -14,6 +14,9 @@ function validateIdMacro(path: NodePath<types.Expression | types.ArgumentPlaceho
   throw new Error(MESSAGES.INVALID_ID_ARGUMENT)
 }
 
+// function get
+
+
 // https://github.com/facebook/stylex/discussions/684
 // the generate id should be a css variable.
 // const myId = id()
@@ -21,7 +24,7 @@ export function transformId(path: NodePath<types.CallExpression>, mod: Module) {
   const callee = getExtendMacro(path, mod, 'id')
   if (callee) {
     const scopeName = validateIdMacro(callee.get('arguments'))
-    const id = scopeName + xxhash(mod.filename)
+    const id = scopeName + xxhash(getCanonicalFilePath(mod.filename,mod.cwd))
     path.replaceWith(types.stringLiteral(`var(--${id})`))
   }
 }

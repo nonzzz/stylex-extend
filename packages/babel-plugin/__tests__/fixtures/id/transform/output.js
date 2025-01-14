@@ -1,6 +1,6 @@
 import { create } from "@stylexjs/stylex";
 import stylex from "@stylexjs/stylex";
-const myId = "var(--yhn7pe)";
+const myId = "var(--lw3x18)";
 const styles = create({
   base: {
     [myId]: {
