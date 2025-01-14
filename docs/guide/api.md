@@ -25,6 +25,39 @@ export function Component() {
 }
 ```
 
+## Id
+
+- [RFC](https://github.com/facebook/stylex/discussions/684) in stylex
+
+### Usage
+
+```tsx
+import { id } from '@stylex-extend/core'
+import { create, props } from '@stylexjs/js'
+
+const myId = id()
+
+const styles = create({
+  parent: {
+    [myId]: {
+      default: 'red',
+      ':hover': 'pink'
+    }
+  },
+  child: {
+    color: myId
+  }
+})
+
+export function Component() {
+  return (
+    <div {...props(styles.parent)}>
+      <span {...props(styles.child)}></span>
+    </div>
+  )
+}
+```
+
 ## injectGlobalStyle
 
 - unoffical API
