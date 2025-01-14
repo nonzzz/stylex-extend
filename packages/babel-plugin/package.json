@@ -30,6 +30,7 @@
   "dependencies": {
     "@babel/core": "^7.23.9",
     "@stylexjs/shared": "0.9.3",
+    "@stylex-extend/shared": "workspace:*",
     "stylis": "^4.3.1",
     "@dual-bundle/import-meta-resolve": "^4.1.0"
   },

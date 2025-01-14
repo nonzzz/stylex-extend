@@ -3,7 +3,7 @@ import { isImportDeclaration } from './ast/shared'
 import type { StylexExtendBabelPluginOptions } from './interface'
 import { Module } from './module'
 import type { PluginPass } from './module'
-import { transformInjectGlobalStyle, transformInline, transformStylexAttrs } from './visitor'
+import { transformId, transformInjectGlobalStyle, transformInline, transformStylexAttrs } from './visitor'
 import { FIELD, readImportStmt } from './visitor/imports'
 
 function declare(): PluginObj {
@@ -36,6 +36,7 @@ function declare(): PluginObj {
               transformStylexAttrs(path, mod)
             },
             CallExpression(path) {
+              transformId(path, mod)
               transformInline(path, mod)
               transformInjectGlobalStyle(path, mod)
             }

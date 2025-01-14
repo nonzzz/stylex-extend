@@ -15,3 +15,7 @@ export function injectGlobalStyle(..._: Array<Record<string, StylexCSS>>): strin
 export function inline(_: CSSObject): StylexAttrsParamter {
   throw new Error("'inline' calls should be compiled away.")
 }
+
+export function id(_?: string): string {
+  throw new Error('`id` calls should be compiled away.')
+}
