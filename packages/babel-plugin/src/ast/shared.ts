@@ -7,8 +7,11 @@ export type StringLikeKind = types.StringLiteral | types.Identifier
 
 export type CalleeExpression = types.Expression | types.V8IntrinsicIdentifier
 
-export function isStringLikeKind(path: NodePath<types.Node>): path is StringLikeKindPath {
-  return path.isStringLiteral() || path.isIdentifier()
+export function isStringLikeKind(path: NodePath<types.Node> | types.Node): path is StringLikeKindPath {
+  if (!('node' in path)) {
+    return path.type === 'StringLiteral' || path.type === 'Identifier'
+  }
+  return isStringLikeKind(path.node) || isIdentifier(path)
 }
 
 export function isStringLiteral(path: NodePath<types.Node>): path is NodePath<types.StringLiteral> {

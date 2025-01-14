@@ -16,7 +16,7 @@ export function inline(_: CSSObject): StylexAttrsParamter {
   throw new Error("'inline' calls should be compiled away.")
 }
 
-export function id(_?: string): string {
+export function id<V extends boolean = false>(_?: V): V extends true ? { $id: 'stylex-extend', value: string } : string {
   throw new Error('`id` calls should be compiled away.')
 }
 

@@ -64,7 +64,7 @@ export class Module {
     return ['create', this.options.transport] as ['create', 'props' | 'attrs']
   }
   get cwd() {
-    return this.state.cwd;
+    return this.state.cwd
   }
 
   fileNameForHashing(relativePath: string) {
