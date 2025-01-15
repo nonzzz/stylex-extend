@@ -193,6 +193,9 @@ importers:
       '@stylex-extend/babel-plugin':
         specifier: workspace:*
         version: link:../babel-plugin
+      '@stylex-extend/shared':
+        specifier: workspace:*
+        version: link:../shared
       '@stylexjs/babel-plugin':
         specifier: 0.9.3
         version: 0.9.3
