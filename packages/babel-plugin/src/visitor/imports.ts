@@ -9,7 +9,7 @@ import { Module } from '../module'
 export const FIELD = '@stylex-extend/core'
 const STYLEX = '@stylexjs/stylex'
 
-export const APIS = new Set(['inline', 'injectGlobalStyle'])
+export const APIS = new Set(['inline', 'injectGlobalStyle', 'id'])
 
 export function readImportStmt(stmts: NodePath<types.Statement>[], mod: Module) {
   for (const stmt of stmts) {

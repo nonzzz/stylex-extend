@@ -8,7 +8,9 @@ import { callExpression, findNearestTopLevelAncestor, isIdentifier, isMemberExpr
 import { Module } from '../module'
 import { APIS, insertRelativePackage } from './imports'
 
-function validateInlineMacro(path: NodePath<types.Expression | types.ArgumentPlaceholder | types.SpreadElement>[]) {
+function validateInlineMacro(
+  path: NodePath<types.Expression | types.ArgumentPlaceholder | types.SpreadElement>[]
+) {
   if (path.length > 1) { throw new Error(MESSAGES.INLINE_ONLY_ONE_ARGUMENT) }
   if (isObjectExpression(path[0])) {
     return path[0]
@@ -16,7 +18,9 @@ function validateInlineMacro(path: NodePath<types.Expression | types.ArgumentPla
   throw new Error(MESSAGES.INVALID_INLINE_ARGUMENT)
 }
 
-export function getExtendMacro(path: NodePath<types.CallExpression>, mod: Module, expected: 'inline' | 'injectGlobalStyle') {
+export type ExtendMacroKeys = 'inline' | 'injectGlobalStyle' | 'id'
+
+export function getExtendMacro(path: NodePath<types.CallExpression>, mod: Module, expected: ExtendMacroKeys) {
   if (!path.node) { return }
   const callee = path.get('callee')
   if (isIdentifier(callee) && mod.extendImports.get(callee.node.name) === expected) {

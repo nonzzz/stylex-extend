@@ -5,11 +5,21 @@
   "license": "MIT",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
   "repository": "https://github.com/nonzzz/stylex-extend.git",
   "files": [
     "dist",
     "README.md"
   ],
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./package.json": "./package.json",
+    "./*": "./*"
+  },
   "scripts": {
     "dev": "rollup --config rollup.config.ts --configPlugin swc3 --watch",
     "build": "rollup --config rollup.config.ts --configPlugin swc3"

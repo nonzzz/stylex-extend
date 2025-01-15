@@ -25,7 +25,8 @@
     "@stylexjs/babel-plugin": "0.9.3",
     "@stylex-extend/babel-plugin": "workspace:*",
     "@rollup/pluginutils": "^5.1.0",
-    "@babel/core": "^7.25.2"
+    "@babel/core": "^7.25.2",
+    "@stylex-extend/shared": "workspace:*"
   },
   "devDependencies": {
     "@types/babel__core": "^7.20.5"

@@ -63,6 +63,9 @@ export class Module {
   get importIdentifiers() {
     return ['create', this.options.transport] as ['create', 'props' | 'attrs']
   }
+  get cwd() {
+    return this.state.cwd
+  }
 
   fileNameForHashing(relativePath: string) {
     const fileName = filePathResolver(relativePath, this.filename, this.options.aliases)

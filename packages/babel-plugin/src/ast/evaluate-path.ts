@@ -97,6 +97,29 @@ function evaluateTemplateLiteral(path: NodePath<types.TemplateLiteral>, state: S
   return evaluateNodeToHashLike(path, state)
 }
 
+function isInternalId(path: NodePath<types.Node>): [boolean, string | null] {
+  if (isReferencedIdentifier(path)) {
+    const bindings = path.scope.getBinding(path.node.name)
+    if (!bindings) {
+      return [false, null]
+    }
+    if (bindings.path.isVariableDeclarator()) {
+      const inital = bindings.path.get('init')
+      if (inital && inital.isObjectExpression()) {
+        const len = inital.node.properties.length
+        for (let i = 0; i < len; i++) {
+          const item = inital.node.properties[i]
+          if (item.type === 'ObjectProperty' && isStringLikeKind(item.key) && isStringLikeKind(item.value)) {
+            if (getStringLikeKindValue(item.key) === '$id' && getStringLikeKindValue(item.value) === 'stylex-extend') {
+              return [true, getStringLikeKindValue((inital.node.properties[1] as types.ObjectProperty).value as types.StringLiteral)]
+            }
+          }
+        }
+      }
+    }
+  }
+  return [false, null]
+}
 // About difference. us evaluate will split two logic. one is evaluate object expression. another is evaluate baisc expression.
 // Like number, string, boolean, null, undefined, etc.
 // Unlike stylex. we must ensure the object expression if it's kind of object property the key must be static.
@@ -119,6 +142,10 @@ function evaluate(path: NodePath<types.Node>, state: State) {
   }
 
   if (isIdentifier(path)) {
+    const [pass, id] = isInternalId(path)
+    if (pass) {
+      return id
+    }
     const value = path.node.name
     if (value === 'undefined') {
       return undefined
@@ -201,11 +228,16 @@ function evaluate(path: NodePath<types.Node>, state: State) {
         state.layer++
       }
       if (isObjectProperty(prop)) {
-        if (prop.node.computed) {
+        const [pass, id] = isInternalId(prop.get('key'))
+        if (prop.node.computed && !pass) {
           throw new Error(MESSAGES.NO_STATIC_ATTRIBUTE)
         }
-        let key: string | undefined
-        if (isStringLikeKind(prop.get('key'))) {
+        let key: string | null = null
+        if (id) {
+          key = id
+          state.layer++
+        }
+        if (!key && isStringLikeKind(prop.get('key'))) {
           // @ts-expect-error safe
           key = getStringLikeKindValue(prop.get('key'))
         }

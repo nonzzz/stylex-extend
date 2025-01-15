@@ -25,6 +25,47 @@ export function Component() {
 }
 ```
 
+## Id
+
+- [RFC](https://github.com/facebook/stylex/discussions/684) in stylex
+
+Note: This is not samiler with RFC. function `id` support pass a boolean flag. If pass `true` mean it works for `stylex-extend` self function, the default value is `flase`.
+If you want to use `id` with JSXAttribute `stylex` or `inline`. you should decalre a new id with `true`, Don't pass the id set to true to StyleX API itself.
+
+### Usage
+
+```tsx
+import { id } from '@stylex-extend/core'
+import { create, props } from '@stylexjs/js'
+
+const myId = id()
+
+const myId2 = id(true)
+
+const styles = create({
+  parent: {
+    [myId]: {
+      default: 'red',
+      ':hover': 'pink'
+    }
+  },
+  child: {
+    color: myId
+  }
+})
+
+export function Component() {
+  return (
+    <div {...props(styles.parent)}>
+      <span {...props(styles.child)}></span>
+      <span stylex={{ [myId2]: { default: 'purple' } }}>
+        <span stylex={{ color: myId2 }}>Purple</span>
+      </span>
+    </div>
+  )
+}
+```
+
 ## injectGlobalStyle
 
 - unoffical API

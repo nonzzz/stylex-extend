@@ -14,5 +14,7 @@ export const MESSAGES = {
   INVALID_FILE: 'Invalid file path',
   ONLY_TOP_LEVEL_INJECT_GLOBAL_STYLE: 'function injectGlobalStyle() must be called at the top level of the module.',
   INVALID_CSS_TOKEN: 'Invalid css token.',
-  INVALID_INLINE_ARGUMENT: 'Invalid inline argument.'
+  INVALID_INLINE_ARGUMENT: 'Invalid inline argument.',
+  INVALID_ID_ARGUMENT: 'Invalid id argument.',
+  ONLY_TOP_LEVEL_ID: 'function id() must be called at the top level of the module.'
 }
