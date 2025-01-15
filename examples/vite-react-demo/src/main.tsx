@@ -9,8 +9,6 @@ interface ButtonProps {
   onClick: () => void
 }
 
-// stylex.props(inline({ color: 'red' }))
-
 const myId = id()
 const myId2 = id(true)
 
@@ -28,8 +26,6 @@ const basic = stylex.create({
   }
 })
 
-console.log(basic)
-
 function Button(props: React.PropsWithChildren<ButtonProps>) {
   return <div onClick={props.onClick} stylex={{ color: props.color, fontSize: '15px' }}>{props.children}</div>
 }
@@ -45,6 +41,16 @@ export function App() {
           <span stylex={{ color: myId }}>Green Text</span>
           <span {...stylex.props(basic.font)}>
             <span stylex={{ fontSize: myId, marginLeft: '6px' }}>Large Font</span>
+          </span>
+        </p>
+      </div>
+      <div>
+        With macro
+        <p stylex={{ [myId2]: { default: '30px' } }}>
+          <span stylex={{ fontSize: myId2 }}>Text</span>
+          <span stylex={{ [myId2]: { default: 'purple' } }}>
+            <span stylex={{ color: myId2, [myId2]: { default: 'green' } }}>Purple</span>
+            <span stylex={{ color: myId2 }}>Green</span>
           </span>
         </p>
       </div>

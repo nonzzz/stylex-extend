@@ -16,16 +16,19 @@ export function inline(_: CSSObject): StylexAttrsParamter {
   throw new Error("'inline' calls should be compiled away.")
 }
 
-export function id<V extends boolean = false>(_?: V): V extends true ? { $id: 'stylex-extend', value: string } : string {
+export function id(_?: boolean): string {
   throw new Error('`id` calls should be compiled away.')
 }
 
 function createWhenAPI(errorMessage: string) {
-  return (selector: string, pseudo?: string) => {
+  return (selector: string, pseudo?: string): string => {
     throw new Error(errorMessage)
   }
 }
 
+/**
+ * @description This has not yet been implemented. I think `id` can handle most scenarios.
+ */
 export const when = {
   // a b
   ancestor: createWhenAPI("'when.ancestor' calls should be compiled away."),

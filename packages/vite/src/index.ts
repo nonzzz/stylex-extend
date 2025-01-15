@@ -8,6 +8,7 @@ import type { ParserOptions, PluginItem } from '@babel/core'
 import { createFilter } from '@rollup/pluginutils'
 import type { FilterPattern } from '@rollup/pluginutils'
 import extendBabelPlugin, { StylexExtendBabelPluginOptions } from '@stylex-extend/babel-plugin'
+import { xxhash } from '@stylex-extend/shared'
 import type { Options, Rule } from '@stylexjs/babel-plugin'
 import stylexBabelPlugin from '@stylexjs/babel-plugin'
 import path from 'path'
@@ -144,18 +145,6 @@ export function stylex(options: StyleXOptions = {}): Plugin[] {
         .map((r) => r.meta).flat().filter(Boolean),
       useCSSLayer!
     ) + '\n' + Object.values(globalCSS).join('\n')
-  }
-
-  const xxhash = (str: string) => {
-    let i
-    let l
-    let hval = 0x811C9DC5
-
-    for (i = 0, l = str.length; i < l; i++) {
-      hval ^= str.charCodeAt(i)
-      hval += (hval << 1) + (hval << 4) + (hval << 7) + (hval << 8) + (hval << 24)
-    }
-    return (`00000${(hval >>> 0).toString(36)}`).slice(-6)
   }
 
   // rollup private parse and es-module lexer can't parse JSX. So we have had to use babel to parse the import statements.

@@ -8,7 +8,9 @@ import { callExpression, findNearestTopLevelAncestor, isIdentifier, isMemberExpr
 import { Module } from '../module'
 import { APIS, insertRelativePackage } from './imports'
 
-function validateInlineMacro(path: NodePath<types.Expression | types.ArgumentPlaceholder | types.SpreadElement>[]) {
+function validateInlineMacro(
+  path: NodePath<types.Expression | types.ArgumentPlaceholder | types.SpreadElement>[]
+) {
   if (path.length > 1) { throw new Error(MESSAGES.INLINE_ONLY_ONE_ARGUMENT) }
   if (isObjectExpression(path[0])) {
     return path[0]

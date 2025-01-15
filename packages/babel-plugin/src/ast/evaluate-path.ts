@@ -142,6 +142,10 @@ function evaluate(path: NodePath<types.Node>, state: State) {
   }
 
   if (isIdentifier(path)) {
+    const [pass, id] = isInternalId(path)
+    if (pass) {
+      return id
+    }
     const value = path.node.name
     if (value === 'undefined') {
       return undefined
@@ -200,10 +204,6 @@ function evaluate(path: NodePath<types.Node>, state: State) {
       return result
     }
     if (isIdentifier(callee)) {
-      const [pass, id] = isInternalId(callee)
-      if (pass) {
-        return id
-      }
       const value = getStringLikeKindValue(callee)
       state.environment.references.set(value, { path, define: value })
       return MARK.ref(value)

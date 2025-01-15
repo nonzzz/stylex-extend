@@ -11,24 +11,24 @@ const _styles = _create({
   },
 });
 const _styles2 = _create({
-  "#0": (myId) => ({
-    color: myId,
+  "#0": {
+    color: "var(--1ulkty)",
     "var(--1ulkty)": {
       default: "28px",
     },
-  }),
+  },
 });
 const _styles3 = _create({
-  "#0": (myId) => ({
-    fontSize: myId,
-  }),
+  "#0": {
+    fontSize: "var(--1ulkty)",
+  },
 });
 export function Component() {
   return (
     <div {...props(_styles["#0"])}>
-      <p {...props(_styles2["#0"](myId))}>
+      <p {...props(_styles2["#0"])}>
         First pagination
-        <span {...props(_styles3["#0"](myId))}>Nested Text</span>
+        <span {...props(_styles3["#0"])}>Nested Text</span>
       </p>
     </div>
   );

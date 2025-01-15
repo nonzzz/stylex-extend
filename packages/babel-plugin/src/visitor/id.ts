@@ -2,12 +2,16 @@ import { types } from '@babel/core'
 import type { NodePath } from '@babel/core'
 import { xxhash } from '@stylex-extend/shared'
 import { MESSAGES } from '../ast/message'
-import { isBooleanLiteral, make } from '../ast/shared'
+import { findNearestStatementAncestor, isBooleanLiteral, isTopLevelCalled, make } from '../ast/shared'
 import { Module, getCanonicalFilePath } from '../module'
 import { getExtendMacro } from './inline'
 
-function validateIdMacro(path: NodePath<types.Expression | types.ArgumentPlaceholder | types.SpreadElement>[]) {
+function validateIdMacro(
+  path: NodePath<types.Expression | types.ArgumentPlaceholder | types.SpreadElement>[],
+  path2: NodePath<types.Node>
+) {
   if (!path.length) { return '' }
+  if (!isTopLevelCalled(path2)) { throw new Error(MESSAGES.ONLY_TOP_LEVEL_ID) }
   if (isBooleanLiteral(path[0])) {
     return path[0].node.value
   }
@@ -29,7 +33,7 @@ function generateIdExpression(id: string) {
 export function transformId(path: NodePath<types.CallExpression>, mod: Module) {
   const callee = getExtendMacro(path, mod, 'id')
   if (callee) {
-    const isVariant = validateIdMacro(callee.get('arguments'))
+    const isVariant = validateIdMacro(callee.get('arguments'), findNearestStatementAncestor(callee))
     const id = xxhash(getCanonicalFilePath(mod.filename, mod.cwd))
     if (isVariant) {
       path.replaceWith(generateIdExpression(id))
