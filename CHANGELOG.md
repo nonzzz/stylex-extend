@@ -1,3 +1,9 @@
+## 0.6.0 (2025-1-15)
+
+### Features
+
+- Add new api `id`. Details see [RFC](https://github.com/facebook/stylex/discussions/684)
+
 ## 0.5.6 (2025-1-13)
 
 Fallback `unstable_moduleResolution`
