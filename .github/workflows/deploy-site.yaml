@@ -13,7 +13,7 @@ jobs:
         run: make
       - uses: actions/setup-node@v3
         with:
-          node-version: 20.5.1
+          node-version: 22.9.0
       - name: Build site
         run: make build-site
 
