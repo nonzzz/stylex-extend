@@ -5,15 +5,15 @@
 :::code-group
 
 ```bash [pnpm]
-pnpm add -D @stylex-exnted/core  @stylex-extend/vite
+pnpm add -D @stylex-extend/core  @stylex-extend/vite
 ```
 
 ```bash [yarn]
-yarn add -D @stylex-exnted/core  @stylex-extend/vite
+yarn add -D @stylex-extend/core  @stylex-extend/vite
 ```
 
 ```bash [npm]
-npm install -D @stylex-exnted/core  @stylex-extend/vite
+npm install -D @stylex-extend/core  @stylex-extend/vite
 ```
 
 :::
