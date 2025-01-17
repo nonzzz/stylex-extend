@@ -6,9 +6,6 @@
   "version": "0.6.0",
   "license": "MIT",
   "repository": "https://github.com/nonzzz/stylex-extend.git",
-  "scripts": {
-    "build": "rollup --config rollup.config.ts --configPlugin swc3"
-  },
   "exports": {
     ".": "./src/index.ts",
     "./package.json": "./package.json"
