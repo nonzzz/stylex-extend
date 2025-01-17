@@ -9,6 +9,10 @@
   "scripts": {
     "build": "rollup --config rollup.config.ts --configPlugin swc3"
   },
+  "exports": {
+    ".": "./src/index.ts",
+    "./package.json": "./package.json"
+  },
   "dependencies": {
     "@stylex-extend/shared": "workspace:*"
   }
