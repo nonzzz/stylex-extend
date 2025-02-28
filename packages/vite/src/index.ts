@@ -249,7 +249,6 @@ export function stylex(options: StyleXOptions = {}): Plugin[] {
     return transformAsync(opts.code, {
       babelrc: false,
       filename: opts.filename,
-      // @ts-expect-error safe
       plugins: [...(babelConfig?.plugins ?? []), plugin.withOptions(opts.options)],
       presets: babelConfig?.presets,
       parserOpts: opts.parserOpts ?? {},

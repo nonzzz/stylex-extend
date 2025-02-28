@@ -8,17 +8,22 @@
     "client.d.ts",
     "README.md"
   ],
+  "scripts": {
+    "test": "vitest"
+  },
   "exports": {
     ".": "./src/index.ts",
     "./package.json": "./package.json",
     "./client": "./client.d.ts"
   },
   "dependencies": {
-    "@stylexjs/babel-plugin": "0.9.3",
+    "@stylexjs/babel-plugin": "0.11.0",
     "@stylex-extend/babel-plugin": "workspace:*",
     "@rollup/pluginutils": "^5.1.0",
     "@babel/core": "^7.25.2",
-    "@stylex-extend/shared": "workspace:*"
+    "@stylex-extend/shared": "workspace:*",
+    "postcss-load-config": "^6.0.1",
+    "@stylexjs/postcss-plugin": "0.11.0"
   },
   "devDependencies": {
     "@types/babel__core": "^7.20.5"

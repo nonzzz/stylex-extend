@@ -12,7 +12,11 @@
     "README.md"
   ],
   "exports": {
-    ".": "./src/index.ts",
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    },
     "./package.json": "./package.json"
   },
   "dependencies": {
