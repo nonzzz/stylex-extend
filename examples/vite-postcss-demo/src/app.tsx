@@ -1,5 +1,8 @@
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import React, { useState } from 'react'
 import { Aliases } from '~/component/aliases'
+import { colors } from '~/themes/colors.stylex'
 
 interface ButtonProps {
   color: string
@@ -18,7 +21,7 @@ export function App() {
       <div>
         With macro
         <p stylex={{ fontSize: '30px' }}>
-          <span stylex={{ color: 'purple' }}>Purple</span>
+          <span stylex={{ color: colors.blue }}>Purple</span>
           <span stylex={{ color: 'green' }}>Green</span>
         </p>
       </div>

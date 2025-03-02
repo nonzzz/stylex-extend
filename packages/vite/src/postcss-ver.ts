@@ -2,7 +2,7 @@
 import type { TransformOptions } from '@babel/core'
 import { createFilter } from '@rollup/pluginutils'
 import type { StylexExtendBabelPluginOptions } from '@stylex-extend/babel-plugin'
-import type { CSSOptions, ModuleNode, Plugin, Update, ViteDevServer } from 'vite'
+import type { CSSOptions, ModuleNode, Plugin, Update } from 'vite'
 import { searchForWorkspaceRoot } from 'vite'
 import { ensureParserOpts, getPlugin, interopDefault, isPotentialCSSFile, transformStyleX } from './compile'
 import { CONSTANTS, WELL_KNOW_LIBS, defaultOptions, unique } from './index'
@@ -32,7 +32,6 @@ export function stylex(options: StylexOptionsWithPostcss = {}): Plugin[] {
   options = { ...defaultOptions, ...options }
   const { macroTransport, useCSSLayer = false, optimizedDeps: _, include, postcss: postcssConfig, exclude, babelConfig, ...rest } = options
   const filter = createFilter(include, exclude)
-  const servers: ViteDevServer[] = []
   const accepts: Set<string> = new Set()
   const effects: Map<string, boolean> = new Map()
   return [
@@ -56,7 +55,12 @@ export function stylex(options: StylexOptionsWithPostcss = {}): Plugin[] {
           }
         }
 
-        const rootDir = searchForWorkspaceRoot(config?.root || process.cwd())
+        const rootDir = searchForWorkspaceRoot(config.root || process.cwd())
+        if (!options.unstable_moduleResolution) {
+          // For monorepo.
+          options.unstable_moduleResolution = { type: 'commonJS', rootDir }
+        }
+
         // @ts-expect-error ignored
         const postcss = await import('@stylexjs/postcss-plugin').then((m: unknown) => interopDefault(m)) as (
           opts: StylexPostCSSPluginOptions
@@ -96,25 +100,11 @@ export function stylex(options: StylexOptionsWithPostcss = {}): Plugin[] {
         config.css.postcss.plugins?.unshift(instance)
       },
       configResolved(config) {
-        // Check css transformer
-        if (config.css.transformer === 'lightningcss') {
-          throw new Error('Lightningcss is not supported by stylex-extend')
-        }
-        if (typeof config.css.postcss === 'string') {
-          throw new Error('Postcss config file is not supported by stylex-extend')
-        }
-        const rootDir = searchForWorkspaceRoot(config.root)
-        if (!options.unstable_moduleResolution) {
-          // For monorepo.
-          options.unstable_moduleResolution = { type: 'commonJS', rootDir }
-        }
-
         const optimizedDeps = unique([
           ...Array.isArray(options.optimizedDeps) ? options.optimizedDeps : [],
           ...Array.isArray(options.importSources) ? options.importSources.map((s) => typeof s === 'string' ? s : s.from) : [],
           ...WELL_KNOW_LIBS
         ])
-
         if (config.command === 'serve') {
           config.optimizeDeps.exclude = [...optimizedDeps, ...(config.optimizeDeps.exclude || [])]
         }
@@ -123,9 +113,6 @@ export function stylex(options: StylexOptionsWithPostcss = {}): Plugin[] {
             ? [...config.ssr.noExternal, ...optimizedDeps]
             : config.ssr.noExternal
         }
-      },
-      configureServer(server) {
-        servers.push(server)
       },
       transform(code, id) {
         if (isPotentialCSSFile(id) && !id.includes('node_modules')) {

@@ -19,7 +19,7 @@ export default defineConfig({
     stylex({
       mactroTransport: 'props',
       postcss: {
-        include: ['examples/vite-postcss-demo/src/**/*.tsx'],
+        include: ['examples/vite-postcss-demo/src/**/*.{ts,tsx}'],
         aliases: {
           '~/*': [path.join(__dirname, 'src/*')]
         }
