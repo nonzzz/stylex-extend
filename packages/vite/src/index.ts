@@ -1,19 +1,19 @@
-/* eslint-disable no-labels */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
-/* eslint-disable @typescript-eslint/no-unsafe-return */
+
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable no-use-before-define */
-import { parseSync, transformAsync } from '@babel/core'
+import { parseSync } from '@babel/core'
 import type { ParserOptions, PluginItem } from '@babel/core'
 import { createFilter } from '@rollup/pluginutils'
 import type { FilterPattern } from '@rollup/pluginutils'
-import extendBabelPlugin, { StylexExtendBabelPluginOptions } from '@stylex-extend/babel-plugin'
+import { StylexExtendBabelPluginOptions } from '@stylex-extend/babel-plugin'
 import { xxhash } from '@stylex-extend/shared'
 import type { Options, Rule } from '@stylexjs/babel-plugin'
 import stylexBabelPlugin from '@stylexjs/babel-plugin'
 import path from 'path'
 import type { HookHandler, Plugin, Update, ViteDevServer } from 'vite'
 import { normalizePath, searchForWorkspaceRoot } from 'vite'
+import { ensureParserOpts, transformStyleX } from './compile'
 
 type UnionToIntersection<U> = (U extends any ? (k: U) => void : never) extends ((k: infer I) => void) ? I : never
 type LastOf<T> = UnionToIntersection<T extends any ? () => T : never> extends () => infer R ? R : never
@@ -53,16 +53,6 @@ export interface StyleXOptions extends Partial<InternalOptions> {
   [key: string]: any
 }
 
-type TransformWithStyleXType = 'extend' | 'standard'
-
-interface TransformWithStyleXRestOptions<T = TransformWithStyleXType> {
-  code: string
-  filename: string
-  options: T extends 'extend' ? Parameters<typeof extendBabelPlugin.withOptions>[0]
-    : Parameters<typeof stylexBabelPlugin.withOptions>[0]
-  parserOpts?: any
-}
-
 interface ImportSpecifier {
   n: string | undefined
   s: number
@@ -73,11 +63,6 @@ type BabelParserPlugins = ParserOptions['plugins']
 
 interface HMRPayload {
   hash: string
-}
-
-function interopDefault(m: any) {
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-  return m.default || m
 }
 
 type RollupPluginContext = ThisParameterType<HookHandler<NonNullable<Plugin['transform']>>>
@@ -91,16 +76,16 @@ const CONSTANTS = {
 
 const WS_EVENT_TYPE = 'stylex:hmr'
 
-const defaultOptions = {
+export const defaultOptions = {
   include: /\.(mjs|js|ts|vue|jsx|tsx)(\?.*|)$/,
   importSources: ['stylex', '@stylexjs/stylex'],
   macroTransport: 'props',
   useCSSLayer: false
 } satisfies StyleXOptions
 
-const WELL_KNOW_LIBS = ['@stylexjs/open-props']
+export const WELL_KNOW_LIBS = ['@stylexjs/open-props']
 
-function unique<T>(data: T[]) {
+export function unique<T>(data: T[]) {
   return Array.from(new Set(data))
 }
 
@@ -109,7 +94,7 @@ function getExt(p: string) {
   return path.extname(filename).slice(1)
 }
 
-function isPotentialCSSFile(id: string) {
+export function isPotentialCSSFile(id: string) {
   const extension = getExt(id)
   return extension === 'css' || (extension === 'vue' && id.includes('&lang.css')) || (extension === 'astro' && id.includes('&lang.css'))
 }
@@ -195,67 +180,6 @@ export function stylex(options: StyleXOptions = {}): Plugin[] {
       }
     }
     return code
-  }
-
-  // Handle non-standard
-  const ensureParserOpts = (id: string): BabelParserPlugins | false => {
-    const plugins: BabelParserPlugins = []
-    const [original, ...rest] = id.split('?')
-    const extension = path.extname(original).slice(1)
-    if (extension === 'jsx' || extension === 'tsx') {
-      plugins.push('jsx')
-    }
-    if (extension === 'ts' || extension === 'tsx') {
-      plugins.push('typescript')
-    }
-    // vue&type=script&lang.tsx
-    // vue&type=script&setup=true&lang.tsx
-    // For vue and ...etc
-    if (extension === 'vue') {
-      // Check if is from unplugin-vue-router (Hard code here)
-      for (const spec of rest) {
-        if (spec.includes('definePage')) {
-          return false
-        }
-      }
-      loop: for (;;) {
-        const current = rest.shift()
-        if (!current) { break loop }
-        const matched = current.match(/lang\.(\w+)/)
-        if (matched) {
-          const lang = matched[1]
-          if (lang === 'jsx' || lang === 'tsx') {
-            plugins.push('jsx')
-          }
-          if (lang === 'ts' || lang === 'tsx') {
-            plugins.push('typescript')
-          }
-          break loop
-        }
-      }
-    }
-    return plugins
-  }
-
-  const transformWithStyleX = async <T extends TransformWithStyleXType>(pluginName: T, opts: TransformWithStyleXRestOptions<T>) => {
-    let plugin: typeof stylexBabelPlugin | typeof extendBabelPlugin
-    try {
-      plugin = interopDefault(pluginName === 'extend' ? extendBabelPlugin : stylexBabelPlugin)
-    } catch {
-      plugin = await import(pluginName === 'extend' ? '@stylex-extend/babel-plugin' : '@stylexjs/babel-plugin').then((m) =>
-        interopDefault(m)
-      )
-    }
-    return transformAsync(opts.code, {
-      babelrc: false,
-      filename: opts.filename,
-      plugins: [...(babelConfig?.plugins ?? []), plugin.withOptions(opts.options)],
-      presets: babelConfig?.presets,
-      parserOpts: opts.parserOpts ?? {},
-      generatorOpts: {
-        sourceMaps: true
-      }
-    })
   }
 
   // TODO: for more performance, we might need to maintain a dependency graph to invalidate the cache.
@@ -367,7 +291,7 @@ export function stylex(options: StyleXOptions = {}): Plugin[] {
             delete globalCSS[id]
           }
 
-          const res = await transformWithStyleX('extend', {
+          const res = await transformStyleX('extend', {
             code,
             filename: id,
             options: {
@@ -377,7 +301,7 @@ export function stylex(options: StyleXOptions = {}): Plugin[] {
               unstable_moduleResolution: options.unstable_moduleResolution
             },
             parserOpts: { plugins }
-          })
+          }, babelConfig)
           if (res && res.code) {
             if (res.metadata && CONSTANTS.STYLEX_EXTEND_META_KEY in res.metadata) {
               // @ts-expect-error safe
@@ -396,7 +320,7 @@ export function stylex(options: StyleXOptions = {}): Plugin[] {
         if (id.includes('/node_modules/')) { return }
         if (!filter(id) || isPotentialCSSFile(id) || id.startsWith('\0')) { return }
         code = await rewriteImportStmts(code, id, this)
-        const res = await transformWithStyleX('standard', {
+        const res = await transformStyleX('standard', {
           code,
           filename: id,
           options: {
@@ -406,7 +330,7 @@ export function stylex(options: StyleXOptions = {}): Plugin[] {
             dev: !isBuild,
             importSources: options.importSources
           }
-        })
+        }, babelConfig)
         if (!res) { return }
         if (res.metadata && CONSTANTS.STYLEX_META_KEY in res.metadata) {
           // @ts-expect-error safe

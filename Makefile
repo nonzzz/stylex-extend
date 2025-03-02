@@ -1,8 +1,4 @@
 currentDir = $(CURDIR)
-JK = ./node_modules/.bin/jiek
-
-JK_FLAGS += build
-JK_FLAGS += --noMin
 
 install:
 	@echo "Setup pnpm package manager..."
@@ -15,26 +11,26 @@ build-babel-plugin:
 	@echo "Building babel-plugin package..."
 	$(eval currentDir = $(CURDIR)/packages/babel-plugin)
 	-rm -rf $(currentDir)/dist
-	$(JK) $(JK_FLAGS) --filter babel-plugin
+	pnpm -C $(currentDir) run build
 
 build-core: build-shared
 	@echo "Building core package..."
 	$(eval currentDir = $(CURDIR)/packages/core)
 	-rm -rf $(currentDir)/dist
-	$(JK) $(JK_FLAGS) --filter core
+	pnpm -C $(currentDir) run build
 
 
 build-vite: build-babel-plugin
 	@echo "Building vite package..."
 	$(eval currentDir = $(CURDIR)/packages/vite)
 	-rm -rf $(currentDir)/dist
-	$(JK) $(JK_FLAGS) --external vite --filter vite
+	pnpm -C $(currentDir) run build
 
 build-shared:
 	@echo "Building shared package..."
 	$(eval currentDir = $(CURDIR)/packages/shared)
 	-rm -rf $(currentDir)/dist
-	$(JK) $(JK_FLAGS) --filter shared
+	pnpm -C $(currentDir) run build
 
 publish-all: build-all
 	@echo "Publishing packages..."

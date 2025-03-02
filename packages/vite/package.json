@@ -9,12 +9,23 @@
     "README.md"
   ],
   "scripts": {
-    "test": "vitest"
+    "test": "vitest",
+    "dev": "rollup --config rollup.config.mts --configPlugin swc3 --watch",
+    "build": "rollup --config rollup.config.mts --configPlugin swc3"
   },
   "exports": {
-    ".": "./src/index.ts",
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    },
     "./package.json": "./package.json",
-    "./client": "./client.d.ts"
+    "./client": "./client.d.ts",
+    "./postcss-ver": {
+      "import": "./dist/postcss-ver.mjs",
+      "require": "./dist/postcss-ver.js",
+      "types": "./dist/postcss-ver.d.ts"
+    }
   },
   "dependencies": {
     "@stylexjs/babel-plugin": "0.11.0",

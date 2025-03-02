@@ -10,9 +10,14 @@
   "packageManager": "pnpm@9.0.1",
   "devDependencies": {
     "@eslint-sukka/react": "^6.12.0",
-    "@pnpm/filter-workspace-packages": "latest",
     "@stylex-extend/babel-plugin": "workspace:*",
-    "@stylex-extend/core": "file:./packages/core",
+    "@rollup/plugin-esm-shim": "^0.1.8",
+    "@rollup/plugin-node-resolve": "^16.0.0",
+    "rollup": "^4.34.9",
+    "rollup-plugin-swc3": "^0.12.1",
+    "@swc/core": "^1.11.5",
+    "rollup-plugin-dts": "^6.1.1",
+    "@stylex-extend/core": "workspace:*",
     "@stylex-extend/shared": "workspace:*",
     "@stylex-extend/vite": "workspace:*",
     "@stylexjs/babel-plugin": "0.11.0",
@@ -21,12 +26,10 @@
     "dprint": "^0.45.1",
     "eslint": "^9.16.0",
     "eslint-config-kagura": "^3.0.1",
-    "jiek": "^2.3.3",
-    "rollup-plugin-esbuild": "^6.1.1",
     "typescript": "^5.4.3",
     "vite": "^5.2.6",
     "vitepress-plugin-group-icons": "^1.1.0",
-    "vitest": "^1.4.0"
+    "vitest": "^3.0.7"
   },
   "pnpm": {
     "overrides": {
