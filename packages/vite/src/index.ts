@@ -67,7 +67,7 @@ interface HMRPayload {
 
 type RollupPluginContext = ThisParameterType<HookHandler<NonNullable<Plugin['transform']>>>
 
-const CONSTANTS = {
+export const CONSTANTS = {
   REFERENCE_KEY: '@stylex;',
   STYLEX_META_KEY: 'stylex',
   STYLEX_EXTEND_META_KEY: 'globalStyle',

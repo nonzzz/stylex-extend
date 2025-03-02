@@ -17,7 +17,7 @@
     "rollup-plugin-swc3": "^0.12.1",
     "@swc/core": "^1.11.5",
     "rollup-plugin-dts": "^6.1.1",
-    "@stylex-extend/core": "workspace:*",
+    "@stylex-extend/core": "file:./packages/core",
     "@stylex-extend/shared": "workspace:*",
     "@stylex-extend/vite": "workspace:*",
     "@stylexjs/babel-plugin": "0.11.0",
@@ -27,13 +27,14 @@
     "eslint": "^9.16.0",
     "eslint-config-kagura": "^3.0.1",
     "typescript": "^5.4.3",
-    "vite": "^5.2.6",
+    "vite": "^6.2.0",
     "vitepress-plugin-group-icons": "^1.1.0",
     "vitest": "^3.0.7"
   },
   "pnpm": {
     "overrides": {
-      "is-core-module": "npm:@nolyfill/is-core-module@^1"
+      "is-core-module": "npm:@nolyfill/is-core-module@^1",
+      "vite": "^6.2.0"
     }
   }
 }

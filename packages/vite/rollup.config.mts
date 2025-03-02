@@ -28,7 +28,8 @@ export default defineConfig(
         {
           dir: 'dist',
           format: 'es',
-          entryFileNames: '[name].mjs'
+          entryFileNames: '[name].mjs',
+          chunkFileNames: '[name]-[hash].mjs'
         }
       ],
       plugins: [swc(), shim()],

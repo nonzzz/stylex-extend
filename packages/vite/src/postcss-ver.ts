@@ -2,10 +2,10 @@
 import type { TransformOptions } from '@babel/core'
 import { createFilter } from '@rollup/pluginutils'
 import type { StylexExtendBabelPluginOptions } from '@stylex-extend/babel-plugin'
-import type { CSSOptions, Plugin } from 'vite'
+import type { CSSOptions, ModuleNode, Plugin, Update, ViteDevServer } from 'vite'
 import { searchForWorkspaceRoot } from 'vite'
 import { ensureParserOpts, getPlugin, interopDefault, isPotentialCSSFile, transformStyleX } from './compile'
-import { WELL_KNOW_LIBS, defaultOptions, unique } from './index'
+import { CONSTANTS, WELL_KNOW_LIBS, defaultOptions, unique } from './index'
 import type { StyleXOptions } from './index'
 
 // Note that postcss ver has limitations and can't handle non-js syntax. Like .vue .svelte and etc.
@@ -32,11 +32,70 @@ export function stylex(options: StylexOptionsWithPostcss = {}): Plugin[] {
   options = { ...defaultOptions, ...options }
   const { macroTransport, useCSSLayer = false, optimizedDeps: _, include, postcss: postcssConfig, exclude, babelConfig, ...rest } = options
   const filter = createFilter(include, exclude)
-
+  const servers: ViteDevServer[] = []
+  const accepts: Set<string> = new Set()
+  const effects: Map<string, boolean> = new Map()
   return [
     {
       name: '@stylex-extend:postcss-resolve',
-      async configResolved(config) {
+      enforce: 'pre',
+      async config(config) {
+        if (!config.css) {
+          config.css = {}
+        }
+        if (config.css.transformer === 'lightningcss') {
+          throw new Error('Lightningcss is not supported by stylex-extend')
+        }
+        if (typeof config.css.postcss === 'string') {
+          throw new Error('Postcss config file is not supported by stylex-extend')
+        }
+        // config.css.postcss.
+        if (!config.css.postcss) {
+          config.css.postcss = {
+            plugins: []
+          }
+        }
+
+        const rootDir = searchForWorkspaceRoot(config?.root || process.cwd())
+        // @ts-expect-error ignored
+        const postcss = await import('@stylexjs/postcss-plugin').then((m: unknown) => interopDefault(m)) as (
+          opts: StylexPostCSSPluginOptions
+        ) => PostCSSAcceptedPlugin
+
+        const extend = await getPlugin('extend')
+        const standard = await getPlugin('standard')
+
+        const instance = postcss({
+          include: postcssConfig?.include || [],
+          exclude: postcssConfig?.exclude || [],
+          useCSSLayer,
+          cwd: rootDir,
+          babelConfig: {
+            parserOpts: {
+              plugins: ['jsx', 'typescript']
+            },
+            plugins: [
+              extend.withOptions({
+                // @ts-expect-error safe
+                unstable_moduleResolution: options.unstable_moduleResolution,
+                // @ts-expect-error safe
+                transport: macroTransport,
+                classNamePrefix: options.classNamePrefix,
+                aliases: postcssConfig?.aliases
+              }),
+              standard.withOptions({
+                // @ts-expect-error safe
+                unstable_moduleResolution: options.unstable_moduleResolution,
+                runtimeInjection: false,
+                classNamePrefix: options.classNamePrefix,
+                aliases: postcssConfig?.aliases
+              })
+            ]
+          }
+        })
+        config.css.postcss.plugins?.unshift(instance)
+      },
+      configResolved(config) {
         // Check css transformer
         if (config.css.transformer === 'lightningcss') {
           throw new Error('Lightningcss is not supported by stylex-extend')
@@ -64,52 +123,16 @@ export function stylex(options: StylexOptionsWithPostcss = {}): Plugin[] {
             ? [...config.ssr.noExternal, ...optimizedDeps]
             : config.ssr.noExternal
         }
-        // config.css.postcss.
-        if (!config.css.postcss) {
-          config.css.postcss = {
-            plugins: []
+      },
+      configureServer(server) {
+        servers.push(server)
+      },
+      transform(code, id) {
+        if (isPotentialCSSFile(id) && !id.includes('node_modules')) {
+          if (code.includes(CONSTANTS.REFERENCE_KEY)) {
+            accepts.add(id)
           }
         }
-
-        // @ts-expect-error ignored
-        const postcss = await import('@stylexjs/postcss-plugin').then((m: unknown) => interopDefault(m)) as (
-          opts: StylexPostCSSPluginOptions
-        ) => PostCSSAcceptedPlugin
-
-        const extend = await getPlugin('extend')
-        const standard = await getPlugin('standard')
-
-        const instance = postcss({
-          include: postcssConfig?.include || [],
-          exclude: postcssConfig?.exclude || [],
-          useCSSLayer,
-          cwd: rootDir,
-          babelConfig: {
-            parserOpts: {
-              plugins: ['jsx', 'typescript']
-            },
-            plugins: [
-              [
-                extend.withOptions({
-                  // @ts-expect-error safe
-                  unstable_moduleResolution: options.unstable_moduleResolution,
-                  // @ts-expect-error safe
-                  transport: macroTransport,
-                  classNamePrefix: options.classNamePrefix,
-                  aliases: postcssConfig?.aliases
-                }),
-                standard.withOptions({
-                  // @ts-expect-error safe
-                  unstable_moduleResolution: options.unstable_moduleResolution,
-                  runtimeInjection: false,
-                  classNamePrefix: options.classNamePrefix,
-                  aliases: postcssConfig?.aliases
-                })
-              ]
-            ]
-          }
-        })
-        config.css.postcss.plugins?.unshift(instance)
       }
     },
     {
@@ -162,7 +185,43 @@ export function stylex(options: StylexOptionsWithPostcss = {}): Plugin[] {
           }
         }, babelConfig)
         if (res && res.code) {
+          if (res.metadata && CONSTANTS.STYLEX_META_KEY in res.metadata) {
+            effects.set(id, true)
+          }
+
           return { code: res.code, map: res.map }
+        }
+      }
+    },
+    {
+      name: '@stylex-extend:flush-css',
+      enforce: 'post',
+      handleHotUpdate(ctx) {
+        const { file, modules, server } = ctx
+        if (effects.has(file)) {
+          const cssModules = [...accepts].map((id) => server.moduleGraph.getModuleById(id)).filter(Boolean) as ModuleNode[]
+
+          if (cssModules.length) {
+            cssModules.forEach((mod) => {
+              server.moduleGraph.invalidateModule(mod)
+              if (!server.moduleGraph.getModuleById(mod.id!)) {
+                accepts.delete(mod.id!)
+              }
+            })
+
+            const updates: Update[] = cssModules.map((mod) => ({
+              type: 'js-update',
+              path: mod.url,
+              acceptedPath: mod.url,
+              timestamp: Date.now()
+            }))
+
+            server.ws.send({
+              type: 'update',
+              updates
+            })
+            return [...modules, ...cssModules]
+          }
         }
       }
     }

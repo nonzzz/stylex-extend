@@ -2,7 +2,8 @@ currentDir = $(CURDIR)
 
 install:
 	@echo "Setup pnpm package manager..."
-	@corepack enable
+	npm install -g corepack@latest --force
+	corepack enable
 	pnpm install
 
 build-all: build-shared build-core build-babel-plugin build-vite
