@@ -171,7 +171,9 @@ export function findNearestTopLevelAncestor(
 }
 
 export const make = {
-  objectProperty: (key: string, value: types.Expression) => objectProperty(stringLiteral(key), value),
+  objectProperty: (key: string, value: types.Expression, identifier?: boolean) => {
+    return objectProperty(identifier ? types.identifier(key) : stringLiteral(key), value)
+  },
   identifier: (name: string) => types.identifier(name),
   stringLiteral: (value: string) => stringLiteral(value),
   nullLiteral: () => types.nullLiteral(),

@@ -1,6 +1,6 @@
 import { create as _create, props as _props } from "@stylexjs/stylex";
 const _styles = _create({
-  "#0": (color, propsDisplay, propsNormalRadius, propsMaxRadius) => ({
+  $0: (color, propsDisplay, propsNormalRadius, propsMaxRadius) => ({
     color: color,
     fontSize: "20px",
     display: {
@@ -18,7 +18,7 @@ export function Component(props) {
   return (
     <div
       {..._props(
-        _styles["#0"](color, props.display, props.normalRadius, props.maxRadius)
+        _styles.$0(color, props.display, props.normalRadius, props.maxRadius)
       )}
     />
   );

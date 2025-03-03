@@ -6,7 +6,7 @@ const styles = create({
   },
 });
 const _styles = create({
-  "#0": (propsHoverColor, propsActiveColor) => ({
+  $0: (propsHoverColor, propsActiveColor) => ({
     font: "16px",
     display: "inline-flex",
     color: {
@@ -22,7 +22,7 @@ export function Component(props) {
     <div
       {...stylex.props(
         styles.base,
-        _styles["#0"](props.hoverColor, props.activeColor)
+        _styles.$0(props.hoverColor, props.activeColor)
       )}
     ></div>
   );

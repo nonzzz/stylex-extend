@@ -356,7 +356,9 @@ export function printJsAST(data: ReturnType<typeof sortAndMergeEvaluatedResult>,
   for (let i = 0; i < css.length; i++) {
     const rule = css[i]
     const [ast, vars, logical] = printCSSRule(rule)
-    const expr = make.memberExpression(into, make.stringLiteral('#' + i), true)
+    // After stylex v0.11.0. stylex has an internal styleMap we should respect it.
+    // see https://github.com/facebook/stylex/issues/925
+    const expr = make.memberExpression(into, make.identifier('$' + i), false)
     if (vars.size) {
       const calleeArguments = [...vars].map((variable) => {
         const { path } = references.get(variable)!
@@ -369,7 +371,7 @@ export function printJsAST(data: ReturnType<typeof sortAndMergeEvaluatedResult>,
         expressions.push(callee)
       }
       const func = make.arrowFunctionExpression([...vars].map((variable) => make.identifier(variable)), ast)
-      properties.push(make.objectProperty('#' + i, func))
+      properties.push(make.objectProperty('$' + i, func, true))
       continue
     }
     if (logical) {
@@ -377,7 +379,7 @@ export function printJsAST(data: ReturnType<typeof sortAndMergeEvaluatedResult>,
     } else {
       expressions.push(expr)
     }
-    properties.push(make.objectProperty('#' + i, ast))
+    properties.push(make.objectProperty('$' + i, ast, true))
   }
   return { properties, expressions, into }
 }

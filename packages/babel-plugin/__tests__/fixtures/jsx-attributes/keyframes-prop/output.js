@@ -11,20 +11,20 @@ const pulse = stylex.keyframes({
   },
 });
 const _styles = _create({
-  "#0": {
+  $0: {
     color: "red",
   },
-  "#1": {
+  $1: {
     display: "flex",
   },
-  "#2": (pulse) => ({
+  $2: (pulse) => ({
     pulse: {
       animationName: pulse,
       animationDuration: "1s",
       animationIterationCount: "infinite",
     },
   }),
-  "#3": {
+  $3: {
     fontSize: {
       default: "18px",
       "@media (max-width: 768px)": "20px",
@@ -33,13 +33,6 @@ const _styles = _create({
 });
 export function Component() {
   return (
-    <div
-      {..._props(
-        _styles["#0"],
-        _styles["#1"],
-        _styles["#2"](pulse),
-        _styles["#3"]
-      )}
-    />
+    <div {..._props(_styles.$0, _styles.$1, _styles.$2(pulse), _styles.$3)} />
   );
 }

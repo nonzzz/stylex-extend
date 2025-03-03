@@ -6,7 +6,7 @@ const ctx = {
   t,
 };
 const _styles = _create({
-  "#0": (size, t, ctxT, a1c2mtth) => ({
+  $0: (size, t, ctxT, a1c2mtth) => ({
     "--font-size-unit": size,
     display: t,
     textAlign: ctxT,
@@ -21,7 +21,7 @@ export function Component(props) {
   return (
     <div
       {..._props(
-        _styles["#0"](
+        _styles.$0(
           size,
           t("flex"),
           ctx.t("center"),
