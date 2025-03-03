@@ -63,20 +63,6 @@ function insertAndReplace(
 export function transformInline(path: NodePath<types.CallExpression>, mod: Module) {
   // check path
   if (path.parent.type === 'CallExpression') {
-    // check again
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const [_, applied] = mod.importIdentifiers
-    const { parent } = path
-    if (parent.callee.type === 'Identifier' && parent.callee.name !== applied) {
-      return
-    }
-
-    if (parent.callee.type === 'MemberExpression') {
-      const prop = parent.callee.property
-      if (prop.type === 'Identifier' && prop.name !== applied) {
-        return
-      }
-    }
     insertAndReplace(path, mod, (p, _, expressions) => {
       p.replaceInline(expressions)
     })
