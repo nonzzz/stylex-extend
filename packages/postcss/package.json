@@ -1,0 +1,15 @@
+{
+  "name": "@stylex-extend/postcss",
+  "version": "0.6.0",
+  "main": "src/index.js",
+  "license": "MIT",
+  "dependencies": {
+    "@stylexjs/babel-plugin": "0.11.1",
+    "@stylex-extend/babel-plugin": "workspace:*",
+    "@babel/core": "^7.25.2",
+    "postcss": "^8.4.49",
+    "fast-glob": "^3.3.2",
+    "glob-parent": "^6.0.2",
+    "is-glob": "^4.0.3"
+  }
+}
