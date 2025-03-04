@@ -1,3 +1,12 @@
+## 0.7.0 (2025-3-4)
+
+### Features
+
+- Remove the call restrictions of `inline` API.
+- Add new packages (postcss).
+- vite plugin provides offical postcss binding.
+- Upgrade `@stylexjs/babel-plugin` from `0.9.3` to `0.11.1`
+
 ## 0.6.0 (2025-1-15)
 
 ### Features
