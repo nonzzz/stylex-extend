@@ -22,6 +22,22 @@ export default defineConfig({
     stylex()
   ]
 })
+
+// or using a postcss intergrate
+
+import { stylex } from '@stylex-extend/vite/postcss-ver'
+
+import { defineConfig } from 'vite'
+
+export default defineConfig({
+  plugins: [
+    // ... your plugins
+    stylex({
+      include: [],
+      aliases: {}
+    })
+  ]
+})
 ```
 
 ## Options

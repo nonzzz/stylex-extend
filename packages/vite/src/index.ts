@@ -65,7 +65,7 @@ interface HMRPayload {
   hash: string
 }
 
-type RollupPluginContext = ThisParameterType<HookHandler<NonNullable<Plugin['transform']>>>
+export type RollupPluginContext = ThisParameterType<HookHandler<NonNullable<Plugin['transform']>>>
 
 export const CONSTANTS = {
   REFERENCE_KEY: '@stylex;',

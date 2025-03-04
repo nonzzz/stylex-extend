@@ -1,8 +1,15 @@
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+import { injectGlobalStyle } from '@stylex-extend/core'
 import React, { useState } from 'react'
 import { Aliases } from '~/component/aliases'
 import { colors } from '~/themes/colors.stylex'
+
+injectGlobalStyle({
+  body: {
+    margin: 0,
+    border: '1px solid pink',
+    backgroundColor: colors.gray
+  }
+})
 
 interface ButtonProps {
   color: string
@@ -21,8 +28,8 @@ export function App() {
       <div>
         With macro
         <p stylex={{ fontSize: '30px' }}>
-          <span stylex={{ color: colors.blue }}>Purple</span>
-          <span stylex={{ color: 'green' }}>Green</span>
+          <span stylex={{ color: colors.blue }}>Blue</span>
+          <span stylex={{ color: 'yellow' }}>Green</span>
         </p>
       </div>
       <Aliases />
