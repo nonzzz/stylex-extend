@@ -3,6 +3,7 @@ import * as stylex from '@stylexjs/stylex'
 import React, { useState } from 'react'
 import ReactDOM from 'react-dom/client'
 import 'virtual:stylex.css'
+import { Include } from './include'
 
 interface ButtonProps {
   color: string
@@ -55,6 +56,7 @@ export function App() {
         </p>
       </div>
       <Button color={color} onClick={() => setColor((pre) => pre === 'red' ? 'blue' : 'red')}>Action</Button>
+      <Include />
     </div>
   )
 }

@@ -1,6 +1,6 @@
 import { create as _create, props as _props } from "@stylexjs/stylex";
 const _styles = _create({
-  "#0": (color, propsOtherColor) => ({
+  $0: (color, propsOtherColor) => ({
     color: {
       default: "purple",
       ":hover": color,
@@ -12,5 +12,5 @@ const _styles = _create({
 });
 export function Component(props) {
   const color = "pink";
-  return <div {..._props(_styles["#0"](color, props.otherColor))} />;
+  return <div {..._props(_styles.$0(color, props.otherColor))} />;
 }

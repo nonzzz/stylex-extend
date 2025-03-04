@@ -1,8 +1,10 @@
 import { create as _create, props as _props } from "@stylexjs/stylex";
+function fn(arg) {
+  console.log(arg);
+}
 const _styles = _create({
   $0: {
-    color: "red",
-    fontSize: "16px",
+    color: "purple",
   },
 });
-<div {..._props(_styles.$0)} />;
+fn(_styles.$0);

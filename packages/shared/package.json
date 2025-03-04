@@ -11,8 +11,16 @@
     "dist",
     "README.md"
   ],
+  "scripts": {
+    "dev": "rollup --config rollup.config.mts --configPlugin swc3 --watch",
+    "build": "rollup --config rollup.config.mts --configPlugin swc3"
+  },
   "exports": {
-    ".": "./src/index.ts",
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    },
     "./package.json": "./package.json"
   },
   "dependencies": {
