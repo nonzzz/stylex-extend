@@ -1,12 +1,16 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import type { CSSObject, StylexCSS } from '@stylex-extend/shared'
-import { attrs } from '@stylexjs/stylex'
+import type { StyleXArray, CompiledStyles, InlineStyles } from "@stylexjs/stylex/lib/StyleXTypes";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type ReadonlyParmater<T extends (...args: ReadonlyArray<any>) => any> = T extends (...args: ReadonlyArray<infer P>) => any ? P
   : never
 
-export type StylexAttrsParamter = ReadonlyParmater<typeof attrs>
+export type StylexAttrsParamter = StyleXArray<
+      | (null | undefined | CompiledStyles)
+      | boolean
+      | Readonly<[CompiledStyles, InlineStyles]>
+    >
 
 export function injectGlobalStyle(..._: Array<Record<string, StylexCSS>>): string {
   throw new Error("'injectGlobalStyle' calls should be compiled away.")
