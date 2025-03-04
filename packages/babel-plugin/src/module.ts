@@ -130,7 +130,8 @@ function filePathResolver(relativeFilePath: string, sourceFilePath: string, alia
       // Otherwise, try to resolve the path with aliases
       for (const possiblePath of allAliases) {
         try {
-          return url.fileURLToPath(moduleResolve(possiblePath, url.pathToFileURL(sourceFilePath)))
+          const resolved = moduleResolve(url.pathToFileURL(possiblePath).href,  url.pathToFileURL(path.resolve(sourceFilePath)))
+          return url.fileURLToPath(resolved)
         } catch {
           continue
         }

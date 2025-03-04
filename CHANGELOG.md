@@ -1,3 +1,10 @@
+## 0.7.1 (2025-3-4)
+
+### Patches
+
+- Fix windows system file resolve
+- Better types for macro
+
 ## 0.7.0 (2025-3-4)
 
 ### Features
