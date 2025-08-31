@@ -165,9 +165,9 @@ importers:
       '@stylex-extend/shared':
         specifier: workspace:*
         version: link:../shared
-      '@stylexjs/shared':
-        specifier: 0.9.3
-        version: 0.9.3
+      '@stylexjs/babel-plugin':
+        specifier: 0.15.3
+        version: 0.15.3
       stylis:
         specifier: ^4.3.1
         version: 4.3.4
@@ -182,14 +182,17 @@ importers:
         specifier: ^11.0.4
         version: 11.0.4(@babel/core@7.25.2)
       valibot:
-        specifier: ^0.42.0
-        version: 0.42.0(typescript@5.6.2)
+        specifier: ^1.1.0
+        version: 1.1.0(typescript@5.6.2)
 
   packages/core:
     dependencies:
       '@stylex-extend/shared':
         specifier: workspace:*
         version: link:../shared
+      '@stylexjs/stylex':
+        specifier: 0.15.3
+        version: 0.15.3
 
   packages/postcss:
     dependencies:
@@ -2721,8 +2724,8 @@ packages:
   uri-js@4.4.1:
     resolution: {integrity: sha512-7rKUyy33Q1yc98pQ1DAmLtwX109F7TIfWlW1Ydo8Wl1ii1SeHieeh0HHfPeL2fMXK6z0s8ecKs9frCuLJvndBg==}
 
-  valibot@0.42.0:
-    resolution: {integrity: sha512-igMdmHXxDiQY714ssh9bGisMqJ2yg7sko1KOmv/omnrIacGtP6mGrbvVT1IuV1bDrHyG9ybgpHwG1UElDiDCLg==}
+  valibot@1.1.0:
+    resolution: {integrity: sha512-Nk8lX30Qhu+9txPYTwM0cFlWLdPFsFr6LblzqIySfbZph9+BFsAHsNvHOymEviUepeIW6KFHzpX8TKhbptBXXw==}
     peerDependencies:
       typescript: '>=5'
     peerDependenciesMeta:
@@ -3964,6 +3967,7 @@ snapshots:
   '@stylex-extend/core@file:packages/core':
     dependencies:
       '@stylex-extend/shared': link:packages/shared
+      '@stylexjs/stylex': 0.15.3
 
   '@stylexjs/babel-plugin@0.11.1':
     dependencies:
@@ -5700,7 +5704,7 @@ snapshots:
     dependencies:
       punycode: 2.3.1
 
-  valibot@0.42.0(typescript@5.6.2):
+  valibot@1.1.0(typescript@5.6.2):
     optionalDependencies:
       typescript: 5.6.2
 

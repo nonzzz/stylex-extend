@@ -1,74 +1,33 @@
-import type { ParserOptions, PluginObj } from '@babel/core'
-import { isImportDeclaration } from './ast/shared'
+import type { ConfigAPI, PluginItem, TransformOptions } from '@babel/core'
+import stylex from '@stylexjs/babel-plugin'
+import type { StyleXTransformObj } from '@stylexjs/babel-plugin'
 import type { StylexExtendBabelPluginOptions } from './interface'
-import { Module } from './module'
-import type { PluginPass } from './module'
-import { transformId, transformInjectGlobalStyle, transformInline, transformStylexAttrs } from './visitor'
-import { FIELD, readImportStmt } from './visitor/imports'
+import { declare as globalStyle } from './plugins/global-style'
+import { declare as macro } from './plugins/macro'
 
-function declare(): PluginObj {
+type StylexWithOptions = StyleXTransformObj['withOptions']
+
+type StylexOptions = Parameters<StylexWithOptions>[0]
+
+export interface StylexExtendPresetOptions {
+  stylex?: StylexOptions
+  macro?: StylexExtendBabelPluginOptions
+}
+
+function preset(api: ConfigAPI, options: StylexExtendPresetOptions): TransformOptions {
   return {
-    name: '@stylex-extend',
-    manipulateOptions(_, parserOpts: ParserOptions) {
-      // https://babeljs.io/docs/babel-plugin-syntax-jsx
-      // https://github.com/babel/babel/blob/main/packages/babel-plugin-syntax-typescript/src/index.ts
-      if (!parserOpts.plugins) {
-        parserOpts.plugins = []
-      }
-      const { plugins } = parserOpts
-      if (
-        plugins.some((p) => {
-          const plugin = Array.isArray(p) ? p[0] : p
-          return plugin === 'typescript' || plugin === 'jsx'
-        })
-      ) {
-        return
-      }
-      plugins.push('jsx')
-    },
-    visitor: {
-      Program: {
-        enter(path, state) {
-          const mod = new Module(path, state as PluginPass)
-          readImportStmt(path.get('body'), mod)
-          path.traverse({
-            JSXAttribute(path) {
-              transformStylexAttrs(path, mod)
-            },
-            CallExpression(path) {
-              transformId(path, mod)
-              transformInline(path, mod)
-              transformInjectGlobalStyle(path, mod)
-            }
-          })
-        },
-        exit(path) {
-          const body = path.get('body')
-          for (const stmt of body) {
-            if (isImportDeclaration(stmt)) {
-              const s = stmt.get('source')
-              if (s.isStringLiteral() && s.node.value === FIELD) {
-                stmt.remove()
-              }
-            }
-          }
-        }
-      }
-    }
+    plugins: [
+      [macro, options.macro || {}],
+      [stylex, options.stylex || {}],
+      [globalStyle, {}]
+    ]
   }
 }
 
-function withOptions(options: Partial<StylexExtendBabelPluginOptions>) {
-  return [declare, options]
+function withOptions(options: StylexExtendPresetOptions): PluginItem {
+  return [preset, options]
 }
 
-declare.withOptions = withOptions
+preset.withOptions = withOptions
 
-export type StylexExtendTransformObject = {
-  (): PluginObj,
-  withOptions: typeof withOptions
-}
-
-export default declare as unknown as StylexExtendTransformObject
-
-export type { StylexExtendBabelPluginOptions }
+export default preset

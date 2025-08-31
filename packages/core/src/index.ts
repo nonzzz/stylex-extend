@@ -1,16 +1,17 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import type { CSSObject, StylexCSS } from '@stylex-extend/shared'
-import type {StyleXArray, CompiledStyles, InlineStyles } from '@stylexjs/stylex'
+import type { CompiledStyles, InlineStyles, StyleXArray } from '@stylexjs/stylex'
+import { props } from '@stylexjs/stylex'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type ReadonlyParmater<T extends (...args: ReadonlyArray<any>) => any> = T extends (...args: ReadonlyArray<infer P>) => any ? P
   : never
 
 export type StylexAttrsParamter = StyleXArray<
-      | (null | undefined | CompiledStyles)
-      | boolean
-      | Readonly<[CompiledStyles, InlineStyles]>
-    >
+  | (null | undefined | CompiledStyles)
+  | boolean
+  | Readonly<[CompiledStyles, InlineStyles]>
+>
 
 export function injectGlobalStyle(..._: Array<Record<string, StylexCSS>>): string {
   throw new Error("'injectGlobalStyle' calls should be compiled away.")
@@ -25,7 +26,7 @@ export function id(_?: boolean): string {
 }
 
 function createWhenAPI(errorMessage: string) {
-  return (selector: string, pseudo?: string): string => {
+  return (_: string, __?: string): string => {
     throw new Error(errorMessage)
   }
 }
@@ -40,4 +41,10 @@ export const when = {
   descendent: createWhenAPI("'when.descendent' calls should be compiled away."),
   // a + b
   sibling: createWhenAPI("'when.sibling' calls should be compiled away.")
+}
+
+export * from '@stylexjs/stylex'
+
+export function attrs(..._: ReadonlyArray<StylexAttrsParamter>): ReturnType<typeof props> {
+  throw new Error("'attrs' calls should be compiled away.")
 }

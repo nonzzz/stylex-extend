@@ -1,4 +1,4 @@
-export type Transport = 'props' | 'attrs' | (string & {})
+export type Transport = 'props' | 'attrs'
 
 export interface StylexBindingMeta {
   helper: 'props' | 'attrs' | (string & {})
