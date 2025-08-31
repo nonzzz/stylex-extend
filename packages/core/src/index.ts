@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import type { CSSObject, StylexCSS } from '@stylex-extend/shared'
-import type { StyleXArray, CompiledStyles, InlineStyles } from "@stylexjs/stylex/lib/StyleXTypes";
+import type {StyleXArray, CompiledStyles, InlineStyles } from '@stylexjs/stylex'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type ReadonlyParmater<T extends (...args: ReadonlyArray<any>) => any> = T extends (...args: ReadonlyArray<infer P>) => any ? P
