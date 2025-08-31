@@ -7,25 +7,25 @@
   },
   "author": "kanno",
   "license": "MIT",
-  "packageManager": "pnpm@9.0.1",
+  "packageManager": "pnpm@10.15.0",
   "devDependencies": {
     "@eslint-sukka/react": "^6.12.0",
-    "@stylex-extend/babel-plugin": "workspace:*",
     "@rollup/plugin-esm-shim": "^0.1.8",
     "@rollup/plugin-node-resolve": "^16.0.0",
-    "rollup": "^4.34.9",
-    "rollup-plugin-swc3": "^0.12.1",
-    "@swc/core": "^1.11.5",
-    "rollup-plugin-dts": "^6.1.1",
+    "@stylex-extend/babel-plugin": "workspace:*",
     "@stylex-extend/core": "file:./packages/core",
     "@stylex-extend/shared": "workspace:*",
     "@stylex-extend/vite": "workspace:*",
     "@stylexjs/babel-plugin": "0.11.1",
     "@stylexjs/stylex": "0.11.1",
+    "@swc/core": "^1.11.5",
     "@types/node": "^20.11.30",
     "dprint": "^0.45.1",
     "eslint": "^9.16.0",
     "eslint-config-kagura": "^3.0.1",
+    "rollup": "^4.34.9",
+    "rollup-plugin-dts": "^6.1.1",
+    "rollup-plugin-swc3": "^0.12.1",
     "typescript": "^5.4.3",
     "vite": "^6.2.0",
     "vitepress-plugin-group-icons": "^1.1.0",
@@ -35,6 +35,13 @@
     "overrides": {
       "is-core-module": "npm:@nolyfill/is-core-module@^1",
       "vite": "^6.2.0"
-    }
+    },
+    "onlyBuiltDependencies": [
+      "@swc/core",
+      "core-js",
+      "dprint",
+      "esbuild",
+      "vue-demi"
+    ]
   }
 }
