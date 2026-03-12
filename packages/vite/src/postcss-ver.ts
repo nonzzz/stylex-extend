@@ -288,6 +288,7 @@ export function stylex(options: StylexOptionsWithPostcss = {}): Plugin[] {
             const transformHook = typeof plugin.transform === 'function' ? plugin.transform : plugin.transform.handler
             const ctx = {
               ...this,
+              addWatchFile: ()=>{},
               getCombinedSourcemap: () => {
                 throw new Error('getCombinedSourcemap not implemented')
               }
